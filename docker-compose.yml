@@ -1,31 +1,43 @@
 name: HearthTune
 services:
-  api:
+  api: &api-template
     build:
       context: ./server
       dockerfile: Dockerfile
     container_name: hearthtune_server
     ports:
       - "4000:4000"
+    env_file:
+      - ./server/.env
     volumes:
       - ./server/src:/app/src
-      - ./server/.env:/app/.env
       - ./server/storage/music:/app/storage/music
       - /app/node_modules
       - ./server/cookies.txt:/app/cookies.txt:ro
     depends_on:
       - db
 
-  db:
-    image: mongo:8.2.3
+  db: &db-template
+    env_file:
+      - ./server/.env
+    image: mongo:8.0
     container_name: hearthtune_db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS}
-      - MONGO_INITDB_DATABASE=${MONGO_DB_NAME}
-
     volumes:
       - mongo_data:/data/db
+  test-db:
+    <<: *db-template
+    container_name: hearthtune_test_db
+    volumes: []
 
+  test:
+    <<: *api-template
+    environment: 
+    - FORCE_COLOR=1
+    container_name: hearthtune_test
+    ports: []
+    command: npm test -- --watchAll
+    depends_on:
+      - test-db
 volumes:
   mongo_data:
+  mongo_test_data:
