@@ -31,9 +31,14 @@ services:
 
   test:
     <<: *api-template
-    environment: 
-    - FORCE_COLOR=1
+    environment:
+      - FORCE_COLOR=1
     container_name: hearthtune_test
+    volumes:
+      - ./server/src:/app/src
+      - /app/storage/music
+      - /app/node_modules
+
     ports: []
     command: npm test -- --watchAll
     depends_on:
