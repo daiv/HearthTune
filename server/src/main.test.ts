@@ -34,7 +34,7 @@ describe('Songs service', () => {
 
   beforeEach(spy.mockClear);
 
-  it('Should clamp the limit of songs searched between 1 and provider.MAX_LIMIT', async () => {
+  it('song/search -> Should clamp the limit of songs searched between 1 and provider.MAX_LIMIT', async () => {
 
     await service.search('rock', 70);
     expect(spy).toHaveBeenCalledWith('rock', 10);
@@ -44,7 +44,7 @@ describe('Songs service', () => {
     expect(spy).toHaveBeenCalledWith('rock', 1);
 
   });
-  it('Should sanitize the query', async () => {
+  it('song/search -> Should sanitize the query', async () => {
     const testCases: { query: string, limit: number, expected: string }[] = [
       { query: 'rock', limit: 0, expected: 'rock' },
       { query: 'rock    ', limit: 0, expected: 'rock' },
@@ -66,4 +66,12 @@ describe('Songs service', () => {
       expect(spy).toHaveBeenLastCalledWith(test.expected, 1);
     }
   });
+
+  it('song/play/:id', async () => {
+    const songId = "9Yp3lc3PsjA";
+    const spy = jest.spyOn(provider, 'getAudioStream');
+    await service.getAudioStream(songId, async () => { }, () => { });
+    expect(spy).toHaveBeenCalledWith(songId);
+  });
+
 });

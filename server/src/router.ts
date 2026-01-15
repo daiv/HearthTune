@@ -13,6 +13,7 @@ router.get('/', (_: Request, res: Response) => {
   res.send('server is listening!');
 });
 router.get('/song/search', songController.searchSong);
+router.get('/song/play/:id', songController.playSong);
 
 
 export default router;

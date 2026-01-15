@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { ISongsProvider } from "../interfaces/ISongsProvider";
 import { Song } from "../types/types";
+import { Readable } from "node:stream";
 
 export class YtDlpProvider implements ISongsProvider {
   userAgent: string = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36';
@@ -44,5 +45,18 @@ export class YtDlpProvider implements ISongsProvider {
         }
       });
     })
+  }
+  async getAudioStream(ytId: string): Promise<Readable> {
+    const child = spawn('yt-dlp', [
+      '--user-agent', this.userAgent,
+      '--rate-limit', '300K',
+      '-o', '-',
+      // '-f', 'ba[ext=m4a]/ba',
+      '-f', 'ba[ext=m4a]',
+      '--no-playlist',
+      '--',
+      ytId
+    ]);
+    return child.stdout;
   }
 }
