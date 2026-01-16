@@ -1,7 +1,8 @@
 import { PassThrough, Readable } from "node:stream";
 import { ISongService } from "../interfaces/ISongService";
 import { ISongsProvider } from "../interfaces/ISongsProvider";
-import fs from 'fs'
+import fs from 'fs';
+
 export class SongService implements ISongService {
   MAX_LIMIT = 10;
 
@@ -17,26 +18,41 @@ export class SongService implements ISongService {
 
     return this.provider.searchSongs(sanitizedQuery, clampedLimit);
   }
-  async getAudioStream(id: string, onSuccess: () => Promise<void>, onFail: () => void): Promise<PassThrough> {
 
-    const audioStream = await this.provider.getAudioStream(id);
-    const filePath = `/app/storage/music/${id}.m4a`;
-    const fileWriter = fs.createWriteStream(filePath);
+  async getAudioStream(id: string, onSuccess: () => Promise<void>, onFail: () => void): Promise<PassThrough> {
 
     const userTunnel = new PassThrough();
 
-    audioStream.pipe(fileWriter);
-    audioStream.pipe(userTunnel);
+    try {
+      const audioStream = await this.provider.getAudioStream(id);
+      const filePath = `/app/storage/music/${id}.m4a`;
+      const fileWriter = fs.createWriteStream(filePath);
 
-    fileWriter.on('finish', async () => {
-      fileWriter.close();
-      await onSuccess();
-    });
-    audioStream.on('error', err => {
-      fileWriter.destroy();
+      const handleError = (error: unknown) => {
+        fileWriter.destroy();
+        userTunnel.destroy(error instanceof Error ? error : new Error(String(error)));
+        onFail();
+      }
+
+      audioStream.on('error', handleError);
+      fileWriter.on('error', handleError);
+
+      audioStream.pipe(fileWriter);
+      audioStream.pipe(userTunnel);
+
+      fileWriter.on('finish', async () => {
+        fileWriter.close();
+        onSuccess()
+          .then(() => console.log('Success'))
+          .catch(() => console.log('OnSuccess function failed'));
+      });
+
+    } catch (error) {
+      const errorMessage = error instanceof (Error) ? error.message : error;
+      console.log(errorMessage);
       onFail();
-    });
-
+      userTunnel.destroy(error instanceof Error ? error : new Error(String(error)));
+    }
     return userTunnel;
   }
 }

@@ -1,7 +1,10 @@
 import mongoose from "mongoose";
 import { MockProvider } from "./mocks/MockProvider";
 import { SongService } from "./services/SongService";
-
+import express from 'express';
+import { initGraphqlMiddleware } from "./graphql/graphqlServer";
+import supertest from "supertest";
+import TestAgent from "supertest/lib/agent";
 describe('TDD tests', () => {
   beforeAll(async () => {
     const {
@@ -72,6 +75,39 @@ describe('Songs service', () => {
     const spy = jest.spyOn(provider, 'getAudioStream');
     await service.getAudioStream(songId, async () => { }, () => { });
     expect(spy).toHaveBeenCalledWith(songId);
+  });
+
+});
+describe('graphql', () => {
+  let request: TestAgent;
+  const provider = new MockProvider();
+  const service = new SongService(provider);
+  beforeAll(async () => {
+
+    let server = express();
+    server.use(express.json());
+
+    const graphql = await initGraphqlMiddleware(service);
+    server.use('/graphql', graphql);
+    request = supertest(server);
+
+  });
+
+  it('Should call the service with the right args', async () => {
+    const query = `
+    query find($searchString:String!, $max: Int){
+    search(query:$searchString, limit:$max){
+    id,
+    title, 
+    description,
+    duration}
+    }`;
+    const vars = { searchString: 'Linking park', max: 1 }
+    const spy = jest.spyOn(service, 'search');
+    const response = await request.post('/graphql')
+      .send({ query, variables: vars });
+    console.log('GRAPH', JSON.stringify(response.body, null, 2));
+    expect(spy).toHaveBeenCalledWith(vars.searchString, vars.max);
   });
 
 });

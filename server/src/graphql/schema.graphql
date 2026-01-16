@@ -1,0 +1,9 @@
+type Song {
+  id: ID!
+  title: String
+  duration: String
+  description: String
+}
+type Query {
+  search (query: String!, limit:Int):[Song]
+}

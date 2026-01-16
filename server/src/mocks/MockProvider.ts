@@ -5,16 +5,21 @@ import { Song } from "../types/types";
 export class MockProvider implements ISongsProvider {
   searchSongs(query: string, limit: number): Promise<Song[]> {
     return new Promise(resolve => {
-      const song: Song = {
-        id: '1',
-        title: 'title',
-        description: 'description',
-        duration: 'limit=',
+
+      const songs: Song[] = [];
+      for (let i = 0; i < limit; i++) {
+        const song: Song = {
+          id: `${i}`,
+          title: `title ${i}`,
+          description: `query=${query}`,
+          duration: `limit=${limit}`,
+        }
+        songs.push(song);
       }
-      resolve([song]);
+      resolve(songs);
     });
   }
   getAudioStream(id: string): Promise<Readable> {
-    return new Promise(resolve => resolve(new Readable()));
+    return new Promise(resolve => resolve(new Readable({ read() { } })));
   }
 }
