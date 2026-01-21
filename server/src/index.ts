@@ -4,8 +4,8 @@ import { createRouter } from './router';
 import { checkEnvFile } from './helpers';
 import { initDatabase } from './models/model';
 import { initGraphqlMiddleware } from './graphql/graphqlServer';
-import { YtDlpProvider } from './providers/ytdlp.provider';
-import { SongService } from './services/SongService';
+import { YtDlpProvider } from '@/providers'
+import { SongRepository, SongService } from '@/services';
 
 const app = express();
 const PORT = 4000;
@@ -16,7 +16,8 @@ const PORT = 4000;
     await initDatabase();
     app.use(express.json());
     const provider = new YtDlpProvider();
-    const songService = new SongService(provider);
+    const songRepository = new SongRepository();
+    const songService = new SongService(provider, songRepository);
     const graphql = await initGraphqlMiddleware(songService);
     app.use('/graphql', graphql);
     app.use(createRouter(songService));

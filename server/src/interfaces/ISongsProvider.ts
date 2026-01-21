@@ -1,8 +1,9 @@
 import { Readable } from "node:stream";
-import { Song } from "../types/types";
+import { RawSong } from "../types/types";
 
 export interface ISongsProvider {
-  searchSongs(query: string, limit: number): Promise<Song[]>;
+  searchSongs(query: string, limit: number): Promise<RawSong[]>;
   getAudioStream(id: string): Promise<Readable>;
-
+  isValidId(id: string): boolean;
+  getRelated(id: string, songs: number): Promise<RawSong[]>;
 }

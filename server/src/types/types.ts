@@ -1,10 +1,94 @@
 import { ISongService } from "../interfaces/ISongService";
 
+export enum DownloadStatus { "DownloadPending", "Downloading", "Ready", "Error" }
 export type Song = {
   id: string;
   title: string;
-  duration: string;
-  description: string;
+  duration: number;
+  description: string | null;
+  played?: number;
+  lastPlayed?: Date;
+  status?: DownloadStatus
+}
+export type RawSong = {
+  id: string,
+  title: string,
+  duration: number,
+  _filename?: string,
+  _format_sort_fields?: string,
+  _has_drm?: string,
+  _type?: string,
+  _version?: string,
+  abr?: string,
+  acodec?: string,
+  age_limit?: string,
+  aspect_ratio?: string,
+  asr?: string,
+  audio_channels?: string,
+  automatic_captions?: string,
+  availability?: string,
+  average_rating?: string,
+  categories?: string,
+  channel?: string,
+  channel_follower_count?: string,
+  channel_id?: string,
+  channel_is_verified?: string,
+  channel_url?: string,
+  chapters?: string,
+  comment_count?: string,
+  creators?: string,
+  description?: string | null,
+  display_id?: string,
+  duration_string?: string,
+  dynamic_range?: string,
+  epoch?: string,
+  ext?: string,
+  extractor?: string,
+  extractor_key?: string,
+  filename?: string,
+  filesize_approx?: string,
+  format?: string,
+  format_id?: string,
+  format_note?: string,
+  formats?: string,
+  fps?: string,
+  fulltitle?: string,
+  heatmap?: string,
+  height?: string,
+  is_live?: string,
+  language?: string,
+  like_count?: string,
+  live_status?: string,
+  media_type?: string,
+  original_url?: string,
+  playable_in_embed?: string,
+  playlist?: string,
+  playlist_index?: string,
+  protocol?: string,
+  release_timestamp?: string,
+  release_year?: string,
+  requested_formats?: string,
+  requested_subtitles?: string,
+  resolution?: string,
+  stretched_ratio?: string,
+  subtitles?: string,
+  tags?: string,
+  tbr?: string,
+  thumbnail?: string,
+  thumbnails?: string,
+  timestamp?: string,
+  upload_date?: string,
+  uploader?: string,
+  uploader_id?: string,
+  uploader_url?: string,
+  vbr?: string,
+  vcodec?: string,
+  view_count?: string,
+  was_live?: string,
+  webpage_url?: string,
+  webpage_url_basename?: string,
+  webpage_url_domain?: string,
+  width?: string
 }
 export type resolverContext = {
   songService: ISongService;
