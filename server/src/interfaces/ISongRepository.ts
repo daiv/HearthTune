@@ -1,5 +1,5 @@
+import { DownloadStatus, Song } from "@/common/types";
 import { DeleteResult, Document, UpdateWriteOpResult } from "mongoose";
-import { DownloadStatus, Song } from "../types/types";
 
 export interface ISongRepository {
   save

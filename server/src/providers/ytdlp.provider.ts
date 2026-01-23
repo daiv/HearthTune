@@ -1,7 +1,8 @@
 import { spawn } from "node:child_process";
 import { ISongsProvider } from "@/interfaces";
-import { RawSong, Song } from "../types/types";
+import { RawSong } from "../types/types";
 import { Readable } from "node:stream";
+
 
 export class YtDlpProvider implements ISongsProvider {
   userAgents = [

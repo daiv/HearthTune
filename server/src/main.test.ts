@@ -7,7 +7,7 @@ import supertest from "supertest";
 import TestAgent from "supertest/lib/agent";
 import { YtDlpProvider } from "./providers";
 import { Server } from "node:http";
-import { Song } from "./types/types";
+import { Song } from "@/common/types";
 describe('TDD tests', () => {
   beforeAll(async () => {
     const {
@@ -123,7 +123,6 @@ describe('TDD tests', () => {
       const spy = jest.spyOn(service, 'search');
       const response = await request.post('/graphql')
         .send({ query: searchQuery, variables: vars });
-      // console.log('GRAPH', JSON.stringify(response.body, null, 2));
       expect(spy).toHaveBeenCalledWith(vars.searchString, vars.max);
     });
 

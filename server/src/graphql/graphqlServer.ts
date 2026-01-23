@@ -3,7 +3,7 @@ import { resolvers } from './resolvers';
 import { expressMiddleware } from "@as-integrations/express5";
 import { join } from "node:path";
 import { readFileSync } from 'node:fs'
-import { ISongService } from "../interfaces/ISongService";
+import { ISongService } from "@/interfaces";
 import { resolverContext } from "../types/types";
 
 const schemaPath = join(process.cwd(), "src/graphql/schema.graphql");

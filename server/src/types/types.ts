@@ -1,15 +1,5 @@
 import { ISongService } from "../interfaces/ISongService";
 
-export enum DownloadStatus { "DownloadPending", "Downloading", "Ready", "Error" }
-export type Song = {
-  id: string;
-  title: string;
-  duration: number;
-  description: string | null;
-  played?: number;
-  lastPlayed?: Date;
-  status?: DownloadStatus
-}
 export type RawSong = {
   id: string,
   title: string,

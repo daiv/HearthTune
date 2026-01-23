@@ -1,7 +1,11 @@
 import { PassThrough, Readable } from "node:stream";
 import { ISongService, ISongsProvider, ISongRepository } from "@/interfaces";
 import fs from 'fs';
-import { DownloadStatus, RawSong, Song } from "../types/types";
+import { RawSong } from "../types/types";
+import { DownloadStatus, Song } from "@/common/types";
+import { join } from "node:path";
+
+
 
 export class SongService implements ISongService {
   MAX_LIMIT = 50;//increase this to 50-100
@@ -46,7 +50,8 @@ export class SongService implements ISongService {
   }
   async getAudioStream(id: string): Promise<Readable> {
     if (!this.provider.isValidId(id)) throw new Error('Bad id');
-    const filePath = `/app/storage/music/${id}.m4a`;
+
+    const filePath = join(process.cwd(), 'storage', 'music', `${id}.m4a`);
     if (await this.songRepository.isReady(id)
       &&
       fs.existsSync(filePath)) {

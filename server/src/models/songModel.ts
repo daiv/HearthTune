@@ -1,5 +1,5 @@
+import { DownloadStatus, Song } from "@/common/types";
 import mongoose, { model } from "mongoose";
-import { DownloadStatus, Song } from '../types/types';
 
 const songSchema = new mongoose.Schema<Song>({
   id:
@@ -38,7 +38,7 @@ const songSchema = new mongoose.Schema<Song>({
   },
   status: {
     type: String,
-    default: DownloadStatus.DownloadPending,
+    default: DownloadStatus.DownloadPending
   }
 });
 

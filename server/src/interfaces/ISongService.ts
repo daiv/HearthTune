@@ -1,5 +1,5 @@
 import { Readable } from "node:stream";
-import { Song } from "../types/types";
+import { Song } from "@/common/types";
 
 export interface ISongService {
   search

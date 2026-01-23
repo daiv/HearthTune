@@ -2,18 +2,18 @@ name: HearthTune
 services:
   api: &api-template
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./server/Dockerfile
     container_name: hearthtune_server
     ports:
       - "4000:4000"
     env_file:
       - ./server/.env
     volumes:
-      - ./server/src:/app/src
-      - ./server/storage/music:/app/storage/music
-      - /app/node_modules
-      - ./server/cookies.txt:/app/cookies.txt:ro
+      - ./server/src:/app/server/src
+      - ./server/storage/music:/app/server/storage/music
+      - ./common:/app/common:ro
+      - /app/server/node_modules
     depends_on:
       - db
 
@@ -35,9 +35,10 @@ services:
       - FORCE_COLOR=1
     container_name: hearthtune_test
     volumes:
-      - ./server/src:/app/src
-      - /app/storage/music
-      - /app/node_modules
+      - ./server/src:/app/server/src
+      - ./common:/app/common/:ro
+      - /app/server/storage/music
+      - /app/server/node_modules
 
     ports: []
     command: npm test -- --watchAll

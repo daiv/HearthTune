@@ -1,6 +1,6 @@
 import { Readable } from "node:stream";
 import { ISongsProvider } from "@/interfaces";
-import { RawSong, Song } from "../types/types";
+import { RawSong } from "../types/types";
 
 export class MockProvider implements ISongsProvider {
   searchSongs(query: string, limit: number = 10): Promise<RawSong[]> {
