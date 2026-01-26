@@ -4,18 +4,27 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web"
   },
   "dependencies": {
+    "@react-native-community/cli": "^20.1.0",
+    "@tanstack/react-query": "^5.90.20",
+    "babel-preset-expo": "~54.0.10",
     "expo": "~54.0.32",
     "expo-status-bar": "~3.0.9",
+    "graphql-request": "^7.4.0",
     "react": "19.1.0",
-    "react-native": "0.81.5"
+    "react-native": "0.81.5",
+    "react-native-dotenv": "^3.4.11",
+    "react-native-safe-area-context": "^5.6.2",
+    "react-native-track-player": "^5.0.0-alpha0-nightly-359af5a12d712d3b685530aed9b9625865a25d74"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.0",
+    "graphql": "^16.12.0",
     "typescript": "~5.9.2"
   },
   "private": true
