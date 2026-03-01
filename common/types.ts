@@ -11,5 +11,5 @@ export type Song = {
   description: string | null;
   played?: number;
   lastPlayed?: Date;
-  status?: DownloadStatus
+  status: DownloadStatus | undefined;
 };

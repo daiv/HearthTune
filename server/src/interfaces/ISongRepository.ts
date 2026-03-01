@@ -37,6 +37,10 @@ export interface ISongRepository {
     )
     : Promise<boolean>;
 
+  getSongState
+    (id: string)
+    : Promise<DownloadStatus | undefined>;
+
   getSongDetails
     (
       id: string

@@ -1,7 +1,9 @@
-import { spawn } from "node:child_process";
+import { exec, spawn } from "node:child_process";
+
 import { ISongsProvider } from "@/interfaces";
 import { RawSong } from "../types/types";
 import { Readable } from "node:stream";
+import { promisify } from "node:util";
 
 
 export class YtDlpProvider implements ISongsProvider {
@@ -95,10 +97,15 @@ export class YtDlpProvider implements ISongsProvider {
 
   async getAudioStream(ytId: string): Promise<Readable> {
     const child = spawn('yt-dlp', [
+      '--js-runtimes', 'node',
       '--user-agent', this.randomUA(),
-      '--http-chunk-size', '10M',
+      /* '--http-chunk-size', '10M', */
+      '--buffer-size', '16k',
+      '--limit-rate', '1M',
       '--no-check-certificates',
-      '--extractor-args', 'youtube:player_client=android,web',
+      '--add-header', `Referer:https://www.youtube.com/watch?v=${ytId}`,
+      // '--extractor-args', 'youtube:player_client=android,web',
+      '--extractor-args', 'youtube:player_clients=ios,web,android',
       '--add-header', 'Accept:*/*',
       '--add-header', 'Accept-Language: es-Es,es;q=0.9',
       '--add-header', 'Sec-Fetch-Mode: navigate',

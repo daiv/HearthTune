@@ -8,7 +8,7 @@ export const resolvers = {
     },
     getRelated: async (_parent: undefined, { id }: { id: string }, { songService }: resolverContext) => {
       try {
-        return await songService.getRelated(id);
+        return await songService.getRelatedSongs(id);
       } catch (error: unknown) {
         const errorMessage = String(error instanceof Error ? error.message : error);
 

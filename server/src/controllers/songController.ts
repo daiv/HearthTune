@@ -1,45 +1,45 @@
 import { Request, Response } from 'express';
 import { ISongService } from '../interfaces/ISongService';
+import { InvalidIdException, ServerError } from '@/errors/ServerError';
 
 export class SongController {
   constructor(private service: ISongService) { }
 
-/*   searchSong = async (req: Request, res: Response) => {
-    const { q: query, l: limit } = req.query;
-    if (!query || typeof query !== 'string') return res.status(400).send('Bad request');
-
-    const parsedLimit = parseInt(limit as string, 10) || 10;
-
-    const songs = await this.service.search(query, parsedLimit);
-    console.log('songs', songs);
-    res.json(songs);
-  }
-   */
-
-
   playSong = (async (req: Request, res: Response) => {
     const { user } = { user: 'developer' };//req.header 
-    const { id: ytId} = req.params;
-    const idPattern = /^[a-zA-Z0-9_-]{11}$/;
-    if (!idPattern.test(ytId)) {
-      return res.status(400).send('Invalid id format');
-    }
-    
-    const audioStream = await this.service.getAudioStream(ytId,
-      async function onSuccess() {
-        //save in db
-      },
-      function onFail() {
-        if (!res.headersSent) res.status(500).send('Streaming error');
-      }
-    );
+    const { id } = req.params;
+    console.log('client asked for id ' + id);
 
-    res.setHeader('Content-Type', 'audio/mp4');
-    audioStream.pipe(res);
-    res.on('close', () => {
-      audioStream.unpipe(res);
-      audioStream.destroy();
-      console.log('user disconnected but song still downloading in server ');
-    });
+    try {
+      const audioSource = await this.service.getAudioSource(id);
+      console.log('type is', audioSource.type);
+      if (audioSource.type === 'local') return res.sendFile(audioSource.localPath);
+      else if (audioSource.type === 'external') {
+        res.writeHead(200, {
+          'content-type': 'audio/m4a',
+          'transfer-encoding': 'chunked',
+          'connection': 'keep-alive',
+          "accept-ranges": 'none',
+          'X-Content-Type-Options': 'nosniff'
+        });
+
+        res.on('close', () => {
+          audioSource.stream.unpipe(res);
+          console.log('user disconnected but song still downloading in server ');
+        });
+        return audioSource.stream.pipe(res);
+      }
+    } catch (error) {
+      console.error('error ', error);
+      if (error instanceof Error) {
+        if (error.message == 'Bad id') {
+          throw new InvalidIdException();
+        } else {
+          throw new ServerError();
+        }
+      } else {
+        throw new ServerError('Unknown error');
+      }
+    }
   });
 }

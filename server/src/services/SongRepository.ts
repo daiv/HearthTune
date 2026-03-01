@@ -18,9 +18,13 @@ export class SongRepository implements ISongRepository {
     const count = await SongModel.countDocuments({ id }, { limit: 1 }).lean();
     return count > 0;
   }
+  async getSongState(id: string): Promise<DownloadStatus | undefined> {
+    const doc = await SongModel.findOne({ id });
+    return doc?.status;
+  }
 
   async isReady(id: string): Promise<boolean> {
-    const count = await SongModel.countDocuments({ id, status: DownloadStatus.Ready }, { limit: 1 }).lean();
+    const count = await SongModel.countDocuments({ id, status: DownloadStatus.Ready }, { limit: 1 }).exec();
     return count > 0;
   }
 

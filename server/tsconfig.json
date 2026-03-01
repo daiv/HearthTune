@@ -3,6 +3,8 @@
     "target": "ESNext",
     "module": "esnext",
     "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "strict": true,
     "outDir": "./dist",
     "baseUrl": ".",
