@@ -5,5 +5,6 @@ export const SEARCH_SONGS = gql`
       search(query:$query){
         id
         title
+        duration
       }
     }`;

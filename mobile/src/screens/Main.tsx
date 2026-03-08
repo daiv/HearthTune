@@ -1,6 +1,6 @@
-import SearchBar from "@/components/SearchBar";
+import Player from "@/components/Player";
 
 export function Main() {
 
-  return <SearchBar />
+  return <Player  />
 }

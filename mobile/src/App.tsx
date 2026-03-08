@@ -44,7 +44,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryclient}>
 
-      <SafeAreaView>
+      <SafeAreaView style={{ flex: 1 }}>
         {
           status === 'Error' ? <Text>Error initializating player</Text>
             :

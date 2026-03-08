@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@react-native-community/slider": "^5.1.2"
+  },
+  "devDependencies": {
+    "@types/react-native": "^0.72.8"
+  }
+}
