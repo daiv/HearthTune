@@ -12,4 +12,6 @@ export type Song = {
   played?: number;
   lastPlayed?: Date;
   status?: DownloadStatus | undefined;
+  instanceId?: string;
+  addedManually?: boolean;
 };

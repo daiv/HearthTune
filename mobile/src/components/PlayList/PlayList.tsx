@@ -1,15 +1,19 @@
-import usePlayList from "@/hooks/usePlayList";
-import { useEffect } from "react";
-import { Text, View } from "react-native";
+import { Song } from "@/common/types";
+import { FlatList, Text, View } from "react-native";
+import PlayListItem from "./PlayListItem";
+import { usePlayListContext } from "@/context/PlayListContext";
+
+const renderFunction = ({ item }: { item: Song }) => <PlayListItem key={item.instanceId} song={item} />
 
 export default function PlayList() {
 
-  const { playList, syncSongs } = usePlayList();
-  useEffect(syncSongs, []);
+  const { playList } = usePlayListContext();
   return <View style={{ flex: 1 }}>
     <Text>PlayList</Text>
-    {playList.map(song => {
-      return <Text>{song.title}</Text>
-    })}
+    <FlatList<Song>
+      data={playList}
+      keyExtractor={item => item.id}
+      renderItem={renderFunction}
+    />
   </View>
 }

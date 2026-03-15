@@ -6,9 +6,9 @@ export const resolvers = {
     search: async (_parent: undefined, { query, limit }: { query: string, limit?: number }, { songService }: resolverContext) => {
       return await songService.search(query, limit || 50);
     },
-    getRelated: async (_parent: undefined, { id }: { id: string }, { songService }: resolverContext) => {
+    getRelated: async (_parent: undefined, { id, numberOfSongs }: { id: string, numberOfSongs: number }, { songService }: resolverContext) => {
       try {
-        return await songService.getRelatedSongs(id);
+        return await songService.getRelatedSongs(id, numberOfSongs);
       } catch (error: unknown) {
         const errorMessage = String(error instanceof Error ? error.message : error);
 

@@ -1,9 +1,13 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import Slider from "@react-native-community/slider"
-import { useProgress } from "react-native-track-player";
-export default function SongProgressBar() {
-  const { position, duration, buffered } = useProgress();
+import { useRef } from "react";
 
+type SongProgressProps = {
+  duration: number;
+  position: number;
+}
+export default function SongProgressBar({ progression }: { progression: SongProgressProps }) {
+  const { position, duration } = progression;
   return (
     <View>
       <Slider

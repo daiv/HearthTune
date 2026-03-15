@@ -2,8 +2,7 @@ import { Song } from "@/common/types";
 import { memo } from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { styles } from "./styles";
-import { SERVER_URL as PLAYER_URL } from '@env';
-import TrackPlayer from "react-native-track-player";
+import { usePlayListContext } from "@/context/PlayListContext";
 
 function SearchItem({ song }: { song: Song }) {
 
@@ -13,6 +12,8 @@ function SearchItem({ song }: { song: Song }) {
   const hours = Math.floor(mins / 60);
   const minsRem = mins % 60;
 
+  const { addSong } = usePlayListContext();
+
   const handleItemPress = () => {
     Alert.alert('Add song', `Do you want to add \n${song.title} \n to current playlist?`,
       [{
@@ -21,7 +22,8 @@ function SearchItem({ song }: { song: Song }) {
       },
       {
         text: 'Ok',
-        onPress: () => TrackPlayer.add({ mediaId: song.title, title: song.title, url: PLAYER_URL + song.id })
+        // onPress: () => TrackPlayer.add({ mediaId: song.title, title: song.title, url: PLAYER_URL + song.id })
+        onPress: () => addSong(song)
       }
       ]
     );

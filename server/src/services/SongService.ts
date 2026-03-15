@@ -40,10 +40,15 @@ export class SongService implements ISongService {
   }
 
   async getRelatedSongs(id: string, numberOfSongs: number = 10): Promise<Song[]> {
-    if (!this.provider.isValidId(id)) throw new Error('Bad id');
+    console.log('client asked id', id);
+    if (!this.provider.isValidId(id)) {
+      throw new Error('Bad id');
+    }
     else {
+      console.log('client asked for relateds');
       const result = await this.provider.getRelated(id, numberOfSongs);
       const rawToSong = result.map(this.extractAndCacheSong);
+      console.log(`returning ${rawToSong.length} relateds`);
       return rawToSong;
     }
   }

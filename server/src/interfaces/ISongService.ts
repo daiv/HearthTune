@@ -12,7 +12,8 @@ export interface ISongService {
 
   getRelatedSongs
     (
-      id: string
+      id: string,
+      numberOfSongs?: number
     )
     : Promise<Song[]>;
 

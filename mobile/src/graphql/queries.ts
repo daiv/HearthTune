@@ -8,3 +8,12 @@ export const SEARCH_SONGS = gql`
         duration
       }
     }`;
+export const GET_RELATED_SONGS = gql`
+    query getRelated($id: String!, $numberOfSongs: Int!) { 
+      getRelated(id: $id, numberOfSongs: $numberOfSongs) {    
+        id
+        title
+        duration
+      }
+    }
+`;

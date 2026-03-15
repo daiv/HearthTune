@@ -3,7 +3,6 @@ import { exec, spawn } from "node:child_process";
 import { ISongsProvider } from "@/interfaces";
 import { RawSong } from "../types/types";
 import { Readable } from "node:stream";
-import { promisify } from "node:util";
 
 
 export class YtDlpProvider implements ISongsProvider {
@@ -59,19 +58,19 @@ export class YtDlpProvider implements ISongsProvider {
   }
   async getRelated(id: string, songs: number): Promise<RawSong[]> {
     return new Promise((resolve, reject) => {
-
+      const mixUrl = `https://www.youtube.com/watch?v=${id}&list=RD${id}`;
       const child = spawn('yt-dlp', [
         '--user-agent', this.randomUA(),
         '--dump-single-json',
-        '--sleep-requests', '1.5',
         '--no-check-certificates',
         '--geo-bypass',
         '--simulate',
         '--flat-playlist',
         '--no-warnings',
+        '--playlist-items', `1:${songs+1}`,
         '--add-header', 'Accept-Language: es-ES,es;q=0.9',
         '--',
-        `ytsearch${songs}:https://www.youtube.com/watch?v=${id}`
+        mixUrl
       ]);
       const chunks: Buffer[] = [];
       const errors: string[] = [];

@@ -7,5 +7,5 @@ type Song {
 }
 type Query {
   search (query: String!, limit:Int):[Song]
-  getRelated(id:String):[Song]
+  getRelated(id:String, numberOfSongs:Int):[Song]
 }
