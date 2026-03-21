@@ -5,4 +5,5 @@ export type PlayListContextData = {
   addSong: (song: Song, addedManually?: boolean) => void;
   removeSongByInstanceId: (id: string) => void;
   addRelatedSong: (id: string) => void;
+  skipToByInstanceId: (instanceId: string) => void;
 }

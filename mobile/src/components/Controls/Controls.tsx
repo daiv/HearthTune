@@ -1,10 +1,10 @@
-import { StyleProp, TouchableOpacity, View, ViewStyle } from "react-native";
+import { StyleProp, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import PlayButton from "../PlayButton";
 import { globalStyles } from "../../globalStyles";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { styles } from "./styles";
-import TrackPlayer, { Event, useProgress, useTrackPlayerEvents } from "react-native-track-player";
+import TrackPlayer, { Event, useActiveTrack, useProgress, useTrackPlayerEvents } from "react-native-track-player";
 import SongProgressBar from "../SongProgressBar";
 import { usePlayListContext } from "@/context/PlayListContext";
 import { useEffect, useRef } from "react";
@@ -17,6 +17,7 @@ export default function Controls({ style, setPlayListVisibility }: { style?: Sty
 
   const { position, duration } = useProgress();
   const { playList, addSong } = usePlayListContext();
+  const activeTrack = useActiveTrack();
 
   const isLastSong = useRef<boolean>(false);
   const isTrigered = useRef(false);
@@ -69,10 +70,13 @@ export default function Controls({ style, setPlayListVisibility }: { style?: Sty
 
     console.log(intPosition, "trigered=" + isTrigered.current + " middle =" + middle + " if= " + (intPosition >= middle));
   }, [intPosition, duration]);
-
+  const getTitle = () => {
+    return playList.find(song => song.instanceId === activeTrack?.mediaId)?.title || 'unkown song';
+  }
   return (
     <>
-      <SongProgressBar progression={{ duration, position }} />
+      <Text>{getTitle()}</Text>
+      <SongProgressBar />
       <View style={[globalStyles.mainContainer, styles.controlPanel, style]}>
         <TouchableOpacity
           onPress={() => TrackPlayer.skipToPrevious()}>

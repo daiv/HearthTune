@@ -7,7 +7,7 @@ import { styles } from "./styles";
 import { globalStyles } from "@/globalStyles";
 import SearchItem from "./SearchItem";
 
-const renderFunction = ({ item }: { item: Song }) => <SearchItem song={item} />
+const renderFunction = ({ item }: { item: Song }) => <SearchItem key={item.id} song={item} />
 
 export default function SearchBar() {
   const [input, setInput] = useState('');

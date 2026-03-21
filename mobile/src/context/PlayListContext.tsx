@@ -1,9 +1,8 @@
 import { Song } from "@/common/types";
-import { useGraphQl } from "@/hooks/useGraphql";
 import { PlayListContextData } from "@/types/types";
 import { SERVER_URL } from "@env";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import TrackPlayer from "react-native-track-player";
+import TrackPlayer, { useActiveTrack } from "react-native-track-player";
 
 
 const PlayListContext = createContext<PlayListContextData | null>(null);
@@ -34,7 +33,8 @@ export const PlayListProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       })
       .catch(console.log);
   }, []);
-  useEffect(sync, [sync]);
+
+  useEffect(sync, [playList]);
 
   const addSong = useCallback((song: Song, addedManually: boolean = true) => {
     const songWithInstance = { ...song, addedManually, instanceId: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}` }
@@ -46,10 +46,23 @@ export const PlayListProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       mediaId: songWithInstance.instanceId
     });
   }, []);
+  
   const addRelatedSong = useCallback(() => {
-
     console.log('middle point reached all is working');
   }, []);
+
+  const skipToByInstanceId = useCallback((instanceId: string) => {
+    if (!instanceId) {
+      console.log('bad instance Id');
+      return;
+    }
+
+    const index = playList.findIndex(song => song.instanceId === instanceId);
+    if (index !== -1) {
+      TrackPlayer.skip(index);
+    }
+    else console.warn('bad index');
+  }, [playList]);
 
   const removeSongByInstanceId = useCallback(async (id: string) => {
     const indexToRemove = playList.findIndex(song => song.instanceId === id);
@@ -62,7 +75,11 @@ export const PlayListProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [playList]);
 
-  const contextValue = { playList, addSong, removeSongByInstanceId, isLastSong, addRelatedSong };
+  const contextValue = {
+    playList, addSong, removeSongByInstanceId, isLastSong, addRelatedSong
+    ,
+    skipToByInstanceId
+  };
   return (
     <PlayListContext.Provider value={contextValue}>{children}</PlayListContext.Provider>
   )
