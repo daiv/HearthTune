@@ -36,7 +36,7 @@ const songSchema = new mongoose.Schema<Song>({
     required: false,
     default: Date.now,
   },
-  status: {
+  downloadStatus: {
     type: String,
     default: DownloadStatus.DownloadPending
   }

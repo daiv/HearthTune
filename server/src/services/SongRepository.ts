@@ -20,7 +20,7 @@ export class SongRepository implements ISongRepository {
   }
   async getSongState(id: string): Promise<DownloadStatus | undefined> {
     const doc = await SongModel.findOne({ id });
-    return doc?.status;
+    return doc?.downloadStatus;
   }
 
   async isReady(id: string): Promise<boolean> {
@@ -39,7 +39,7 @@ export class SongRepository implements ISongRepository {
   }
 
   async setSongState(id: string, status: DownloadStatus): Promise<boolean> {
-    return (await SongModel.updateOne({ id }, { status })).matchedCount === 1;
+    return (await SongModel.updateOne({ id }, { downloadStatus: status })).matchedCount === 1;
   }
 
   async delete(id: string): Promise<DeleteResult> {

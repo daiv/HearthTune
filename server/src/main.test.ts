@@ -155,7 +155,7 @@ describe('TDD tests', () => {
       description: '',
       duration: 10,
       played: 0,
-      status: DownloadStatus.DownloadPending,
+      downloadStatus: DownloadStatus.DownloadPending,
       lastPlayed: now
     };
     const repo = new SongRepository();

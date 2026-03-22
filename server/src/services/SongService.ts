@@ -13,20 +13,22 @@ export class SongService implements ISongService {
   private activeSources = new Map<string, PassThrough>();
   constructor(private provider: ISongsProvider, private songRepository: ISongRepository) { }
 
-  private extractAndCacheSong = (rawSong: RawSong): Song => {
+  private extractAndCacheSong = async (rawSong: RawSong): Promise<Song> => {
+    const downloadStatus = await this.songRepository.getSongState(rawSong.id) || DownloadStatus.DownloadPending;
     const song: Song = {
       id: rawSong.id,
       description: rawSong.description || '',
       duration: Number(rawSong.duration),
       title: rawSong.title,
-      status: DownloadStatus.DownloadPending
+      downloadStatus,
+      local: downloadStatus === DownloadStatus.Ready
     };
     this.songsCache.set(song.id, song);
     return song;
   }
 
-  async search(query: string, limit: number): Promise<Song[]> {
-
+  async search(query: string, limit: number = 50): Promise<Song[]> {
+    console.log('searching for ', query);
     const sanitizedQuery = query
       .replace(/[^\w\s\u00C0-\u017F!$&\-\.\+_]/gi, '')
       .replace(/\s+/g, ' ')
@@ -34,8 +36,7 @@ export class SongService implements ISongService {
 
     const clampedLimit = Math.min(Math.max(1, limit), this.MAX_LIMIT);
     const result = await this.provider.searchSongs(sanitizedQuery, clampedLimit);
-    const songs: Song[] = result
-      .map(this.extractAndCacheSong);
+    const songs: Song[] = await Promise.all(result.map(this.extractAndCacheSong));
     return songs;
   }
 
@@ -47,7 +48,7 @@ export class SongService implements ISongService {
     else {
       console.log('client asked for relateds');
       const result = await this.provider.getRelated(id, numberOfSongs);
-      const rawToSong = result.map(this.extractAndCacheSong);
+      const rawToSong = await Promise.all(result.map(this.extractAndCacheSong));
       console.log(`returning ${rawToSong.length} relateds`);
       return rawToSong;
     }
@@ -61,9 +62,9 @@ export class SongService implements ISongService {
     if (!song) song = await this.saveSongOnDb(id);
     if (!song) throw new ServerError('Unable to get song info');
 
-    console.log('song status is', song.status);
+    console.log('song status is', song.downloadStatus);
 
-    if (song.status === DownloadStatus.Ready && fs.existsSync(join(this.PATH, `${id}.m4a`)))
+    if (song.downloadStatus === DownloadStatus.Ready && fs.existsSync(join(this.PATH, `${id}.m4a`)))
       return { type: 'local', localPath };
 
     if (this.activeSources.has(id)) {
@@ -80,17 +81,42 @@ export class SongService implements ISongService {
 
     await this.songRepository.setSongState(id, DownloadStatus.Downloading);
 
-    source.on('end', async () => {
-      this.activeSources.delete(id);
-      await this.songRepository.setSongState(id, DownloadStatus.Ready)
-      combinedStream.end();
-    });
-
-    source.on('error', async err => {
+    const handleCleanUpError = async (err: Error) => {
+      console.error(err.message);
+      if (!this.activeSources.has(id)) return;
       this.activeSources.delete(id);
       await this.songRepository.setSongState(id, DownloadStatus.Error);
       combinedStream.destroy(err);
+      if (fs.existsSync(localPath)) {
+        try {
+          console.warn('removing empty file: ', localPath);
+          fs.unlinkSync(localPath);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    };
+
+    source.on('error', handleCleanUpError);
+    fileWriter.on('error', handleCleanUpError);
+
+    source.on('end', async () => {
+      combinedStream.end();
     });
+
+    fileWriter.on('finish', async () => {
+      try {
+        const stats = fs.statSync(localPath);
+        if (stats.size > 0) {
+          await this.songRepository.setSongState(id, DownloadStatus.Ready);
+          this.activeSources.delete(id);
+        } else throw new Error('File is empty');
+      } catch (error) {
+        if (error instanceof Error)
+          handleCleanUpError(error);
+      }
+    });
+
     return { type: 'external', stream: combinedStream }
   }
 
@@ -98,7 +124,7 @@ export class SongService implements ISongService {
     const song: Song =
       this.songsCache.get(id)
       ||
-      this.extractAndCacheSong((await this.provider.searchSongs(id, 1))[0]);
+      await this.extractAndCacheSong((await this.provider.searchSongs(id, 1))[0]);
     if (!song) return null;
     await this.songRepository.save(song);
     return song;
