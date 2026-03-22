@@ -15,7 +15,6 @@ export const styles = StyleSheet.create({
     flexBasis: 0,
   },
   searchItem: {
-    height: 45,
     borderColor: 'white',
     borderWidth: 1,
     overflow: 'hidden',

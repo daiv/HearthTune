@@ -11,7 +11,8 @@ export type Song = {
   description: string | null;
   played?: number;
   lastPlayed?: Date;
-  status?: DownloadStatus | undefined;
+  downloadStatus?: DownloadStatus | undefined;
   instanceId?: string;
   addedManually?: boolean;
+  local?: boolean;
 };

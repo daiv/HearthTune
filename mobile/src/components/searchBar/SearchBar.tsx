@@ -7,7 +7,7 @@ import { styles } from "./styles";
 import { globalStyles } from "@/globalStyles";
 import SearchItem from "./SearchItem";
 
-const renderFunction = ({ item }: { item: Song }) => <SearchItem key={item.id} song={item} />
+const renderFunction = ({ item }: { item: Song }) => <SearchItem key={item.instanceId} song={item} />
 
 export default function SearchBar() {
   const [input, setInput] = useState('');
@@ -16,7 +16,6 @@ export default function SearchBar() {
     SEARCH_SONGS,
     { query: searchQuery },
     { enabled: searchQuery.length > 3 }
-
   )
   const handleClick = () => {
     setSearchQuery(input);
@@ -43,13 +42,12 @@ export default function SearchBar() {
         <View>
           <Text>found {data.search.length}</Text>
           <FlatList<Song>
-            data={data.search}
+            data={data.search.sort((currentSong, otherSong) => (
+              Number(otherSong.local) - (Number(currentSong.local)))
+            )}
             keyExtractor={item => item.id}
             renderItem={renderFunction}
-            getItemLayout={(data, index) => (
-              { length: 45, offset: 45 * index, index }
-            )}
-            removeClippedSubviews={true}
+
             maxToRenderPerBatch={10}
           />
         </View>

@@ -6,6 +6,7 @@ export const SEARCH_SONGS = gql`
         id
         title
         duration
+        local
       }
     }`;
 export const GET_RELATED_SONGS = gql`
