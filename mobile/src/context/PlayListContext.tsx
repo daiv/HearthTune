@@ -71,7 +71,6 @@ export const PlayListProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           isCurrentTrackBeyondMiddlePoint.current = false;
           console.log('playing id ', playListRef.current[songIndex.current].id);
           console.log('songIndex', songIndex.current);
-          logRefs();
           break;
 
         case Event.PlaybackProgressUpdated:
@@ -89,28 +88,18 @@ export const PlayListProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               console.error(error);
             }
           }
-          if (Math.floor(position) % 5 === 0) logRefs();
           break;
       }
     });
 
-  const logRefs = () => {
-    console.log('---------------------------')
-    console.log('ref', playListRef.current);
-    console.log('islastSong', isLastSong.current);
-    console.log('beyondMIddlePoint', isCurrentTrackBeyondMiddlePoint.current);
-    console.log('isTrigered', isSongAdditionTrigered.current);
-    console.log('automodeOn', isAutoSongAdditionModeEnabled.current);
-  }
-
-  const getRelatedSongFromServer = async (id: string): Promise<Song | undefined> => {
+  const getRelatedSongsFromServer = async (id: string): Promise<Song[] | undefined> => {
     const data = await request<{ getRelated: Song[] }>(
       GRAPHQL_API_URL,
       GET_RELATED_SONGS,
       { id, numberOfSongs: 1 }
     );
     console.log('the id asked for to the server is', id);
-    return data?.getRelated[0];
+    return data?.getRelated;
   }
 
   const addSong = useCallback((song: Song, addedManually: boolean = true) => {
@@ -126,37 +115,46 @@ export const PlayListProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   }, []);
 
+  const addSongIfNew = useCallback((songs: Song[]): boolean => {
+    for (const seed of songs) {
+      if (!playListRef.current.some(s => s.id === seed.id)) {
+        console.log('adding related', seed.title);
+        addSong(seed, false);
+        return true;
+      } else console.log(`skipping ${seed.title} already in list`);
+    }
+    return false;
+  }, [addSong]);
+
   const addRelatedSongToQueue = useCallback(async () => {
     const list = playListRef.current;
     const index = songIndex.current;
     const currentSong = list[index];
     if (!currentSong) return;
-    console.log('id to ask', currentSong.id);
-    console.log('lenght list', list.length);
-    let isSongAdded = false;
-    let isSongRepeated = false;
-    let attempts = 0;
-    while (!isSongAdded && attempts < 5) {
-      console.log('trying to add new song...');
-      attempts++;
-      try {
-        const relatedSong = await getRelatedSongFromServer(currentSong.id);
-        if (relatedSong) {
-          isSongRepeated = playListRef.current.some(song => song.id === relatedSong.id);
-          if (!isSongRepeated) {
-            console.log('adding related ', relatedSong.title);
-            addSong(relatedSong, false);
-            isSongAdded = true;
 
-          } else console.warn(`server returned ${relatedSong.title} but is already in list`);
-        } else console.error('not related song found');
+    const relatedSongs = await getRelatedSongsFromServer(currentSong.id);
+    if (!relatedSongs || relatedSongs.length === 0) return;
+    let isSongAdded: boolean = false;
 
-      } catch (error) {
-        console.error('error asking server');
+    isSongAdded = addSongIfNew(relatedSongs);
+
+    if (!isSongAdded) {
+      console.log('All related songs from server were duplicated, looking for more...');
+
+      for (const relatedSong of relatedSongs) {
+        try {
+          const moreRelatedSongs = await getRelatedSongsFromServer(relatedSong.id) || [];
+          isSongAdded = addSongIfNew(moreRelatedSongs);
+          if (isSongAdded) break;
+
+        } catch (error) {
+          console.error(`error getting relateds from ${relatedSong.title}`)
+        }
       }
-
     }
-  }, [addSong]);
+    if (!isSongAdded) console.error('unable to get new songs from server. All attemps returned duplicateds')
+  }, [addSong, addSongIfNew]);
+
 
 
   const skipToByInstanceId = useCallback((instanceId: string) => {
