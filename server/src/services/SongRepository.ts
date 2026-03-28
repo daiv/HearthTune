@@ -46,7 +46,7 @@ export class SongRepository implements ISongRepository {
     return await SongModel.deleteOne({ id });
   }
 
-  async getSongDetails(id: string): Promise<Song | null> {
+  async getSongDetails(id: string = 'HjF3E2zGNkg'): Promise<Song | null> {
     return await SongModel.findOne({ id });
   }
 }

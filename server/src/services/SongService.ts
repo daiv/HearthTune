@@ -41,8 +41,10 @@ export class SongService implements ISongService {
   }
 
   async getRelatedSongs(id: string, numberOfSongs: number = 10): Promise<Song[]> {
-    console.log('client asked id', id);
+
+    console.log('client asked relateds to id', id);
     if (!this.provider.isValidId(id)) {
+      console.log('not a valid id throwing error');
       throw new Error('Bad id');
     }
     else {

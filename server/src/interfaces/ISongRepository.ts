@@ -43,7 +43,7 @@ export interface ISongRepository {
 
   getSongDetails
     (
-      id: string
+      id?: string
     )
     : Promise<Song | null>;
 

@@ -33,6 +33,7 @@ services:
     <<: *api-template
     environment:
       - FORCE_COLOR=1
+      - MONGO_HOSTNAME=test-db
     container_name: hearthtune_test
     volumes:
       - ./server/src:/app/server/src

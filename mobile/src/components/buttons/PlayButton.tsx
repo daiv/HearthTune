@@ -1,7 +1,7 @@
 import { Text, TouchableOpacity } from "react-native";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import TrackPlayer, { usePlaybackState } from "react-native-track-player";
-export default function PlayButton() {
+export function PlayButton() {
 
   const playBackState = usePlaybackState();
 
