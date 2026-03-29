@@ -5,6 +5,6 @@ import TrackPlayer from "react-native-track-player";
 export function SkiptoNextButton() {
   return <TouchableOpacity
     onPress={() => TrackPlayer.skipToNext()}>
-    <FontAwesome name="step-forward" size={54} color="black" />
+    <FontAwesome name="step-forward" size={24} color="black" />
   </TouchableOpacity>
 }

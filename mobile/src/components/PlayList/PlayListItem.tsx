@@ -3,7 +3,8 @@ import { Text, TouchableOpacity, View } from "react-native"
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { usePlayListContext } from "@/context/PlayListContext";
 import { BlinkingPlay } from "../BlinkingPlay";
-export default function PlayListItem({ song, index, isPlaying }: { song: Song, index: number, isPlaying: boolean }) {
+
+export  function PlayListItem({ song, index, isPlaying }: { song: Song, index: number, isPlaying: boolean }) {
 
   const { removeSongByInstanceId, skipToByInstanceId } = usePlayListContext();
   const minutes = Math.floor(song.duration / 60);

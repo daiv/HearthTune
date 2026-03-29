@@ -1,10 +1,10 @@
 import { Song } from "@/common/types";
 import { FlatList, Text, View } from "react-native";
-import PlayListItem from "./PlayListItem";
 import { usePlayListContext } from "@/context/PlayListContext";
-import { useActiveTrack, usePlaybackState } from "react-native-track-player";
+import { useActiveTrack } from "react-native-track-player";
+import { PlayListItem } from "./PlayListItem";
 
-export default function PlayList() {
+export function PlayList() {
   const activeTrack = useActiveTrack();
   const { playList } = usePlayListContext();
 

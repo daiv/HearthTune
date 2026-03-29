@@ -23,9 +23,9 @@ export function PlayButton() {
       <TouchableOpacity
         onPress={handleClick}  >
         {playBackState.state === 'playing' ?
-          <FontAwesome name="pause" size={54} color="black" />
+          <FontAwesome name="pause" size={24} color="black" />
           :
-          <FontAwesome name="play" size={54} color="black" />
+          <FontAwesome name="play" size={24} color="black" />
         }
       </TouchableOpacity>
     </>

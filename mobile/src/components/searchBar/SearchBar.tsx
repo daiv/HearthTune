@@ -5,11 +5,11 @@ import { SEARCH_SONGS } from "../../graphql/queries";
 import { Song } from '@/common/types'
 import { styles } from "./styles";
 import { globalStyles } from "@/globalStyles";
-import SearchItem from "./SearchItem";
+import { SearchItem } from "./SearchItem";
 
 const renderFunction = ({ item }: { item: Song }) => <SearchItem key={item.instanceId} song={item} />
 
-export default function SearchBar() {
+export function SearchBar() {
   const [input, setInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const { data, isLoading } = useGraphQl<{ search: Song[] }, { query: string, limit?: number }>(

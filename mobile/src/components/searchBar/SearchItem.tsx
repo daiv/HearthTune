@@ -4,7 +4,7 @@ import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { styles } from "./styles";
 import { usePlayListContext } from "@/context/PlayListContext";
 
-function SearchItem({ song }: { song: Song }) {
+export const SearchItem = memo(({ song }: { song: Song }) => {
 
   const durationInSecs = song.duration;
   const mins = Math.floor(durationInSecs / 60);
@@ -46,5 +46,4 @@ function SearchItem({ song }: { song: Song }) {
       </View>
     </TouchableOpacity>
   );
-}
-export default memo(SearchItem);
+});

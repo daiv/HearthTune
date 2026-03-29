@@ -1,4 +1,4 @@
 export * from './SkipToNextButton';
-export * from './SkipToPrevButton.tsx';
+export * from './SkipToPrevButton';
 export * from './TogglePlayListButton';
 export * from './PlayButton';

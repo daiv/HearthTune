@@ -1,9 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Main } from './screens/Main';
 import TrackPlayer, { Capability } from 'react-native-track-player';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { NavigationContainer } from '@react-navigation/native';
+import AntDesign from '@expo/vector-icons/AntDesign';
+
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { PlayListProvider } from './context/PlayListContext';
+import { SearchBar, PlayList, Controls } from './components';
+import { Library, Settings } from './screens';
+import { styles } from './styles';
+
 
 const MAX_LOGIN_ATTEMPTS = 3;
 export default function App() {
@@ -24,7 +34,7 @@ export default function App() {
           ],
           notificationCapabilities: [
             Capability.Pause,
-            Capability.SkipToNext, 
+            Capability.SkipToNext,
             Capability.SkipToPrevious,
           ],
           progressUpdateEventInterval: 1
@@ -47,7 +57,11 @@ export default function App() {
     });
     return () => { isMounted = false; }
   }, []);
+  const screenOptions = { headerShown: false };
+  const Tab = createBottomTabNavigator();
+
   const queryclient = new QueryClient();
+  const focusColor = (focused: boolean) => focused ? "blue" : "black";
   return (
     <QueryClientProvider client={queryclient}>
 
@@ -56,7 +70,59 @@ export default function App() {
           status === 'Error' ? <Text>Error initializating player</Text>
             :
             status === 'Ready' ?
-              <Main />
+              <PlayListProvider>
+                <NavigationContainer>
+                  <Tab.Navigator screenOptions={screenOptions}>
+                    <Tab.Screen name='home' component={SearchBar}
+                      options={{
+                        tabBarIcon: ({ focused }) => {
+                          return <AntDesign name="home" size={24} color={focusColor(focused)} />
+                        }
+                      }
+                      }></Tab.Screen>
+
+                    <Tab.Screen
+                      name='playList'
+                      component={PlayList}
+                      options={{
+                        tabBarIcon: ({ focused }) => {
+                          return <AntDesign name="unordered-list" size={24} color={focusColor(focused)} />
+                        }
+                      }}
+                    >
+
+                    </Tab.Screen>
+
+                    <Tab.Screen
+                      name='lib'
+                      component={Library}
+                      options={{
+                        tabBarIcon: ({ focused }) => {
+                          return <MaterialIcons name="library-music" size={24} color={focusColor(focused)} />
+                        }
+                      }}
+                    >
+                    </Tab.Screen>
+
+                    <Tab.Screen
+                      name='settings'
+                      component={Settings}
+                      options={{
+                        tabBarIcon: ({ focused }) => {
+                          return <Ionicons name="settings" size={24} color={focusColor(focused)} />
+                        }
+                      }}
+                    >
+                    </Tab.Screen>
+
+                  </Tab.Navigator>
+
+                  <View style={styles.floatingControls}>
+                    <Controls />
+                  </View>
+                </NavigationContainer>
+              </PlayListProvider>
+
               : <View>
                 <ActivityIndicator />
                 <Text>Loading</Text>
