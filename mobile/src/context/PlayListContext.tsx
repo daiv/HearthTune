@@ -3,7 +3,7 @@ import { GET_RELATED_SONGS } from "@/graphql/queries";
 import { PlayListContextData } from "@/types/types";
 import { GRAPHQL_API_URL, SERVER_URL } from "@env";
 import request from "graphql-request";
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import TrackPlayer, { Event, useTrackPlayerEvents } from "react-native-track-player";
 
 const PlayListContext = createContext<PlayListContextData | null>(null);
@@ -44,15 +44,6 @@ export const PlayListProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   useEffect(sync, []);
-
-  useEffect(() => {
-    const setup = async () => {
-      await TrackPlayer.updateOptions({
-        progressUpdateEventInterval: 1
-      });
-    }
-    setup();
-  }, []);
 
   useTrackPlayerEvents(
     [
@@ -160,6 +151,7 @@ export const PlayListProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const skipToByInstanceId = useCallback((instanceId: string) => {
     if (!instanceId) {
       console.log('bad instance Id');
+      sync();
       return;
     }
 
@@ -167,25 +159,35 @@ export const PlayListProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (index !== -1) {
       TrackPlayer.skip(index);
     }
-    else console.warn('bad index');
+    else {
+      console.warn('bad index');
+      sync();
+    }
   }, [playList]);
 
   const removeSongByInstanceId = useCallback(async (id: string) => {
     const indexToRemove = playList.findIndex(song => song.instanceId === id);
-    if (indexToRemove === -1) return;
+    if (indexToRemove === -1) {
+      sync();
+      return;
+    }
     try {
       await TrackPlayer.remove(indexToRemove);
       setPlayList(currentList => currentList.filter(song => song.instanceId !== id));
     } catch (err) {
       console.error('Error removing song', err);
+      sync();
     }
   }, [playList]);
 
-  const contextValue = {
-    playList, addSong, removeSongByInstanceId, isLastSong, addRelatedSong: addRelatedSongToQueue
-    ,
+  const contextValue = useMemo(() => ({
+    playList,
+    addSong,
+    removeSongByInstanceId,
+    isLastSong,
+    addRelatedSongToQueue,
     skipToByInstanceId
-  };
+  }), [playList, addSong, removeSongByInstanceId, addRelatedSongToQueue, skipToByInstanceId]);
   return (
     <PlayListContext.Provider value={contextValue}>{children}</PlayListContext.Provider>
   )

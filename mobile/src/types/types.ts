@@ -4,6 +4,6 @@ export type PlayListContextData = {
   playList: Song[];
   addSong: (song: Song, addedManually?: boolean) => void;
   removeSongByInstanceId: (id: string) => void;
-  addRelatedSong: (id: string) => void;
+  addRelatedSongToQueue: (id: string) => void;
   skipToByInstanceId: (instanceId: string) => void;
 }

@@ -19,8 +19,15 @@ export default function App() {
             Capability.Play,
             Capability.Pause,
             Capability.SkipToNext,
+            Capability.SkipToPrevious,
             Capability.Stop,
           ],
+          notificationCapabilities: [
+            Capability.Pause,
+            Capability.SkipToNext, 
+            Capability.SkipToPrevious,
+          ],
+          progressUpdateEventInterval: 1
         });
         setStatus('Ready');
         return true;
