@@ -36,6 +36,11 @@ const songSchema = new mongoose.Schema<Song>({
     required: false,
     default: Date.now,
   },
+  requestedBy: {
+    type: String,
+    required: true,
+    default: 'mockUser1'
+  },
   downloadStatus: {
     type: String,
     default: DownloadStatus.DownloadPending
