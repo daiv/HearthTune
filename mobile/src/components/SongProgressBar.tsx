@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
 import Slider from "@react-native-community/slider"
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useProgress } from "react-native-track-player";
 
-export default function SongProgressBar() {
+export function SongProgressBar() {
   const { position, duration } = useProgress();
   const [time, setTime] = useState<string>('0:00');
 

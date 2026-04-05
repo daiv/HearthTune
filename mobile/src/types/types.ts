@@ -1,9 +1,9 @@
 import { Song } from "@/common/types"
 
 export type PlayListContextData = {
-  playList: Song[];
-  addSong: (song: Song, addedManually?: boolean) => void;
-  removeSongByInstanceId: (id: string) => void;
-  addRelatedSongToQueue: (id: string) => void;
+  queue: Song[];
+  enqueue: (song: Song, addedManually?: boolean) => Promise<void>;
+  dequeue: (instanceId: string) => Promise<void>;
+  enqueueRelatedSong: (id: string) => Promise<void>;
   skipToByInstanceId: (instanceId: string) => void;
 }

@@ -1,12 +1,12 @@
 import { Song } from "@/common/types";
 import { FlatList, Text, View } from "react-native";
-import { usePlayListContext } from "@/context/PlayListContext";
+import { usePlayListContext } from "@/context/PlayerContext";
 import { useActiveTrack } from "react-native-track-player";
 import { PlayListItem } from "./PlayListItem";
 
 export function PlayList() {
   const activeTrack = useActiveTrack();
-  const { playList } = usePlayListContext();
+  const { queue } = usePlayListContext();
 
   const renderFunction = ({ item, index }: { item: Song, index: number }) => {
     return <PlayListItem
@@ -20,7 +20,7 @@ export function PlayList() {
   return <View style={{ flex: 1 }}>
     <Text>PlayList</Text>
     <FlatList<Song>
-      data={playList}
+      data={queue}
       keyExtractor={item => item.instanceId!}
       renderItem={renderFunction}
     />

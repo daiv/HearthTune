@@ -1,33 +1,30 @@
-import { Text, TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import TrackPlayer, { usePlaybackState } from "react-native-track-player";
+import TrackPlayer, { State, usePlaybackState } from "react-native-track-player";
 export function PlayButton() {
 
   const playBackState = usePlaybackState();
+  const color = "black";
 
   const handleClick = async () => {
     console.log(playBackState);
-    if (playBackState.state === 'playing') {
+    const state = playBackState.state;
+    const isPlaying = state === State.Playing;
+    if (isPlaying) {
       TrackPlayer.pause();
-      return;
+    } else {
+      if (state === State.Ended) await TrackPlayer.skip(0);
+      TrackPlayer.play();
     }
-    if (playBackState.state === 'ended')
-      await TrackPlayer.skip(0);
-
-    TrackPlayer.play();
   }
 
   return (
-    <>
+    <View>
       <Text>{playBackState.state}</Text>
       <TouchableOpacity
         onPress={handleClick}  >
-        {playBackState.state === 'playing' ?
-          <FontAwesome name="pause" size={24} color="black" />
-          :
-          <FontAwesome name="play" size={24} color="black" />
-        }
+        <FontAwesome name={playBackState.state === State.Playing ? "pause" : "play"} size={24} color={color} />
       </TouchableOpacity>
-    </>
+    </View>
   );
 }

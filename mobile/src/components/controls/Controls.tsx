@@ -1,20 +1,25 @@
 import { View } from "react-native";
 
 import { styles } from "./styles";
-import SongProgressBar from "../SongProgressBar";
-import { PlayButton, SkiptoNextButton, SkiptoPrevButton } from "../buttons"
+
+import { PlayButton, LikeButton, SkipButton } from "../buttons";
 import { SongTitle } from "../SongTitle";
+import { SongProgressBar } from "../SongProgressBar";
+
 
 export function Controls() {
 
   return (
     <View>
-      <SongTitle />
+      <View style={{ flexDirection: "row" }}>
+        <LikeButton />
+        <SongTitle />
+      </View>
       <SongProgressBar />
       <View style={[styles.controlPanel]}>
-        <SkiptoPrevButton />
+        <SkipButton to='prev' />
         <PlayButton />
-        <SkiptoNextButton />
+        <SkipButton to='next' />
       </View >
     </View>
   )

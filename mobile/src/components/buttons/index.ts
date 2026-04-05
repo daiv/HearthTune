@@ -1,4 +1,4 @@
-export * from './SkipToNextButton';
-export * from './SkipToPrevButton';
 export * from './TogglePlayListButton';
 export * from './PlayButton';
+export * from './SkipButton';
+export * from './LikeButton';

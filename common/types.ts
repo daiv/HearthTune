@@ -15,4 +15,5 @@ export type Song = {
   instanceId?: string;
   addedManually?: boolean;
   local?: boolean;
+  requestedBy?: string;
 };

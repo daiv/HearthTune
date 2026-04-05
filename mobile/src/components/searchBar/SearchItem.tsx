@@ -2,7 +2,7 @@ import { Song } from "@/common/types";
 import { memo } from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { styles } from "./styles";
-import { usePlayListContext } from "@/context/PlayListContext";
+import { usePlayListContext } from "@/context/PlayerContext";
 
 export const SearchItem = memo(({ song }: { song: Song }) => {
 
@@ -12,7 +12,7 @@ export const SearchItem = memo(({ song }: { song: Song }) => {
   const hours = Math.floor(mins / 60);
   const minsRem = mins % 60;
   const localString = song.local ? 'true' : 'false';
-  const { addSong } = usePlayListContext();
+  const { enqueue } = usePlayListContext();
 
   const handleItemPress = () => {
     Alert.alert('Add song', `Do you want to add \n${song.title} \n to current playlist?`,
@@ -22,8 +22,7 @@ export const SearchItem = memo(({ song }: { song: Song }) => {
       },
       {
         text: 'Ok',
-        // onPress: () => TrackPlayer.add({ mediaId: song.title, title: song.title, url: PLAYER_URL + song.id })
-        onPress: () => addSong(song)
+        onPress: () => enqueue(song)
       }
       ]
     );

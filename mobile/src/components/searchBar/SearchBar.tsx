@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { useGraphQl } from "../../hooks/useGraphql";
-import { SEARCH_SONGS } from "../../graphql/queries";
+import { useGraphQl } from "@/hooks/";
+import { SEARCH_SONGS } from "@/graphql/queries";
 import { Song } from '@/common/types'
 import { styles } from "./styles";
 import { globalStyles } from "@/globalStyles";

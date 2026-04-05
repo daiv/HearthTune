@@ -1,12 +1,12 @@
 import { Song } from "@/common/types"
 import { Text, TouchableOpacity, View } from "react-native"
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { usePlayListContext } from "@/context/PlayListContext";
-import { BlinkingPlay } from "../BlinkingPlay";
+import { usePlayListContext } from "@/context/PlayerContext";
+import { BlinkingPlayButton } from "../buttons/BlinkingPlayButton";
 
-export  function PlayListItem({ song, index, isPlaying }: { song: Song, index: number, isPlaying: boolean }) {
+export function PlayListItem({ song, index, isPlaying }: { song: Song, index: number, isPlaying: boolean }) {
 
-  const { removeSongByInstanceId, skipToByInstanceId } = usePlayListContext();
+  const { dequeue, skipToByInstanceId } = usePlayListContext();
   const minutes = Math.floor(song.duration / 60);
   const seconds = Math.floor(song.duration % 60);
   const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -15,14 +15,14 @@ export  function PlayListItem({ song, index, isPlaying }: { song: Song, index: n
       onPress={() => {
         skipToByInstanceId(song.instanceId!);
       }}>
-      {isPlaying && <BlinkingPlay />}
+      {isPlaying && <BlinkingPlayButton />}
       <Text>index: {index}</Text>
       <Text>title: {song.title}</Text>
       <Text>duration: {formattedTime}</Text>
     </TouchableOpacity>
 
     <TouchableOpacity
-      onPress={() => removeSongByInstanceId(song.instanceId!)}>
+      onPress={() => dequeue(song.instanceId!)}>
       <FontAwesome name="trash" size={24} color="black" />
     </TouchableOpacity>
   </View>
