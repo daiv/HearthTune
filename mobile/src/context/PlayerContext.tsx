@@ -5,8 +5,6 @@ import { SERVER_URL } from "@env";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import TrackPlayer, { Event, useTrackPlayerEvents } from "react-native-track-player";
 
-
-
 const PlayerContext = createContext<PlayListContextData | null>(null);
 
 export const usePlayListContext = () => {
@@ -19,6 +17,7 @@ export const usePlayListContext = () => {
 export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [queue, setQueue] = useState<Song[]>([]);
   const queueRef = useRef<Song[]>([]);
+  const relatedCandidates = useRef<Song[]>([]);
   const isLastSong = useRef(false);
   const isCurrentTrackBeyondMiddlePoint = useRef(false);
   const isSongAdditionTrigered = useRef(false);
@@ -96,6 +95,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   });
 
   const enqueue = useCallback(async (song: Song, addedManually: boolean = true) => {
+    if (addedManually) relatedCandidates.current = [];
     const instanceId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const songWithInstance = { ...song, instanceId };
     const track = {
@@ -115,42 +115,44 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   }, []);
 
-  const addSongIfNew = useCallback(async (songs: Song[]): Promise<boolean> => {
-    for (const seed of songs) {
-      if (!queueRef.current.some(s => s.id === seed.id)) {
-        console.log('adding related', seed.title);
-        await enqueue(seed, false);
-        return true;
-      } else console.log(`skipping ${seed.title} already in list`);
-    }
-    return false;
-  }, [enqueue]);
 
-
-  const enqueueRelatedSong = useCallback(async () => {
-    const list = queueRef.current;
-    const index = songIndex.current;
-    const currentSong = list[index];
+  const enqueueRelatedSong = useCallback(async (isRetry = false) => {
+    const currentSong = queueRef.current[songIndex.current];
     if (!currentSong) return;
 
-    const relatedSongs = await getRelatedSongsFromServer(currentSong.id, 15);
-    if (!relatedSongs || relatedSongs.length === 0) return;
-
-    let isSongAdded: boolean = false;
-
-    isSongAdded = await addSongIfNew(relatedSongs);
-
-    if (!isSongAdded) {
-      console.log('All related songs from server were duplicated, looking for more...');
-      const lastSong = queueRef.current[queueRef.current.length - 1];
-      if (lastSong && lastSong.id) {
-
-        const last = await getRelatedSongsFromServer(lastSong.id, 15);
-        if (last) await addSongIfNew(last);
+    if (relatedCandidates.current.length > 0) {
+      const candidateIndex = relatedCandidates.current.findIndex(
+        candidate => !queueRef.current.some(song => song.id === candidate.id)
+      );
+      if (candidateIndex !== -1) {
+        const [songToAdd] = relatedCandidates.current.splice(candidateIndex, 1);
+        await enqueue(songToAdd, false);
+        return;
       }
-
     }
-  }, [addSongIfNew]);
+
+    const relatedSongs = await getRelatedSongsFromServer(currentSong.id, 15);
+
+    const newRelatedSongIndex =
+      relatedSongs?.findIndex(
+        relSong => !queueRef.current.some(song => song.id === relSong.id)
+      ) ?? -1;
+
+    if (newRelatedSongIndex !== -1 && relatedSongs) {
+      const songToAdd = relatedSongs[newRelatedSongIndex];
+      await enqueue(songToAdd, false);
+      relatedCandidates.current = relatedSongs.filter(song => song.id !== songToAdd.id);
+    } else if (!isRetry) {
+      const lastSong = queueRef.current[queueRef.current.length - 1];
+      if (lastSong) {
+        const relatedToLastSong = await getRelatedSongsFromServer(lastSong.id, 15);
+        if (relatedToLastSong && relatedToLastSong.length > 0) {
+          relatedCandidates.current = relatedToLastSong;
+          await enqueueRelatedSong(true);
+        }
+      }
+    }
+  }, [enqueue]);
 
 
 
