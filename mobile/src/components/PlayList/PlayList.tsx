@@ -1,8 +1,9 @@
 import { Song } from "@/common/types";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, Text, View } from "react-native";
 import { usePlayListContext } from "@/context/PlayerContext";
 import { useActiveTrack } from "react-native-track-player";
 import { PlayListItem } from "./PlayListItem";
+import { PlayListControls } from "../PlayListControls";
 
 export function PlayList() {
   const activeTrack = useActiveTrack();
@@ -19,12 +20,19 @@ export function PlayList() {
 
   return <View style={{ flex: 1, margin: 10 }}>
     <Text>PlayList</Text>
-    <TouchableOpacity
-      style={{ borderColor: 'black', borderWidth: 1, width: 100, backgroundColor: "#1c91b4" }}
-      onPress={() => enqueueRelatedSong()}
-    >
-      <Text>Add related</Text>
-    </TouchableOpacity>
+    <PlayListControls
+      showPanel={queue && queue.length > 0}
+      enqueueRelatedSong={enqueueRelatedSong}
+      savePlayList={() => {
+        Alert.alert('title', 'message',
+          [{ text: 'Cancel' },
+          {
+            text: 'ok',
+            onPress: () => { console.log('savePlaylist') }
+          }
+          ]);
+      }
+      } />
     <FlatList<Song>
       data={queue}
       keyExtractor={item => item.instanceId!}

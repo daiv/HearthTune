@@ -14,8 +14,6 @@ import { SearchBar, PlayList, Controls } from './components';
 import { Library, Settings } from './screens';
 import { styles } from './styles';
 
-
-
 const MAX_LOGIN_ATTEMPTS = 3;
 export default function App() {
   const [status, setStatus] = useState<'Loading' | 'Error' | 'Ready'>('Loading');
@@ -58,7 +56,7 @@ export default function App() {
     });
     return () => { isMounted = false; }
   }, []);
-  
+
   const screenOptions = { headerShown: false };
   const SIZE = 24;
   const screens: { name: string, component: React.FC, tabBarIcon: ({ focused }: { focused: boolean }) => React.JSX.Element }[] =
@@ -100,7 +98,6 @@ export default function App() {
               <PlayerProvider>
                 <NavigationContainer>
                   <Tab.Navigator screenOptions={screenOptions}>
-
                     {screens.map(screen => {
                       return <Tab.Screen
                         name={screen.name}
@@ -108,7 +105,6 @@ export default function App() {
                         options={{ tabBarIcon: screen.tabBarIcon }}
                       ></Tab.Screen>
                     })}
-
                   </Tab.Navigator>
                   <View style={styles.floatingControls}>
                     <Controls />

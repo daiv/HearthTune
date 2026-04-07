@@ -2,5 +2,6 @@ node_modules
 dist
 .git
 .env*
+src/providers/youtube_cookies.txt
 storage/music/*
 !storage/music/.gitkeep

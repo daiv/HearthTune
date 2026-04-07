@@ -1,7 +1,7 @@
 import { Song } from "@/common/types";
+import { addInstanceId, songToTrack, trackToSong } from "@/helpers/helpers";
 import { getRelatedSongsFromServer } from "@/services/musicService";
 import { PlayListContextData } from "@/types/types";
-import { SERVER_URL } from "@env";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import TrackPlayer, { Event, useTrackPlayerEvents } from "react-native-track-player";
 
@@ -30,22 +30,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     isSyncing.current = true;
     try {
-
       const [tracks, currentSongIndex] = await Promise.all(
         [
           TrackPlayer.getQueue(),
           TrackPlayer.getActiveTrackIndex()
         ]);
 
-      const songs: Song[] = tracks.map(track => (
-        {
-          id: track.id,
-          title: track.title!,
-          duration: track.duration || 0,
-          description: track.description ?? '',
-          instanceId: track.mediaId ?? `B-plan${Math.random()}`,
-        }
-      ));
+      const songs: Song[] = tracks.map(trackToSong);
 
       queueRef.current = songs;
       setQueue([...queueRef.current]);
@@ -96,16 +87,10 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const enqueue = useCallback(async (song: Song, addedManually: boolean = true) => {
     if (addedManually) relatedCandidates.current = [];
-    const instanceId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    const songWithInstance = { ...song, instanceId };
-    const track = {
-      id: song.id,
-      title: song.title,
-      url: SERVER_URL + song.id,
-      mediaId: instanceId
-    }
+    const songWithInstance = addInstanceId(song);
+
     try {
-      await TrackPlayer.add(track);
+      await TrackPlayer.add(songToTrack(song));
       const nextQueue = [...queueRef.current, songWithInstance];
       queueRef.current = nextQueue;
       setQueue(nextQueue);
@@ -115,6 +100,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   }, []);
 
+  const loadPlayList = useCallback(async (songs: Song[]) => {
+    await TrackPlayer.reset();
+    await TrackPlayer.add(songs.map(songToTrack));
+    const newQueue = [...songs];
+    queueRef.current = newQueue;
+    setQueue(newQueue);
+  }, []);
 
   const enqueueRelatedSong = useCallback(async (isRetry = false) => {
     const currentSong = queueRef.current[songIndex.current];
@@ -126,7 +118,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       );
       if (candidateIndex !== -1) {
         const [songToAdd] = relatedCandidates.current.splice(candidateIndex, 1);
-        await enqueue(songToAdd, false);
+        await enqueue(addInstanceId(songToAdd), false);
         return;
       }
     }
@@ -153,8 +145,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     }
   }, [enqueue]);
-
-
 
   const skipToByInstanceId = useCallback((instanceId: string) => {
     if (!instanceId) {

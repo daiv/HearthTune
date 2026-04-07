@@ -9,10 +9,14 @@ services:
       - "4000:4000"
     env_file:
       - ./server/.env
+    environment:
+      - TZ=Europe/Madrid
     volumes:
       - ./server/src:/app/server/src
       - ./server/storage/music:/app/server/storage/music
       - ./common:/app/common:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
       - /app/server/node_modules
     depends_on:
       - db

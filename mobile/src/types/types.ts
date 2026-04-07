@@ -7,3 +7,9 @@ export type PlayListContextData = {
   enqueueRelatedSong: (isRetry?: boolean) => Promise<void>;
   skipToByInstanceId: (instanceId: string) => void;
 }
+export type PlayListControlProps = {
+  enqueueRelatedSong: Function;
+  savePlayList: Function;
+  showPanel: boolean
+
+}
