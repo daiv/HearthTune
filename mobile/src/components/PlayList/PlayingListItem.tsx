@@ -3,13 +3,12 @@ import { Text, TouchableOpacity, View } from "react-native"
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { usePlayListContext } from "@/context/PlayerContext";
 import { BlinkingPlayButton } from "../buttons/BlinkingPlayButton";
+import { formatTime } from "@/helpers/helpers";
 
-export function PlayListItem({ song, index, isPlaying }: { song: Song, index: number, isPlaying: boolean }) {
+export function PlayingListItem({ song, index, isPlaying }: { song: Song, index: number, isPlaying: boolean }) {
 
   const { dequeue, skipToByInstanceId } = usePlayListContext();
-  const minutes = Math.floor(song.duration / 60);
-  const seconds = Math.floor(song.duration % 60);
-  const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  const formattedTime = formatTime(song.duration);
   return <View style={{ borderWidth: 1, borderColor: 'black' }}>
     <TouchableOpacity
       onPress={() => {
@@ -19,6 +18,7 @@ export function PlayListItem({ song, index, isPlaying }: { song: Song, index: nu
       <Text>index: {index}</Text>
       <Text>title: {song.title}</Text>
       <Text>duration: {formattedTime}</Text>
+      <Text>source: {song.source}</Text>
     </TouchableOpacity>
 
     <TouchableOpacity

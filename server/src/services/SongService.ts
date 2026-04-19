@@ -1,31 +1,17 @@
 import { PassThrough } from "node:stream";
 import { ISongService, ISongsProvider, ISongRepository } from "@/interfaces";
 import fs from 'fs';
-import { RawSong, SongResponse } from "../types/types";
+import { SongResponse } from "../types/types";
 import { DownloadStatus, Song } from "@/common/types";
 import { join } from "node:path";
-import { InvalidIdException, ServerError } from "../errors/ServerError";
+import { InvalidIdException, ProviderNotFoundException, ServerError } from "../errors/ServerError";
 
 export class SongService implements ISongService {
   MAX_LIMIT = 50;
   private songsCache = new Map<string, Song>();
   private readonly PATH = join(process.cwd(), 'storage', 'music');
   private activeSources = new Map<string, PassThrough>();
-  constructor(private provider: ISongsProvider, private songRepository: ISongRepository) { }
-
-  private extractAndCacheSong = async (rawSong: RawSong): Promise<Song> => {
-    const downloadStatus = await this.songRepository.getSongState(rawSong.id) || DownloadStatus.DownloadPending;
-    const song: Song = {
-      id: rawSong.id,
-      description: rawSong.description || '',
-      duration: Number(rawSong.duration),
-      title: rawSong.title,
-      downloadStatus,
-      local: downloadStatus === DownloadStatus.Ready
-    };
-    this.songsCache.set(song.id, song);
-    return song;
-  }
+  constructor(private providers: ISongsProvider[], private songRepository: ISongRepository) { }
 
   async search(query: string, limit: number = 50): Promise<Song[]> {
     console.log('searching for ', query);
@@ -35,33 +21,61 @@ export class SongService implements ISongService {
       .trim();
 
     const clampedLimit = Math.min(Math.max(1, limit), this.MAX_LIMIT);
-    const result = await this.provider.searchSongs(sanitizedQuery, clampedLimit);
-    const songs: Song[] = await Promise.all(result.map(this.extractAndCacheSong));
-    return songs;
+
+    const searches: Song[] = (await Promise.allSettled(this.providers.map(provider => provider.searchSongs(sanitizedQuery, clampedLimit))))
+      .filter((res): res is PromiseFulfilledResult<Song[]> => {
+        return res.status === 'fulfilled'
+      }
+      )
+      .map(search => search.value)
+      .flat();
+    const searchesResult: Song[] = (await Promise.allSettled(
+      searches.map(async song => {
+        const downloadStatus = await this.songRepository.getSongState(song.id) || DownloadStatus.DownloadPending;
+        song.local = downloadStatus === DownloadStatus.Ready;
+        this.songsCache.set(song.id, song);
+        return song;
+      })
+    )).filter((res): res is PromiseFulfilledResult<Song> => res.status === 'fulfilled')
+      .map(res => res.value);
+    console.log('found', searchesResult.length);
+    return searchesResult;
   }
 
-  async getRelatedSongs(id: string, numberOfSongs: number = 10): Promise<Song[]> {
+  async getRelatedSongs(id: string, numberOfSongs: number = 10, source = 'Youtube'): Promise<Song[]> {
+    const provider = this.providers.find(prov => prov.SOURCE === source);
+    if (!provider) throw new ProviderNotFoundException();
 
     console.log('client asked relateds to id', id);
-    if (!this.provider.isValidId(id)) {
-      console.log('not a valid id throwing error');
-      throw new Error('Bad id');
-    }
-    else {
-      console.log('client asked for relateds');
-      const result = await this.provider.getRelated(id, numberOfSongs);
-      const rawToSong = await Promise.all(result.map(this.extractAndCacheSong));
-      console.log(`returning ${rawToSong.length} relateds`);
-      return rawToSong;
-    }
+    if (!provider.isValidId(id)) throw new InvalidIdException(id, provider.SOURCE);
+
+    const songSearch = await provider.getRelated(id, numberOfSongs);
+
+    const result = (await Promise.allSettled(songSearch.map(async song => {
+      const downloadStatus = await this.songRepository.getSongState(song.id) || DownloadStatus.DownloadPending;
+      song.downloadStatus = downloadStatus;
+      song.local = downloadStatus === DownloadStatus.Ready;
+      return song;
+    })))
+      .filter((res): res is PromiseFulfilledResult<Song> => res.status === 'fulfilled')
+      .map(res => {
+        const song: Song = res.value;
+        this.songsCache.set(song.id, song);
+        return song;
+      });
+    return result;
   }
 
-  async getAudioSource(id: string): Promise<SongResponse> {
-    if (!this.provider.isValidId(id)) throw new InvalidIdException();
+  async getAudioSource(id: string, source: string = 'Youtube'): Promise<SongResponse> {
+    const provider = this.providers.find(provider => provider.SOURCE === source);
 
-    const localPath = join(this.PATH, `${id}.m4a`);
+    if (!provider) throw new ProviderNotFoundException();
+
+    if (!provider.isValidId(id)) throw new InvalidIdException(id, provider.SOURCE);
+
+    const localPath = join(this.PATH, `${id}.${provider.FILE_EXTENSION}`);
     let song = await this.songRepository.getSongDetails(id);
-    if (!song) song = await this.saveSongOnDb(id);
+    if (!song) song = await this.saveSongOnDb(id, provider);
     if (!song) throw new ServerError('Unable to get song info');
 
     console.log('song status is', song.downloadStatus);
@@ -76,10 +90,10 @@ export class SongService implements ISongService {
     const combinedStream = new PassThrough();
     this.activeSources.set(id, combinedStream);
 
-    const source = await this.provider.getAudioStream(id);
+    const audiostream = await provider.getAudioStream(id);
     const fileWriter = fs.createWriteStream(localPath);
-    source.pipe(fileWriter);
-    source.pipe(combinedStream);
+    audiostream.pipe(fileWriter);
+    audiostream.pipe(combinedStream);
 
     await this.songRepository.setSongState(id, DownloadStatus.Downloading);
 
@@ -99,10 +113,10 @@ export class SongService implements ISongService {
       }
     };
 
-    source.on('error', handleCleanUpError);
+    audiostream.on('error', handleCleanUpError);
     fileWriter.on('error', handleCleanUpError);
 
-    source.on('end', async () => {
+    audiostream.on('end', async () => {
       combinedStream.end();
     });
 
@@ -122,13 +136,21 @@ export class SongService implements ISongService {
     return { type: 'external', stream: combinedStream }
   }
 
-  private async saveSongOnDb(id: string): Promise<Song | null> {
-    const song: Song =
-      this.songsCache.get(id)
-      ||
-      await this.extractAndCacheSong((await this.provider.searchSongs(id, 1))[0]);
-    if (!song) return null;
-    await this.songRepository.save(song);
-    return song;
+  private async saveSongOnDb(id: string, provider: ISongsProvider): Promise<Song | null> {
+    const song = this.songsCache.get(id);
+    if (song) {
+      await this.songRepository.save(song);
+      return song;
+    }
+
+    const newSong = (await provider.searchSongs(id, 1))[0];
+    if (!newSong) return null;
+
+    const downloadStatus = await this.songRepository.getSongState(id) || DownloadStatus.DownloadPending;
+    newSong.downloadStatus = downloadStatus;
+    newSong.local = downloadStatus === DownloadStatus.Ready;
+    this.songsCache.set(newSong.id, newSong);
+
+    return newSong;
   }
 }

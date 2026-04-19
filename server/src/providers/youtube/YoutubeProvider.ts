@@ -1,11 +1,15 @@
-import { exec, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 
 import { ISongsProvider } from "@/interfaces";
-import { RawSong } from "../types/types";
 import { Readable } from "node:stream";
+import { Song } from "@/common/types";
+import { YoutubeRawSong } from "./youtube.types";
 
 
-export class YtDlpProvider implements ISongsProvider {
+export class YoutubeProvider implements ISongsProvider {
+  readonly SOURCE = "Youtube";
+  readonly FILE_EXTENSION = "m4a";
+
   userAgents = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ... Chrome/119.0.0.0',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ... Safari/13.1.2',
@@ -19,7 +23,7 @@ export class YtDlpProvider implements ISongsProvider {
     return regex.test(id);
   }
 
-  async searchSongs(query: string, limit: number | undefined = 10): Promise<RawSong[]> {
+  async searchSongs(query: string, limit: number = 10): Promise<Song[]> {
 
     return new Promise((resolve, reject) => {
       const child = spawn('yt-dlp', [
@@ -44,19 +48,42 @@ export class YtDlpProvider implements ISongsProvider {
         if (code !== 0) return reject(new Error(`Process failed with code ${code}: ${error}`));
         try {
           const rawResult = Buffer.concat(chunks).toString();
-          const songs: RawSong[] = rawResult
+          const songs: YoutubeRawSong[] = rawResult
             .split('\n')
             .filter(line => line.length > 0)
             .map(line => JSON.parse(line));
-          resolve(songs);
+          resolve(songs.map(this.rawToSong));
 
         } catch (error) {
+          console.error('error parsing');
           reject(new Error('Error parsing JSON'));
         }
       });
     })
   }
-  async getRelated(id: string, songs: number): Promise<RawSong[]> {
+
+  private rawToSong = (rawSong: YoutubeRawSong): Song => {
+    console.log('raw', rawSong);
+    console.log('continuing...');
+    const song: Song = {
+      id: rawSong.id || '',
+      description: rawSong.description || '',
+      duration: Number(rawSong.duration) || 0,
+      title: rawSong.title || '',
+      source: this.SOURCE
+    };
+    console.log('id', rawSong.id);
+    console.log('description', rawSong.description);
+    console.log('duration', rawSong.duration);
+    console.log('title', rawSong.title);
+    console.log('source', this.SOURCE);
+
+    console.log('song created');
+
+    return song;
+  }
+
+  async getRelated(id: string, songs: number): Promise<Song[]> {
     return new Promise((resolve, reject) => {
       const mixUrl = `https://www.youtube.com/watch?v=${id}&list=RD${id}`;
       const child = spawn('yt-dlp', [
@@ -67,7 +94,7 @@ export class YtDlpProvider implements ISongsProvider {
         '--simulate',
         '--flat-playlist',
         '--no-warnings',
-        '--playlist-items', `1:${songs+1}`,
+        '--playlist-items', `1:${songs + 1}`,
         '--add-header', 'Accept-Language: es-ES,es;q=0.9',
         '--',
         mixUrl
@@ -82,8 +109,8 @@ export class YtDlpProvider implements ISongsProvider {
           const rawResult = Buffer.concat(chunks).toString();
           const data = JSON.parse(rawResult);
 
-          const related: RawSong[] = (data.entries || []).slice(1);
-          resolve(related);
+          const related: YoutubeRawSong[] = (data.entries || []).slice(1);
+          resolve(related.map(this.rawToSong));
         } catch (error) {
           reject(new Error('Error parsing json'));
         }
@@ -94,7 +121,7 @@ export class YtDlpProvider implements ISongsProvider {
     });
   }
 
-  async getAudioStream(ytId: string): Promise<Readable> {
+  async getAudioStream(id: string): Promise<Readable> {
     const child = spawn('yt-dlp', [
       '--js-runtimes', 'node',
       '--user-agent', this.randomUA(),
@@ -102,7 +129,7 @@ export class YtDlpProvider implements ISongsProvider {
       '--buffer-size', '16k',
       '--limit-rate', '1M',
       '--no-check-certificates',
-      '--add-header', `Referer:https://www.youtube.com/watch?v=${ytId}`,
+      '--add-header', `Referer:https://www.youtube.com/watch?v=${id}`,
       // '--extractor-args', 'youtube:player_client=android,web',
       '--extractor-args', 'youtube:player_clients=ios,web,android',
       '--add-header', 'Accept:*/*',
@@ -114,7 +141,7 @@ export class YtDlpProvider implements ISongsProvider {
       '-f', 'ba[ext=m4a]',
       '--no-playlist',
       '--',
-      ytId
+      id
     ]);
 
     child.stderr.on('data', errorData => {

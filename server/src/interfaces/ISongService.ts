@@ -1,12 +1,11 @@
-import { Readable } from "node:stream";
-import { DownloadStatus, Song } from "@/common/types";
+import { Song } from "@/common/types";
 import { SongResponse } from "@/types/types";
 
 export interface ISongService {
   search
     (
       query: string,
-      limit: number
+      limit?: number
     )
     : Promise<Song[]>;
 
@@ -17,7 +16,7 @@ export interface ISongService {
     )
     : Promise<Song[]>;
 
-  getAudioSource(id: string): Promise<SongResponse>
+  getAudioSource(id: string, source?: string): Promise<SongResponse>
 
 }
 

@@ -4,11 +4,13 @@ import { Track } from "react-native-track-player";
 
 export const songToTrack = (song: Song): Track => {
   const songWithInstance = song.instanceId ? song : addInstanceId(song);
+  const url =
+    `${SERVER_URL + (song.source === 'Youtube' ? song.id : song.url)}/${song.source}`;
 
   const track: Track = {
     id: song.id,
     title: song.title,
-    url: SERVER_URL + song.id,
+    url,
     mediaId: songWithInstance.instanceId
   }
   return track;
@@ -25,7 +27,13 @@ export const trackToSong = (track: Track): Song => {
   const songWithInstanceId = song.instanceId ? song : addInstanceId(song);
   return songWithInstanceId;
 }
+export const formatTime = (durationInSeconds: number): string => {
+  const minutes = Math.floor(durationInSeconds / 60);
+  const seconds = Math.floor(durationInSeconds % 60);
+  const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  return formattedTime;
 
+}
 export const addInstanceId = (song: Song): Song => {
   const instanceId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   return { ...song, instanceId };

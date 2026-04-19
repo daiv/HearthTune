@@ -7,11 +7,11 @@ export class SongController {
 
   playSong = (async (req: Request, res: Response) => {
     const { user } = { user: 'developer' };//req.header 
-    const { id } = req.params;
+    const { id, provider = 'Youtube' } = req.params;
     console.log('client asked for id ' + id);
 
     try {
-      const audioSource = await this.service.getAudioSource(id);
+      const audioSource = await this.service.getAudioSource(id, provider);
       console.log('type is', audioSource.type);
       if (audioSource.type === 'local') return res.sendFile(audioSource.localPath);
       else if (audioSource.type === 'external') {
@@ -33,7 +33,7 @@ export class SongController {
       console.error('error ', error);
       if (error instanceof Error) {
         if (error.message == 'Bad id') {
-          throw new InvalidIdException();
+          throw new InvalidIdException(id, provider);
         } else {
           throw new ServerError();
         }

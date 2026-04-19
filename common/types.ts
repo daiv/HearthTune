@@ -16,4 +16,6 @@ export type Song = {
   addedManually?: boolean;
   local?: boolean;
   requestedBy?: string;
+  source?: 'Soundcloud' | 'Youtube';
+  url?: string;
 };

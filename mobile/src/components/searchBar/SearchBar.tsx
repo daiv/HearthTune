@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useGraphQl } from "@/hooks/";
 import { SEARCH_SONGS } from "@/graphql/queries";
@@ -21,7 +21,6 @@ export function SearchBar() {
     setSearchQuery(input);
     setInput('');
   }
-
   return (
     <View style={{ flex: 1, padding: 5 }}>
       <View style={styles.searchBarPanel}>

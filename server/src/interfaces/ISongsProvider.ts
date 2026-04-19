@@ -1,9 +1,11 @@
 import { Readable } from "node:stream";
-import { RawSong } from "../types/types";
+import { Song } from "@/common/types";
 
 export interface ISongsProvider {
-  searchSongs(query: string, limit: number): Promise<RawSong[]>;
-  getAudioStream(id: string): Promise<Readable>;
+  readonly SOURCE: 'Youtube' | 'Soundcloud';
+  readonly FILE_EXTENSION: 'mp3' | 'm4a';
   isValidId(id: string): boolean;
-  getRelated(id: string, songs: number): Promise<RawSong[]>;
+  searchSongs(query: string, limit?: number): Promise<Song[]>;
+  getRelated(id: string, songs: number): Promise<Song[]>;
+  getAudioStream(id: string): Promise<Readable>;
 }

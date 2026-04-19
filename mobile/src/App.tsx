@@ -10,8 +10,8 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { PlayerProvider } from './context/PlayerContext';
-import { SearchBar, PlayList, Controls } from './components';
-import { Library, Settings } from './screens';
+import { Controls } from './components';
+import { Home, Library, Playing, Settings } from './screens';
 import { styles } from './styles';
 
 const MAX_LOGIN_ATTEMPTS = 3;
@@ -63,16 +63,16 @@ export default function App() {
     [
       {
         name: 'Home',
-        component: SearchBar,
+        component: Home,
         tabBarIcon: ({ focused }) => <AntDesign name="home" size={SIZE} color={focusColor(focused)} />
       },
       {
         name: 'Playing',
-        component: PlayList,
+        component: Playing,
         tabBarIcon: ({ focused }) => <AntDesign name="unordered-list" size={SIZE} color={focusColor(focused)} />
       },
       {
-        name: 'Playlists',
+        name: 'Library',
         component: Library,
         tabBarIcon: ({ focused }) => <MaterialIcons name="library-music" size={SIZE} color={focusColor(focused)} />
       },
@@ -97,7 +97,11 @@ export default function App() {
             status === 'Ready' ?
               <PlayerProvider>
                 <NavigationContainer>
-                  <Tab.Navigator screenOptions={screenOptions}>
+                  <Tab.Navigator screenOptions={screenOptions}
+                    screenLayout={({ children }) => (
+                      <View style={styles.screens}>{children}</View>
+                    )}
+                  >
                     {screens.map(screen => {
                       return <Tab.Screen
                         name={screen.name}

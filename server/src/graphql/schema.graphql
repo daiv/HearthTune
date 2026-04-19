@@ -5,6 +5,8 @@ type Song {
   description: String
   played: Int
   local: Boolean
+  source: String
+  url: String
 }
 type Query {
   search (query: String!, limit:Int):[Song]

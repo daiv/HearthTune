@@ -89,8 +89,10 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (addedManually) relatedCandidates.current = [];
     const songWithInstance = addInstanceId(song);
 
+    console.log('added song', songWithInstance);
+
     try {
-      await TrackPlayer.add(songToTrack(song));
+      await TrackPlayer.add(songToTrack(songWithInstance));
       const nextQueue = [...queueRef.current, songWithInstance];
       queueRef.current = nextQueue;
       setQueue(nextQueue);

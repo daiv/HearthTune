@@ -41,7 +41,7 @@ export const SearchItem = memo(({ song }: { song: Song }) => {
         <Text>{song.title}</Text>
         <Text>local is {localString}</Text>
         <Text>{finalDuration}</Text>
-        <Text></Text>
+        <Text>source is {song.source}</Text>
       </View>
     </TouchableOpacity>
   );

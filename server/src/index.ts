@@ -4,10 +4,11 @@ import { createRouter } from './router';
 import { checkEnvFile } from './helpers';
 import { initDatabase } from './models/model';
 import { initGraphqlMiddleware } from './graphql/graphqlServer';
-import { YtDlpProvider } from '@/providers'
+import { YoutubeProvider, SoundCloudProvider } from '@/providers'
 import { SongRepository, SongService } from '@/services';
 import { MockProvider } from './mocks/MockProvider';
 import { errorHandler } from './middleware/errorHandler';
+import { ISongsProvider } from './interfaces';
 
 const app = express();
 const PORT = 4000;
@@ -16,10 +17,10 @@ const PORT = 4000;
   try {
     checkEnvFile();
     await initDatabase();
-    const provider = new YtDlpProvider();
+    const providers: ISongsProvider[] = [new YoutubeProvider(), new SoundCloudProvider()];
     // const provider = new MockProvider();
     const songRepository = new SongRepository();
-    const songService = new SongService(provider, songRepository);
+    const songService = new SongService(providers, songRepository);
 
     app.use(express.json());
     app.use(createRouter(songService));

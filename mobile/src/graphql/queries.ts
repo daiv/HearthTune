@@ -7,15 +7,19 @@ export const SEARCH_SONGS = gql`
         title
         duration
         local
+        source
+        url
       }
     }`;
-    
+
 export const GET_RELATED_SONGS = gql`
     query getRelated($id: String!, $numberOfSongs: Int!) { 
       getRelated(id: $id, numberOfSongs: $numberOfSongs) {    
         id
         title
         duration
+        source
+        url
       }
     }
 `;

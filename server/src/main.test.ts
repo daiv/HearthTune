@@ -7,6 +7,7 @@ import TestAgent from "supertest/lib/agent";
 import { Server } from "node:http";
 import { DownloadStatus, Song } from "@/common/types";
 import { SongRepository, SongService } from "./services";
+import { describe, it, expect, afterAll, beforeAll, jest, beforeEach } from '@jest/globals';
 
 describe('TDD tests', () => {
   beforeAll(async () => {
@@ -17,7 +18,7 @@ describe('TDD tests', () => {
       MONGO_HOSTNAME = 'db' } = process.env;
     const MONGO_URI = `mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${MONGO_HOSTNAME}:27017/${MONGO_INITDB_DATABASE}?authSource=admin`;
     await mongoose.connect(MONGO_URI);
-  }); 
+  });
   afterAll(async () => {
     await mongoose.connection.close();
   });
@@ -35,12 +36,14 @@ describe('TDD tests', () => {
   });
 
   describe('Songs service', () => {
-    const provider = new MockProvider();
+    const providers = [new MockProvider()];
+    const mockProvider = providers[0];
     const repo = new SongRepository();
-    const service = new SongService(provider, repo);
-    const spy = jest.spyOn(provider, 'searchSongs');
+    const service = new SongService(providers, repo);
+    const spy = jest.spyOn(mockProvider, 'searchSongs');
 
-    beforeEach(spy.mockClear);
+
+    beforeEach(() => { spy.mockClear(); });
 
     it('song/search -> Should clamp the limit of songs searched between 1 and provider.MAX_LIMIT', async () => {
       let limit = 70;
@@ -69,7 +72,7 @@ describe('TDD tests', () => {
         { query: 'La Fuga', limit: 0, expected: 'La Fuga' },
       ];
 
-      const spy = jest.spyOn(provider, 'searchSongs');
+      const spy = jest.spyOn(mockProvider, 'searchSongs');
 
       for (const test of testCases) {
         await service.search(test.query, test.limit);
@@ -88,10 +91,10 @@ describe('TDD tests', () => {
 
   describe('Graphql', () => {
     let request: TestAgent;
-    const provider = new MockProvider();
+    const providers = [new MockProvider()];
     // const provider = new YtDlpProvider();
     const repo = new SongRepository();
-    const service = new SongService(provider, repo);
+    const service = new SongService(providers, repo);
 
     let httpServer: Server;
 

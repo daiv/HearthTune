@@ -1,1 +1,2 @@
-export * from './ytdlp.provider';
+export * from './youtube/YoutubeProvider';
+export * from './soundcloud/SoundCloudProvider'

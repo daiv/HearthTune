@@ -6,7 +6,7 @@ export function createRouter(songService: ISongService) {
   const router = express.Router();
   const songController = new SongController(songService);
 
-  router.get('/song/play/:id', songController.playSong);
+  router.get('/song/play/:id/:provider', songController.playSong);
 
   return router;
 }

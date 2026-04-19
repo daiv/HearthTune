@@ -1,9 +1,12 @@
 import { Readable } from "node:stream";
 import { ISongsProvider } from "@/interfaces";
-import { RawSong } from "../types/types";
+import { Song } from "@/common/types";
+
 
 export class MockProvider implements ISongsProvider {
-  searchSongs(query: string, limit: number = 10): Promise<RawSong[]> {
+  readonly FILE_EXTENSION = 'm4a';
+  readonly SOURCE = "Youtube";
+  searchSongs(query: string, limit: number = 10): Promise<Song[]> {
     return new Promise(resolve => {
       if (limit > 10) limit = 10;
       resolve(mockSongs.slice(0, limit));
@@ -16,12 +19,12 @@ export class MockProvider implements ISongsProvider {
     const regex = /^[a-zA-Z0-9_-]{11}$/;
     return regex.test(id);
   }
-  async getRelated(id: string): Promise<RawSong[]> {
+  async getRelated(id: string): Promise<Song[]> {
     return mockSongs;
   }
 }
 
-export const mockSongs: RawSong[] = [
+export const mockSongs: Song[] = [
   {
     id: 'vkHd4ejXrAE',
     description: null,
