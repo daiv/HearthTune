@@ -5,7 +5,7 @@ import { usePlayListContext } from "@/context/PlayerContext";
 import { BlinkingPlayButton } from "../buttons/BlinkingPlayButton";
 import { formatTime } from "@/helpers/helpers";
 
-export function PlayingListItem({ song, index, isPlaying }: { song: Song, index: number, isPlaying: boolean }) {
+export function PlayListItem({ song, index, isPlaying }: { song: Song, index: number, isPlaying: boolean }) {
 
   const { dequeue, skipToByInstanceId } = usePlayListContext();
   const formattedTime = formatTime(song.duration);

@@ -1,2 +1,2 @@
-export * from './PlayingList'
-export * from './PlayingListItem'
+export * from './PlayList'
+export * from './PlayListItem'

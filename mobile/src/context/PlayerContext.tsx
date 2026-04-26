@@ -116,8 +116,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const resetQueue = useCallback(async () => {
     await TrackPlayer.reset();
+    queueRef.current = [];
     setQueue([]);
-  }, []);
+  }, [queue]);
 
   const pauseAutoQueue = useCallback((enabled: boolean) => {
     pauseAutoQueueRef.current = enabled;

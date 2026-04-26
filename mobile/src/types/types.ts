@@ -12,7 +12,11 @@ export type PlayListContextData = {
 }
 export type PlayListControlProps = {
   enqueueRelatedSong: Function;
+  resetQueue: Function;
   savePlayList: Function;
   showPanel: boolean
-
+}
+export type PlayListControlButton = {
+  view: React.JSX.Element;
+  onPress: Function
 }

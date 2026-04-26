@@ -2,19 +2,19 @@ import { Song } from "@/common/types";
 import { Alert, FlatList, Text, View } from "react-native";
 import { usePlayListContext } from "@/context/PlayerContext";
 import { useActiveTrack } from "react-native-track-player";
-import { PlayingListItem } from "./PlayingListItem";
+import { PlayListItem } from "./PlayListItem";
 import { PlayListControls } from "../PlayListControls";
 import { formatTime } from "@/helpers/helpers";
 
 export function PlayList() {
   const activeTrack = useActiveTrack();
-  const { queue, enqueueRelatedSong } = usePlayListContext();
+  const { queue, enqueueRelatedSong, resetQueue } = usePlayListContext();
 
   const totalDuration = queue.map(song => song.duration);
   const formattedTime = totalDuration ? formatTime(totalDuration.reduce((ac, val) => ac + val, 0)) : '0:00';
 
   const renderFunction = ({ item, index }: { item: Song, index: number }) => {
-    return <PlayingListItem
+    return <PlayListItem
       key={item.instanceId}
       song={item}
       index={index}
@@ -22,11 +22,12 @@ export function PlayList() {
       } />
   }
 
-  return <View style={{ flex: 1, margin: 10 }}>
+  return <View style={{ flex: 1 }}>
     <Text>PlayList -{formattedTime}</Text>
     <PlayListControls
       showPanel={queue && queue.length > 0}
       enqueueRelatedSong={enqueueRelatedSong}
+      resetQueue={resetQueue}
       savePlayList={() => {
         Alert.alert('title', 'message',
           [{ text: 'Cancel' },
