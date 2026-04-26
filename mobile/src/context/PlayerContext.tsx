@@ -16,19 +16,20 @@ export const usePlayListContext = () => {
 
 export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [queue, setQueue] = useState<Song[]>([]);
+
   const queueRef = useRef<Song[]>([]);
-  const relatedCandidates = useRef<Song[]>([]);
-  const isLastSong = useRef(false);
-  const isCurrentTrackBeyondMiddlePoint = useRef(false);
-  const isSongAdditionTrigered = useRef(false);
-  const isAutoSongAdditionModeEnabled = useRef(true);
-  const isSyncing = useRef(false);
-  const songIndex = useRef(0);
+  const relatedCandidatesRef = useRef<Song[]>([]);
+  const isLastSongRef = useRef(false);
+  const isCurrentTrackBeyondMiddlePointRef = useRef(false);
+  const isSongAdditionTrigeredRef = useRef(false);
+  const isSyncingRef = useRef(false);
+  const songIndexRef = useRef(0);
+  const pauseAutoQueueRef = useRef(false);
 
   const syncQueue = useCallback(async () => {
-    if (isSyncing.current) return;
+    if (isSyncingRef.current) return;
 
-    isSyncing.current = true;
+    isSyncingRef.current = true;
     try {
       const [tracks, currentSongIndex] = await Promise.all(
         [
@@ -40,11 +41,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       queueRef.current = songs;
       setQueue([...queueRef.current]);
-      if (currentSongIndex !== undefined) songIndex.current = currentSongIndex;
+      if (currentSongIndex !== undefined) songIndexRef.current = currentSongIndex;
     } catch (error) {
       console.error('error syncing queue', error);
     } finally {
-      isSyncing.current = false;
+      isSyncingRef.current = false;
     }
 
   }, []);
@@ -56,37 +57,40 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       Event.PlaybackProgressUpdated,
 
     ], async event => {
-
-      if (!isAutoSongAdditionModeEnabled.current || !isLastSong.current) return;
       const { position, duration } = event;
-      if (!position || duration <= 0) return;
-      isCurrentTrackBeyondMiddlePoint.current = (duration / 2) < position;
-
-      if (isCurrentTrackBeyondMiddlePoint.current && !isSongAdditionTrigered.current) {
-        isSongAdditionTrigered.current = true;
-        try {
-          await enqueueRelatedSong();
-        } catch (error) {
-          isSongAdditionTrigered.current = false;
-          console.error(error);
-        }
-      }
+      manageAutoQueue(position, duration);
     }
   );
 
+  const manageAutoQueue = async (position: number, duration: number) => {
+    if (pauseAutoQueueRef.current || !isLastSongRef.current || !position || duration <= 0) return;
+
+    isCurrentTrackBeyondMiddlePointRef.current = (duration / 2) < position;
+
+    if (isCurrentTrackBeyondMiddlePointRef.current && !isSongAdditionTrigeredRef.current) {
+      isSongAdditionTrigeredRef.current = true;
+      try {
+        await enqueueRelatedSong();
+      } catch (error) {
+        isSongAdditionTrigeredRef.current = false;
+        console.error(error);
+      }
+    }
+  }
+
   useTrackPlayerEvents([Event.PlaybackActiveTrackChanged], async event => {
     const activeIndex = await TrackPlayer.getActiveTrackIndex();
-    songIndex.current = activeIndex ?? 0;
-    isLastSong.current = queueRef.current.length - 1 === songIndex.current;
+    songIndexRef.current = activeIndex ?? 0;
+    isLastSongRef.current = queueRef.current.length - 1 === songIndexRef.current;
 
-    isSongAdditionTrigered.current = isCurrentTrackBeyondMiddlePoint.current = false;
+    isSongAdditionTrigeredRef.current = isCurrentTrackBeyondMiddlePointRef.current = false;
 
-    console.log('playing id ', queueRef.current[songIndex.current]?.id);
-    console.log('songIndex', songIndex.current);
+    console.log('playing id ', queueRef.current[songIndexRef.current]?.id);
+    console.log('songIndex', songIndexRef.current);
   });
 
   const enqueue = useCallback(async (song: Song, addedManually: boolean = true) => {
-    if (addedManually) relatedCandidates.current = [];
+    if (addedManually) relatedCandidatesRef.current = [];
     const songWithInstance = addInstanceId(song);
 
     console.log('added song', songWithInstance);
@@ -110,16 +114,25 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setQueue(newQueue);
   }, []);
 
+  const resetQueue = useCallback(async () => {
+    await TrackPlayer.reset();
+    setQueue([]);
+  }, []);
+
+  const pauseAutoQueue = useCallback((enabled: boolean) => {
+    pauseAutoQueueRef.current = enabled;
+  }, []);
+
   const enqueueRelatedSong = useCallback(async (isRetry = false) => {
-    const currentSong = queueRef.current[songIndex.current];
+    const currentSong = queueRef.current[songIndexRef.current];
     if (!currentSong) return;
 
-    if (relatedCandidates.current.length > 0) {
-      const candidateIndex = relatedCandidates.current.findIndex(
+    if (relatedCandidatesRef.current.length > 0) {
+      const candidateIndex = relatedCandidatesRef.current.findIndex(
         candidate => !queueRef.current.some(song => song.id === candidate.id)
       );
       if (candidateIndex !== -1) {
-        const [songToAdd] = relatedCandidates.current.splice(candidateIndex, 1);
+        const [songToAdd] = relatedCandidatesRef.current.splice(candidateIndex, 1);
         await enqueue(addInstanceId(songToAdd), false);
         return;
       }
@@ -135,13 +148,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (newRelatedSongIndex !== -1 && relatedSongs) {
       const songToAdd = relatedSongs[newRelatedSongIndex];
       await enqueue(songToAdd, false);
-      relatedCandidates.current = relatedSongs.filter(song => song.id !== songToAdd.id);
+      relatedCandidatesRef.current = relatedSongs.filter(song => song.id !== songToAdd.id);
     } else if (!isRetry) {
       const lastSong = queueRef.current[queueRef.current.length - 1];
       if (lastSong) {
         const relatedToLastSong = await getRelatedSongsFromServer(lastSong.id, 15);
         if (relatedToLastSong && relatedToLastSong.length > 0) {
-          relatedCandidates.current = relatedToLastSong;
+          relatedCandidatesRef.current = relatedToLastSong;
           await enqueueRelatedSong(true);
         }
       }
@@ -174,20 +187,23 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       queueRef.current = updatedQueue;
       setQueue(updatedQueue);
       const currentIndex = await TrackPlayer.getActiveTrackIndex();
-      isLastSong.current = (currentIndex === updatedQueue.length - 1);
+      isLastSongRef.current = (currentIndex === updatedQueue.length - 1);
 
     } catch (error) {
       console.error('error removing song', error);
     }
   }, []);
 
-  const contextValue = useMemo(() => ({
+  const contextValue: PlayListContextData = useMemo(() => ({
     queue,
     enqueue,
     dequeue,
     skipToByInstanceId,
-    enqueueRelatedSong
-  }), [queue, enqueue, dequeue, skipToByInstanceId, enqueueRelatedSong]);
+    enqueueRelatedSong,
+    loadPlayList,
+    resetQueue,
+    pauseAutoQueue
+  }), [queue, enqueue, dequeue, skipToByInstanceId, enqueueRelatedSong, loadPlayList, resetQueue, pauseAutoQueue]);
   return (
     <PlayerContext.Provider value={contextValue}>{children}</PlayerContext.Provider>
   )

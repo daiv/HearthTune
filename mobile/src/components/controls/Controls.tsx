@@ -5,6 +5,7 @@ import { styles } from "./styles";
 import { PlayButton, LikeButton, SkipButton } from "../buttons";
 import { SongTitle } from "../SongTitle";
 import { SongProgressBar } from "../SongProgressBar";
+import { RepeatButton } from "../buttons/RepeatButton";
 
 
 export function Controls() {
@@ -19,6 +20,7 @@ export function Controls() {
       <View style={[styles.controlPanel]}>
         <SkipButton to='prev' />
         <PlayButton />
+        <RepeatButton />
         <SkipButton to='next' />
       </View >
     </View>

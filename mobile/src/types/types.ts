@@ -6,6 +6,9 @@ export type PlayListContextData = {
   dequeue: (instanceId: string) => Promise<void>;
   enqueueRelatedSong: (isRetry?: boolean) => Promise<void>;
   skipToByInstanceId: (instanceId: string) => void;
+  loadPlayList: (songs: Song[]) => void;
+  resetQueue: () => void;
+  pauseAutoQueue: (enabled: boolean) => void;
 }
 export type PlayListControlProps = {
   enqueueRelatedSong: Function;
