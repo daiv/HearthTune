@@ -9,14 +9,16 @@ export type PlayListContextData = {
   loadPlayList: (songs: Song[]) => void;
   resetQueue: () => void;
   pauseAutoQueue: (enabled: boolean) => void;
+  shuffleQueue: () => Promise<void>;
 }
 export type PlayListControlProps = {
-  enqueueRelatedSong: Function;
-  resetQueue: Function;
-  savePlayList: Function;
-  showPanel: boolean
+  enqueueRelatedSong: (isRetry?: boolean) => Promise<void>;
+  resetQueue: () => void;
+  savePlayList: () => void;
+  showPanel: boolean;
+  shuffleQueue: () => Promise<void>;
 }
 export type PlayListControlButton = {
   view: React.JSX.Element;
-  onPress: Function
+  onPress: () => Promise<void> | void;
 }

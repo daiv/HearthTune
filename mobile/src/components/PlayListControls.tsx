@@ -3,18 +3,22 @@ import Entypo from '@expo/vector-icons/Entypo';
 import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
 import { PlayListControlButton, PlayListControlProps } from "@/types/types";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { AsyncButton } from "./buttons/AsyncButton";
 
 const margin = 10;
 const size = 24;
 
-export function PlayListControls({ showPanel, enqueueRelatedSong, savePlayList, resetQueue }: PlayListControlProps) {
+export function PlayListControls({ showPanel, enqueueRelatedSong, savePlayList, resetQueue, shuffleQueue }: PlayListControlProps) {
 
   const buttons: PlayListControlButton[] = [
     {
       view: <SimpleLineIcons name="magic-wand" size={size} color="black" />,
       onPress: enqueueRelatedSong,
     },
-
+    {
+      view: <Entypo name="shuffle" size={24} color="black" />,
+      onPress: shuffleQueue
+    },
     {
       view: <Entypo name="save" size={size} color="black" />,
       onPress: savePlayList
@@ -41,12 +45,14 @@ export function PlayListControls({ showPanel, enqueueRelatedSong, savePlayList, 
   return <View style={{ flexDirection: 'row' }}>
     {showPanel && <>
 
-      {buttons.map(button => (
-        <TouchableOpacity
+      {buttons.map((button, index) => (
+        <AsyncButton
+          key={index}
           style={{ margin }}
-          onPress={() => button.onPress()}>
+          onPress={() => button.onPress()}
+        >
           {button.view}
-        </TouchableOpacity>
+        </AsyncButton>
       )
       )}
 

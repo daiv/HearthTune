@@ -8,7 +8,7 @@ import { formatTime } from "@/helpers/helpers";
 
 export function PlayList() {
   const activeTrack = useActiveTrack();
-  const { queue, enqueueRelatedSong, resetQueue } = usePlayListContext();
+  const { queue, enqueueRelatedSong, resetQueue, shuffleQueue } = usePlayListContext();
 
   const totalDuration = queue.map(song => song.duration);
   const formattedTime = totalDuration ? formatTime(totalDuration.reduce((ac, val) => ac + val, 0)) : '0:00';
@@ -28,6 +28,7 @@ export function PlayList() {
       showPanel={queue && queue.length > 0}
       enqueueRelatedSong={enqueueRelatedSong}
       resetQueue={resetQueue}
+      shuffleQueue={shuffleQueue}
       savePlayList={() => {
         Alert.alert('title', 'message',
           [{ text: 'Cancel' },

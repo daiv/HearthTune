@@ -25,6 +25,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const isSyncingRef = useRef(false);
   const songIndexRef = useRef(0);
   const pauseAutoQueueRef = useRef(false);
+  const isShufflingRef = useRef(false);
 
   const syncQueue = useCallback(async () => {
     if (isSyncingRef.current) return;
@@ -112,13 +113,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const newQueue = [...songs];
     queueRef.current = newQueue;
     setQueue(newQueue);
-  }, []);
+  }, [queueRef]);
 
   const resetQueue = useCallback(async () => {
     await TrackPlayer.reset();
     queueRef.current = [];
     setQueue([]);
-  }, [queue]);
+  }, []);
 
   const pauseAutoQueue = useCallback((enabled: boolean) => {
     pauseAutoQueueRef.current = enabled;
@@ -194,7 +195,20 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.error('error removing song', error);
     }
   }, []);
-
+  const shuffleQueue = useCallback(async () => {
+    if (isShufflingRef.current) return;
+    isShufflingRef.current = true;
+    const newQueue = [...queueRef.current];
+    for (let i = newQueue.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newQueue[i], newQueue[j]] = [newQueue[j], newQueue[i]];
+    }
+    await loadPlayList(newQueue);
+    songIndexRef.current = 0;
+    isLastSongRef.current = newQueue.length === 1;
+    isSongAdditionTrigeredRef.current = false;
+    isShufflingRef.current = false;
+  }, [loadPlayList]);
   const contextValue: PlayListContextData = useMemo(() => ({
     queue,
     enqueue,
@@ -203,8 +217,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     enqueueRelatedSong,
     loadPlayList,
     resetQueue,
-    pauseAutoQueue
-  }), [queue, enqueue, dequeue, skipToByInstanceId, enqueueRelatedSong, loadPlayList, resetQueue, pauseAutoQueue]);
+    pauseAutoQueue,
+    shuffleQueue
+  }), [queue, enqueue, dequeue, skipToByInstanceId, enqueueRelatedSong, loadPlayList, resetQueue, pauseAutoQueue, shuffleQueue]);
   return (
     <PlayerContext.Provider value={contextValue}>{children}</PlayerContext.Provider>
   )
