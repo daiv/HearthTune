@@ -1,18 +1,10 @@
 import { Song } from "@/common/types";
 import { addInstanceId, songToTrack, trackToSong } from "@/helpers/helpers";
 import { getRelatedSongsFromServer } from "@/services/musicService";
-import { PlayListContextData } from "@/types/types";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import TrackPlayer, { Event, useTrackPlayerEvents } from "react-native-track-player";
-
-const PlayerContext = createContext<PlayListContextData | null>(null);
-
-export const usePlayListContext = () => {
-  const context = useContext(PlayerContext);
-  if (context === null)
-    throw new Error('usePlayListContext must be used whithin a PlayListProvider');
-  return context;
-};
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PlayListContextData } from "@/types/types";
+import { PlayerContext } from "@/contexts/PlayerContext";
 
 export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [queue, setQueue] = useState<Song[]>([]);

@@ -1,7 +1,7 @@
 import { Song } from "@/common/types"
 import { Text, TouchableOpacity, View } from "react-native"
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { usePlayListContext } from "@/context/PlayerContext";
+import { usePlayListContext } from "@/contexts/PlayerContext";
 import { BlinkingPlayButton } from "../buttons/BlinkingPlayButton";
 import { formatTime } from "@/helpers/helpers";
 

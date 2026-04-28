@@ -1,4 +1,4 @@
-import { Alert, TouchableOpacity, View } from "react-native";
+import { Alert, View } from "react-native";
 import Entypo from '@expo/vector-icons/Entypo';
 import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
 import { PlayListControlButton, PlayListControlProps } from "@/types/types";

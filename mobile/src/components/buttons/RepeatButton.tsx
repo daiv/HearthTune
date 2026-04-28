@@ -1,4 +1,4 @@
-import { usePlayListContext } from '@/context/PlayerContext';
+import { usePlayListContext } from '@/contexts/PlayerContext';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRef, useState } from "react";
 import { TouchableOpacity } from "react-native";

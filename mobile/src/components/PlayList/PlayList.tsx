@@ -1,6 +1,6 @@
 import { Song } from "@/common/types";
 import { Alert, FlatList, Text, View } from "react-native";
-import { usePlayListContext } from "@/context/PlayerContext";
+import { usePlayListContext } from "@/contexts/PlayerContext";
 import { useActiveTrack } from "react-native-track-player";
 import { PlayListItem } from "./PlayListItem";
 import { PlayListControls } from "../PlayListControls";

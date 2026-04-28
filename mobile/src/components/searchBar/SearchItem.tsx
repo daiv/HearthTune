@@ -2,7 +2,7 @@ import { Song } from "@/common/types";
 import { memo } from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { styles } from "./styles";
-import { usePlayListContext } from "@/context/PlayerContext";
+import { usePlayListContext } from "@/contexts/PlayerContext";
 
 export const SearchItem = memo(({ song }: { song: Song }) => {
 
