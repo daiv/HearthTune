@@ -5,3 +5,5 @@ export * from './searchBar'
 export * from './buttons/BlinkingPlayButton';
 export * from './SongProgressBar';
 export * from './SongTitle';
+export * from './buttons';
+export * from './Input';

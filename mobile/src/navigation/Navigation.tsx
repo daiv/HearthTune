@@ -1,11 +1,11 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { Home, Library, Playing, Settings } from '@/screens';
+import { Library, Playing, Settings, Home } from '@/screens';
+import { Controls } from '@/components';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { NavigationContainer } from '@react-navigation/native';
 import { View } from 'react-native';
-import { Controls } from '../controls';
 import { styles } from './styles';
 
 const screenOptions = { headerShown: false };
@@ -34,7 +34,7 @@ const screens: { name: string, component: React.FC, tabBarIcon: ({ focused }: { 
       tabBarIcon: ({ focused }) => <Ionicons name="settings" size={SIZE} color={focusColor(focused)} />
     }
   ];
-export function Main() {
+export function Navigation() {
   const Tab = createBottomTabNavigator();
   return <NavigationContainer>
     <Tab.Navigator screenOptions={screenOptions}

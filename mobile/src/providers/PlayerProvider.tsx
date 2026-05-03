@@ -187,6 +187,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.error('error removing song', error);
     }
   }, []);
+  
   const shuffleQueue = useCallback(async () => {
     if (isShufflingRef.current) return;
     isShufflingRef.current = true;
@@ -201,6 +202,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     isSongAdditionTrigeredRef.current = false;
     isShufflingRef.current = false;
   }, [loadPlayList]);
+
   const contextValue: PlayListContextData = useMemo(() => ({
     queue,
     enqueue,

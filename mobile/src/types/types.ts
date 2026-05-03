@@ -1,5 +1,8 @@
 import { Song } from "@/common/types"
+import { Dispatch } from "react";
+import { TextInput } from "react-native";
 
+export type Mode = 'Create account' | 'Log in';
 export type PlayListContextData = {
   queue: Song[];
   enqueue: (song: Song, addedManually?: boolean) => Promise<void>;
@@ -21,4 +24,29 @@ export type PlayListControlProps = {
 export type PlayListControlButton = {
   view: React.JSX.Element;
   onPress: () => Promise<void> | void;
+}
+export type AuthContextData = {
+  userId: string;
+  login: Function;
+  createAccount: Function;
+}
+export type InputProps = {
+  type: 'text' | 'email' | 'password';
+  errorMessage?: string;
+  nextRef?: React.RefObject<TextInput | null>;
+  placeHolder?: string;
+  onChangeText: (text: string) => void;
+}
+export type FormProps = {
+  onChangeEmail: Dispatch<React.SetStateAction<string | undefined>>;
+  onChangePwd: Dispatch<React.SetStateAction<string | undefined>>;
+  emailRef: React.RefObject<TextInput | null>;
+  pwdRef: React.RefObject<TextInput | null>;
+}
+export type ValidatedFields<T> = {
+  value: T;
+  setValue: (value: T) => void;
+  error: string;
+  validate: () => string;
+  ref: React.RefObject<TextInput | null>;
 }

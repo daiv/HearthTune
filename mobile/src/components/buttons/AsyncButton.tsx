@@ -1,15 +1,14 @@
 import { useState } from "react";
-import { ActivityIndicator, StyleProp, TouchableOpacity, ViewStyle } from "react-native";
+import { ActivityIndicator, StyleProp, TouchableOpacity, View, ViewStyle } from "react-native";
 
-export function AsyncButton({ onPress: action, children, style }: { onPress: Function, children: React.JSX.Element, style?: StyleProp<ViewStyle> }) {
+export function AsyncButton({ onPress: action, children, style }: { onPress: Function, children: React.ReactNode, style?: StyleProp<ViewStyle> }) {
   const [isWorking, setIsWorking] = useState(false);
 
 
-  return isWorking ?
-    <ActivityIndicator />
-    :
+  return (
     <TouchableOpacity
-      style={style}
+      style={[style, {  alignItems: 'center' }]}
+      disabled={isWorking}
       onPress={async () => {
         if (isWorking) return;
         setIsWorking(true);
@@ -20,7 +19,16 @@ export function AsyncButton({ onPress: action, children, style }: { onPress: Fun
           setIsWorking(false);
         }
       }}>
-      {children}
-    </TouchableOpacity>
 
+      {isWorking && (
+        <View style={{ position: "absolute" }}>
+          <ActivityIndicator color="white" />
+        </View>
+      )}
+      {<View style={{ opacity: isWorking ? 0 : 1 }}>
+        {children}
+      </View>
+      }
+    </TouchableOpacity>
+  );
 }
