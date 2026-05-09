@@ -27,13 +27,14 @@ export const trackToSong = (track: Track): Song => {
   const songWithInstanceId = song.instanceId ? song : addInstanceId(song);
   return songWithInstanceId;
 }
+
 export const formatTime = (durationInSeconds: number): string => {
   const minutes = Math.floor(durationInSeconds / 60);
   const seconds = Math.floor(durationInSeconds % 60);
   const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
   return formattedTime;
-
 }
+
 export const addInstanceId = (song: Song): Song => {
   const instanceId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   return { ...song, instanceId };
@@ -45,5 +46,7 @@ export const checkMainPwd = (pwd: string): string => {
   if (!pwd || pwd.length === 0) return 'password can not be empty';
   return pwd.length > 8 ? '' : 'password is too short';
 };
+
 export const checkMatchingPwd = (pass: string) => (pass2: string): string => pass === pass2 ? '' : 'passwords does not match';
+
 export const checkNick = (nick: string): string => nick && nick.length > 3 ? '' : 'nick is too short';

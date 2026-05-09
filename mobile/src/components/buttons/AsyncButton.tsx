@@ -1,13 +1,18 @@
 import { useState } from "react";
 import { ActivityIndicator, StyleProp, TouchableOpacity, View, ViewStyle } from "react-native";
 
-export function AsyncButton({ onPress: action, children, style }: { onPress: Function, children: React.ReactNode, style?: StyleProp<ViewStyle> }) {
+export function AsyncButton
+  ({ onPress: action, children, style }:
+    {
+      onPress: () => void | Promise<void>,
+      children: React.ReactNode,
+      style?: StyleProp<ViewStyle>
+    }) {
   const [isWorking, setIsWorking] = useState(false);
-
 
   return (
     <TouchableOpacity
-      style={[style, {  alignItems: 'center' }]}
+      style={[style, { alignItems: 'center' }]}
       disabled={isWorking}
       onPress={async () => {
         if (isWorking) return;

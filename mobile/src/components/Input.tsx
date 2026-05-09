@@ -30,7 +30,7 @@ export const Input = forwardRef<TextInput, InputProps>((props, ref) => {
         </Button>
         }
       </View>
-      {errorMessage && <Text>{errorMessage}</Text>}
+      {errorMessage && <Text style={{ color: 'red' }}>{errorMessage}</Text>}
     </View>
   );
 });

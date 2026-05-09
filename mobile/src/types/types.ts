@@ -30,8 +30,10 @@ export type AuthContextData = {
   login: Function;
   createAccount: Function;
 }
+export type FieldType = 'email' | 'password' | 'text';
+
 export type InputProps = {
-  type: 'text' | 'email' | 'password';
+  type: FieldType
   errorMessage?: string;
   nextRef?: React.RefObject<TextInput | null>;
   placeHolder?: string;
@@ -49,4 +51,6 @@ export type ValidatedFields<T> = {
   error: string;
   validate: () => string;
   ref: React.RefObject<TextInput | null>;
+  type: FieldType;
+  id: string;
 }

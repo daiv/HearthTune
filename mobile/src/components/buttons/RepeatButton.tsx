@@ -10,6 +10,7 @@ type RepeatButtonMode =
   'repeat-variant' | //Repeat track forever
   'repeat'; //Repeat Queue forever
 
+const BUTTON_SIZE = 32;
 const modes: RepeatButtonMode[] = ['repeat-off', 'repeat-once', 'repeat-variant', 'repeat'];
 
 export function RepeatButton() {
@@ -63,7 +64,7 @@ export function RepeatButton() {
   return <TouchableOpacity
     onPress={() => changeMode()}
   >
-    <MaterialCommunityIcons name={modes[repeatMode]} size={24} color="black" />
+    <MaterialCommunityIcons name={modes[repeatMode]} size={BUTTON_SIZE} color="black" />
   </TouchableOpacity>
 
 }

@@ -1,11 +1,29 @@
 import { AuthContext } from "@/contexts/AuthContext";
-import { useAuth } from "@/hooks/useAuth";
 import { AuthContextData } from "@/types/types";
-import React from "react";
+import React, { useCallback, useState } from "react";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
-  const { login, createAccount, userId } = useAuth();
+  const [userId, setUserId] = useState<string>('mockUser');
+
+  const login = useCallback(async (email: string, pwd: string) => {
+    return new Promise<void>(resolve => {
+      setTimeout(() => {
+        console.log('login resolved');
+        resolve();
+      }, 5000);
+    });
+  }, []);
+  const createAccount = useCallback(async (email: string, pwd: string) => {
+    return new Promise<void>(resolve => {
+      setTimeout(() => {
+        console.log('createAccount resolved');
+        resolve();
+      }, 5000);
+    });
+  }, []);
+
+
   const contextValue: AuthContextData = {
     userId, login, createAccount
   }
