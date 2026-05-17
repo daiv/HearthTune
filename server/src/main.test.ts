@@ -8,6 +8,10 @@ import { Server } from "node:http";
 import { DownloadStatus, Song } from "@/common/types";
 import { SongRepository, SongService } from "./services";
 import { describe, it, expect, afterAll, beforeAll, jest, beforeEach } from '@jest/globals';
+import { User } from "./types/types";
+import { UserRepository } from "./repositories/UserRepository";
+import { UserModel } from "./models/userModel";
+import { UserService } from "./services/UserService";
 
 describe('TDD tests', () => {
   beforeAll(async () => {
@@ -18,6 +22,8 @@ describe('TDD tests', () => {
       MONGO_HOSTNAME = 'db' } = process.env;
     const MONGO_URI = `mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${MONGO_HOSTNAME}:27017/${MONGO_INITDB_DATABASE}?authSource=admin`;
     await mongoose.connect(MONGO_URI);
+
+    await mongoose.connection.collection('users').deleteMany({});
   });
   afterAll(async () => {
     await mongoose.connection.close();
@@ -150,7 +156,8 @@ describe('TDD tests', () => {
 
   });
 
-  describe('Repository Tests', () => {
+
+  describe('Song Repository Tests', () => {
     const now = new Date();
     const song: Song = {
       id: '12345678901',
@@ -162,8 +169,8 @@ describe('TDD tests', () => {
       lastPlayed: now
     };
     const repo = new SongRepository();
-    beforeAll(() => {
-      mongoose.connection.collection('songs').deleteMany({});
+    beforeAll(async () => {
+      await mongoose.connection.collection('songs').deleteMany({});
     });
 
     it('Should check if song is already stored', async () => {
@@ -194,5 +201,53 @@ describe('TDD tests', () => {
       expect(response).toBeTruthy();
       response && expect(response.played).toEqual(1);
     });
+
   });
+
+  describe('User repository tests', () => {
+    beforeAll(async () => {
+      await mongoose.connection.collection('users').deleteMany({});
+    })
+    const mockUser: User & { emailHash: string } = {
+      email: 'a@a.com',
+      emailHash: '23423423',
+      id: 'mockId',
+      nick: 'testuser',
+      password: '1234',
+      status: "allowed"
+    }
+    const userRepo = new UserRepository();
+
+    it('should save users', async () => {
+      await userRepo.save(mockUser);
+      const response = await userRepo.getUserByEmailHash(mockUser.emailHash);
+      expect(response).toBeTruthy();
+      expect(response?.id).toEqual(mockUser.id);
+    });
+
+    it('should get the users by id', async () => {
+      const idUser = { ...mockUser, email: 'id@id.com', id: 'idid', emailHash: '3322' };
+      await userRepo.save(idUser);
+      const response = await userRepo.getUserById(idUser.id);
+      expect(idUser.id).toEqual(response?.id);
+    });
+
+    it('should verify real email hashing', async () => {
+      const encryptedUser = { ...mockUser };
+      await userRepo.save(encryptedUser);
+      const rawUser = await UserModel.findOne({ _id: encryptedUser.id }).lean();
+      expect(rawUser?.email).not.toBe(encryptedUser.email);
+    });
+  });
+  describe('User service test', () => {
+    const userService = new UserService(new UserRepository());
+    it('should create user encrypting password and hashing email', async () => {
+      const [nick, email, password] = ['nick', 'email', 'password'];
+      const newUser: User = await userService.createUser(nick, email, password);
+      const newUserRaw = await UserModel.findOne({ nick }).lean();
+      expect(newUserRaw?.email).not.toBe(email);
+      expect(newUserRaw?.password).not.toBe(password);
+      expect(newUser.nick).toBe(nick);
+    })
+  })
 });

@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 export function checkEnvFile() {
   console.log('Checking env file...');
   const mandatoryVar = [
@@ -12,4 +14,10 @@ export function checkEnvFile() {
   });
   if (missingEnvVariables.length > 0) throw new Error(`The next .env variables are missing: ${missingEnvVariables.join(', ')}`);
   else console.log('env file is ok');
+}
+export function hashEmail(text: string): string {
+  return crypto
+    .createHmac("sha256", process.env.HASHING_KEY!)
+    .update(text)
+    .digest("hex");
 }

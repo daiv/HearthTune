@@ -14,7 +14,6 @@ export class SongService implements ISongService {
   constructor(private providers: ISongsProvider[], private songRepository: ISongRepository) { }
 
   async search(query: string, limit: number = 50): Promise<Song[]> {
-    console.log('searching for ', query);
     const sanitizedQuery = query
       .replace(/[^\w\s\u00C0-\u017F!$&\-\.\+_]/gi, '')
       .replace(/\s+/g, ' ')
@@ -38,7 +37,6 @@ export class SongService implements ISongService {
       })
     )).filter((res): res is PromiseFulfilledResult<Song> => res.status === 'fulfilled')
       .map(res => res.value);
-    console.log('found', searchesResult.length);
     return searchesResult;
   }
 
@@ -46,7 +44,6 @@ export class SongService implements ISongService {
     const provider = this.providers.find(prov => prov.SOURCE === source);
     if (!provider) throw new ProviderNotFoundException();
 
-    console.log('client asked relateds to id', id);
     if (!provider.isValidId(id)) throw new InvalidIdException(id, provider.SOURCE);
 
     const songSearch = await provider.getRelated(id, numberOfSongs);
@@ -77,8 +74,6 @@ export class SongService implements ISongService {
     let song = await this.songRepository.getSongDetails(id);
     if (!song) song = await this.saveSongOnDb(id, provider);
     if (!song) throw new ServerError('Unable to get song info');
-
-    console.log('song status is', song.downloadStatus);
 
     if (song.downloadStatus === DownloadStatus.Ready && fs.existsSync(join(this.PATH, `${id}.m4a`)))
       return { type: 'local', localPath };

@@ -9,6 +9,7 @@ import { SongRepository, SongService } from '@/services';
 import { MockProvider } from './mocks/MockProvider';
 import { errorHandler } from './middleware/errorHandler';
 import { ISongsProvider } from './interfaces';
+import { UserRepository } from './repositories/UserRepository';
 
 const app = express();
 const PORT = 4000;
@@ -17,10 +18,13 @@ const PORT = 4000;
   try {
     checkEnvFile();
     await initDatabase();
-    const providers: ISongsProvider[] = [new YoutubeProvider(), new SoundCloudProvider()];
+    const providers: ISongsProvider[] = [new YoutubeProvider(), /* new SoundCloudProvider() */];
     // const provider = new MockProvider();
     const songRepository = new SongRepository();
     const songService = new SongService(providers, songRepository);
+
+    const userRepository = new UserRepository();
+    
 
     app.use(express.json());
     app.use(createRouter(songService));

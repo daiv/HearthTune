@@ -10,7 +10,10 @@ export class SongRepository implements ISongRepository {
     return await SongModel.findOneAndUpdate(
       { id: song.id },
       { $set: song },
-      { upsert: true, new: true }
+      {
+        upsert: true,
+        returnDocument: 'after'
+      }
     );
   }
 
