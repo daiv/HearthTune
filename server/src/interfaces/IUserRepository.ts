@@ -6,5 +6,6 @@ export interface IUserRepository {
   save(user: User): Promise<User>;
   getUserById(id: string): Promise<User | null>;
   getUserByEmailHash(emailHash: string): Promise<User | null>;
-
+  getAllUsers(): Promise<User[] | null>;
+  getWhiteListedUsers(): Promise<User[] | null>
 }

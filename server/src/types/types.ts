@@ -15,13 +15,18 @@ export type SongResponse = {
 export type resolverContext = {
   songService: ISongService;
 }
-
+export type UserCredentials = {
+  token: string;
+  expiration: Date;
+}
 export type User = {
   id: string;
-  nick: string;
+  nick?: string;
   email: string;
-  password: string;
+  password?: string;
   status: UserStatus;
+  role: Role;
+  credentials?: UserCredentials;
 }
 type MongoUserExtraFields =
   {
@@ -31,9 +36,18 @@ type MongoUserExtraFields =
     __enc_email: boolean;
   };
 
+export type CreateUserDto = {
+  email: string;
+  role?: Role;
+  password?: string;
+  nick?: string;
+}
 export type MongoUser = User & MongoUserExtraFields;
-export type Role = 'admin' | 'user';
+export type Role = 'superAdmin' | 'admin' | 'user' | 'basic';
 export type UserStatus =
   'whiteListed' |
-  'allowed';
+  'email sent' |
+  'waiting for account validation' |
+  'allowed' |
+  'banned';
 

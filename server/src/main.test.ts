@@ -12,6 +12,7 @@ import { User } from "./types/types";
 import { UserRepository } from "./repositories/UserRepository";
 import { UserModel } from "./models/userModel";
 import { UserService } from "./services/UserService";
+import { hashEmail } from "./helpers";
 
 describe('TDD tests', () => {
   beforeAll(async () => {
@@ -37,6 +38,7 @@ describe('TDD tests', () => {
   it('should see dotenv vars', () => {
     expect(process.env).toBeTruthy();
   });
+
   it('should be connected to the db', async () => {
     expect(mongoose.connection.readyState).toBe(1);
   });
@@ -84,6 +86,7 @@ describe('TDD tests', () => {
         await service.search(test.query, test.limit);
         expect(spy).toHaveBeenLastCalledWith(test.expected, 1);
       }
+
     });
 
     /* it('song/play/:id', async () => {
@@ -207,15 +210,17 @@ describe('TDD tests', () => {
   describe('User repository tests', () => {
     beforeAll(async () => {
       await mongoose.connection.collection('users').deleteMany({});
-    })
+    });
+
     const mockUser: User & { emailHash: string } = {
       email: 'a@a.com',
       emailHash: '23423423',
       id: 'mockId',
       nick: 'testuser',
       password: '1234',
+      role: 'basic',
       status: "allowed"
-    }
+    };
     const userRepo = new UserRepository();
 
     it('should save users', async () => {
@@ -238,16 +243,99 @@ describe('TDD tests', () => {
       const rawUser = await UserModel.findOne({ _id: encryptedUser.id }).lean();
       expect(rawUser?.email).not.toBe(encryptedUser.email);
     });
+
+
+    describe('User service test', () => {
+      let userRepo: UserRepository;
+      let userService: UserService;;
+      const uniqueEmails: string[] = []
+      for (let i = 0; i < 10; i++) uniqueEmails.push(i + "@email.com");
+
+      beforeAll(async () => {
+        await UserModel.deleteMany({});
+        userRepo = new UserRepository();
+        userService = new UserService(userRepo);
+
+      });
+
+      it('should save users', async () => {
+        const createdUser = await userService.createUser({ email: uniqueEmails.pop()!, password: 'password', nick: 'nick' });
+        expect(createdUser).toBeTruthy();
+      });
+
+      it('Should hash the email', async () => {
+        const email = 'emailTobeHashed';
+        const createdUser = await userService.createUser({ email, password: 'password', nick: 'nick' });
+        const rawCreatedUser = await UserModel.findOne({ nick: 'nick' }).lean();
+        expect(createdUser.email).not.toBe(rawCreatedUser?.email);
+      });
+
+      it('Should encrypt email field', async () => {
+        const { email, password, nick } = mockUser;
+        const createdUser = await userService.createUser({ email, password, nick });
+        expect(password).not.toBe(createdUser.password);
+      });
+
+      it('Should find users by emailHash', async () => {
+        const [email, password, nick] = [uniqueEmails.pop()!, 'pwdd', 'daiv'];
+        const createdUser = await userService.createUser({ email, password, nick });
+        const userFromHash = await userService.getUserByEmail(email);
+        expect(userFromHash).toEqual(createdUser);
+      });
+
+      it('Should find users by id', async () => {
+        const email = uniqueEmails.pop();
+        const createdUser = await userService.createUser({ email: email!, password: '12345' });
+        const userFound = await userService.getUserById(createdUser.id);
+        expect(createdUser.id).toEqual(userFound.id);
+      });
+
+      it('Should create user encrypting password and hashing email', async () => {
+        await UserModel.deleteMany({});
+        // const [nick, email, password] = ['nick', 'email@email.com', 'password'];
+        const { nick, email, password } = mockUser;
+        const newUser: User = await userService.createUser({ email, password, nick });
+        const rawCreatedUser = await UserModel.findOne({ nick }).lean();
+        expect(rawCreatedUser).toBeTruthy();
+        expect(rawCreatedUser?.email).toBeTruthy();
+        expect(rawCreatedUser?.email).not.toBe(email);
+        expect(rawCreatedUser?.password).toBeTruthy();
+        expect(rawCreatedUser?.password).not.toBe(password);
+        expect(newUser.nick).toBe(nick);
+      });
+
+      it('Should produce the same hash from the same string', () => {
+        const { email } = mockUser;
+        const mockEmailHash = hashEmail(email);
+        expect(mockEmailHash).toEqual(hashEmail(email));
+      });
+
+      it('Should update user data instead of creating a duplicate when using save', async () => {
+        const email = uniqueEmails.pop()!;
+        const password = 'initialPassword';
+        const nick = 'originalNick';
+
+        const createdUser = await userService.createUser({ email, password, nick });
+        expect(createdUser.status).toBe('whiteListed');
+
+        const updatedData: User = {
+          ...createdUser,
+          status: 'email sent',
+          role: 'admin'
+        };
+
+        const savedUser = await userRepo.save(updatedData);
+
+        expect(savedUser.id).toBe(createdUser.id);
+        expect(savedUser.status).toBe('email sent');
+        expect(savedUser.role).toBe('admin');
+
+        const userCount = await UserModel.countDocuments({ _id: savedUser.id });
+        expect(userCount).toBe(1);
+
+        const userInDb = await userRepo.getUserByEmailHash(savedUser.emailHash);
+        expect(userInDb?.id).toBe(createdUser.id);
+      });
+    });
   });
-  describe('User service test', () => {
-    const userService = new UserService(new UserRepository());
-    it('should create user encrypting password and hashing email', async () => {
-      const [nick, email, password] = ['nick', 'email', 'password'];
-      const newUser: User = await userService.createUser(nick, email, password);
-      const newUserRaw = await UserModel.findOne({ nick }).lean();
-      expect(newUserRaw?.email).not.toBe(email);
-      expect(newUserRaw?.password).not.toBe(password);
-      expect(newUser.nick).toBe(nick);
-    })
-  })
 });

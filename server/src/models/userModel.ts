@@ -1,7 +1,6 @@
 import { MongoUser } from "@/types/types";
 import mongoose, { model } from "mongoose";
 import { fieldEncryption } from "mongoose-field-encryption";
-import { hashEmail } from "../helpers";
 
 const userSchema = new mongoose.Schema<MongoUser>({
   _id: {
@@ -17,9 +16,11 @@ const userSchema = new mongoose.Schema<MongoUser>({
     type: String,
     unique: true,
     index: true,
+    required: true,
   },
   nick: {
-    type: String
+    type: String,
+    required: false,
   },
   status: {
     type: String,
@@ -28,6 +29,11 @@ const userSchema = new mongoose.Schema<MongoUser>({
   },
   password: {
     type: String,
+    required: false,
+  },
+  role: {
+    type: String,
+    required: true,
   }
 
 }
@@ -45,13 +51,6 @@ const userSchema = new mongoose.Schema<MongoUser>({
     toObject: { virtuals: true }
   }
 );
-
-userSchema.pre("save", async function (this: mongoose.Document & MongoUser) {
-  if (this.isModified("email") && this.email) {
-    const cleanEmail = this.email.toLowerCase().trim();
-    this.emailHash = hashEmail(cleanEmail);
-  }
-});
 
 userSchema.plugin(fieldEncryption, {
   fields: ["email"],

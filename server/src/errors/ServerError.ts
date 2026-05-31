@@ -23,3 +23,8 @@ export class ProviderNotFoundException extends ServerError {
     super(message, 400);
   }
 }
+export class UserAlreadyExistsException extends ServerError {
+  constructor(message: string = 'User already exists') {
+    super(message, 409);
+  }
+}
