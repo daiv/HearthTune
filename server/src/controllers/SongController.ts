@@ -5,7 +5,7 @@ import { InvalidIdException, ServerError } from '@/errors/ServerError';
 export class SongController {
   constructor(private service: ISongService) { }
 
-  playSong = (async (req: Request, res: Response) => {
+  playSong = async (req: Request, res: Response) => {
     const { user } = { user: 'developer' };//req.header 
     const { id, provider = 'Youtube' } = req.params;
     console.log('client asked for id ' + id);
@@ -41,5 +41,11 @@ export class SongController {
         throw new ServerError('Unknown error');
       }
     }
-  });
+  };
+  getArtifact = async (req: Request, res: Response) => {
+    const { token } = req.params;
+    console.log('david');
+    res.render('createAccount', { name: 'Daiv' });
+
+  }
 }

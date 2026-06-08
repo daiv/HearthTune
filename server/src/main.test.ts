@@ -6,12 +6,11 @@ import supertest from "supertest";
 import TestAgent from "supertest/lib/agent";
 import { Server } from "node:http";
 import { DownloadStatus, Song } from "@/common/types";
-import { SongRepository, SongService } from "./services";
+import { SongService, UserService } from "./services";
 import { describe, it, expect, afterAll, beforeAll, jest, beforeEach } from '@jest/globals';
 import { User } from "./types/types";
-import { UserRepository } from "./repositories/UserRepository";
+import { UserRepository, SongRepository } from "./repositories/";
 import { UserModel } from "./models/userModel";
-import { UserService } from "./services/UserService";
 import { hashEmail } from "./helpers";
 
 describe('TDD tests', () => {

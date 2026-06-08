@@ -24,17 +24,8 @@ export class UserService implements IUserService {
     }
     return await this.userRepository.save(user);
   }
-
-  async getUserByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.getUserByEmailHash(hashEmail(email));
-    if (!user) throw new Error('User not found');
-    return user;
-  }
-
-  async getUserById(id: string) {
-    const user = await this.userRepository.getUserById(id);
-    if (!user) throw new Error('User not found');
-    return user;
+  async saveUser(user: User): Promise<User> {
+    return await this.userRepository.save(user);
   }
 
   async createUsersFromEnv() {
@@ -58,44 +49,31 @@ export class UserService implements IUserService {
     await Promise.all(
       envUsers.filter(user => !dbUsers
         .find(dbUser => dbUser.email === user.email))
-        .map(newUser => this.createUser(newUser)
+        .map(newUser => this
+          .createUser(newUser)
         ));
-    const finalDbUsers = await this.userRepository.getAllUsers() || [];
-    console.log('finalUsers', finalDbUsers);
+    // const finalDbUsers = await this.userRepository.getAllUsers() || [];
+    // console.log('finalUsers', finalDbUsers);
   }
 
-
-  async sendActivationLink(to: string, token: string): Promise<boolean> {
-    const mailSuccess = await sendEmail(to, token);
-    return mailSuccess.rejected.length === 0;
+  async getUserById(id: string) {
+    const user = await this.userRepository.getUserById(id);
+    if (!user) throw new Error('User not found');
+    return user;
   }
 
-  async sendActivationLinks() {
-    type UserResponse = User & { activated: boolean };
-    const usersToEmail: UserResponse[] = (await this.userRepository.getWhiteListedUsers())?.map(user => {
-      const credentials: UserCredentials = {
-        expiration: expiresIn(12),
-        token: crypto.randomUUID()
-      };
-      return { ...user, credentials, activated: false };
-    }) || [];
+  async getUserByEmail(email: string): Promise<User> {
+    const user = await this.userRepository.getUserByEmailHash(hashEmail(email));
+    if (!user) throw new Error('User not found');
+    return user;
+  }
 
-    const usersSuccessfullyMailed = (await Promise.allSettled(usersToEmail
-      .map(async (user) => {
-        const { email, credentials } = user;
-        const activated = await this.sendActivationLink(email, credentials!.token);
-        return { ...user, activated };
-      })
-    ))
-      .filter((res): res is PromiseFulfilledResult<UserResponse> => res.status === 'fulfilled')
-      .map(userResponse => {
-        const { activated, ...plainUser } = userResponse.value;
-        return plainUser;
-      });
-
-    await Promise.all(usersSuccessfullyMailed.map(async (user) => {
-      const updatedUser: User = { ...user, status: "email sent" }
-      return this.userRepository.save(updatedUser);
-    }));
+  async getUserByToken(token: string): Promise<User | null> {
+    const user = await this.userRepository.getUserByToken(token);
+    return user;
+  }
+  async getWhiteListedUsers(): Promise<User[] | null> {
+    const whiteListedUsers = await this.userRepository.getWhiteListedUsers();
+    return whiteListedUsers;
   }
 }

@@ -32,7 +32,10 @@ export class UserRepository implements IUserRepository {
     const userDoc = await UserModel.findOne({ emailHash });
     return userDoc ? userDoc.toJSON() : null;
   }
-
+  async getUserByToken(token: string): Promise<User | null> {
+    const userDoc = await UserModel.findOne({ "credentials.token": token });
+    return userDoc ? userDoc.toJSON() : null;
+  }
   async getAllUsers(): Promise<User[] | null> {
     const userDoc = await UserModel.find({});
     return userDoc ? userDoc.map(user => user.toJSON()) : null;

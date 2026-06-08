@@ -45,6 +45,7 @@ const userSchema = new mongoose.Schema<MongoUser>({
         delete ret._id;
         delete ret.__v;
         delete ret.__enc_email;
+        delete ret.password;
         return ret;
       }
     },
