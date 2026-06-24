@@ -1,3 +1,4 @@
+
 export class ServerError extends Error {
   readonly statusCode: number;
 
@@ -26,5 +27,16 @@ export class ProviderNotFoundException extends ServerError {
 export class UserAlreadyExistsException extends ServerError {
   constructor(message: string = 'User already exists') {
     super(message, 409);
+  }
+}
+export class UserNotFoundException extends ServerError {
+  constructor(message: string = 'User not found') {
+    super(message, 404);
+  }
+}
+
+export class InvalidTokenException extends ServerError {
+  constructor(message: string = 'Invalid or expired token') {
+    super(message, 401);
   }
 }

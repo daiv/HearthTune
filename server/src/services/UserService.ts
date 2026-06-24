@@ -1,7 +1,7 @@
-import { expiresIn, hashEmail, sendEmail } from "../helpers";
+import { hashEmail } from "../helpers";
 import { IUserService } from "@/interfaces/IUserService";
 import { UserRepository } from "@/repositories/UserRepository";
-import { CreateUserDto, Role, User, UserCredentials } from "@/types/types";
+import { CreateUserDto, Role, User } from "@/types/types";
 import bcrypt from 'bcrypt';
 
 export class UserService implements IUserService {
@@ -9,15 +9,16 @@ export class UserService implements IUserService {
   constructor(private userRepository: UserRepository) { }
 
   async createUser(data: CreateUserDto): Promise<User> {
+    if (!data.email) throw new Error('bad user format');
     const { password, email, nick, role = 'basic' } = data;
-    const encryptedPassword = password ? await bcrypt.hash(password, 12) : undefined;
+    const hashedPassword = password ? await bcrypt.hash(password, 12) : undefined;
     const emailHash = hashEmail(email);
 
     const user: User & { emailHash: string } = {
       email,
       emailHash,
       nick,
-      password: encryptedPassword,
+      password: hashedPassword,
       status: "whiteListed",
       role,
       id: crypto.randomUUID()
@@ -52,8 +53,6 @@ export class UserService implements IUserService {
         .map(newUser => this
           .createUser(newUser)
         ));
-    // const finalDbUsers = await this.userRepository.getAllUsers() || [];
-    // console.log('finalUsers', finalDbUsers);
   }
 
   async getUserById(id: string) {
@@ -68,12 +67,8 @@ export class UserService implements IUserService {
     return user;
   }
 
-  async getUserByToken(token: string): Promise<User | null> {
-    const user = await this.userRepository.getUserByToken(token);
-    return user;
-  }
   async getWhiteListedUsers(): Promise<User[] | null> {
-    const whiteListedUsers = await this.userRepository.getWhiteListedUsers();
+    const whiteListedUsers = await this.userRepository.getUserByStatus('whiteListed');
     return whiteListedUsers;
   }
 }

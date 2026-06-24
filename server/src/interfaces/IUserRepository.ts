@@ -1,11 +1,13 @@
-import { MongoUser, User } from "@/types/types";
-import { Document, HydratedDocument } from "mongoose"
+import { User, UserStatus } from "@/types/types";
 
 export interface IUserRepository {
 
   save(user: User): Promise<User>;
   getUserById(id: string): Promise<User | null>;
   getUserByEmailHash(emailHash: string): Promise<User | null>;
+  getUserByStatus(status: UserStatus): Promise<User[] | null>;
   getAllUsers(): Promise<User[] | null>;
-  getWhiteListedUsers(): Promise<User[] | null>
+  setUserStatus(userId: string, status: UserStatus): Promise<User | null>;
+  getUserPassword(userId: string): Promise<string | null>;
+
 }

@@ -35,11 +35,14 @@ const PORT = 4000;
     const userRepository = new UserRepository();
 
     const userService = new UserService(userRepository);
-    const authService = new AuthService(userService);
+    const authService = new AuthService(userRepository);
     const authController = new AuthController(authService);
 
     app.use(express.json());
-    app.use(createRouter(songService, authController));
+    app.use(createRouter(songService, authService, authController));
+
+    await userService.createUsersFromEnv();
+    await authService.sendActivationLinkToWhiteListedUsers();
 
     const graphql = await initGraphqlMiddleware(songService);
     app.use('/graphql', graphql);

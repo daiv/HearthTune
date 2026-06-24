@@ -6,12 +6,12 @@ import supertest from "supertest";
 import TestAgent from "supertest/lib/agent";
 import { Server } from "node:http";
 import { DownloadStatus, Song } from "@/common/types";
-import { SongService, UserService } from "./services";
+import { AuthService, SongService, UserService } from "./services";
 import { describe, it, expect, afterAll, beforeAll, jest, beforeEach } from '@jest/globals';
-import { User } from "./types/types";
+import { Credential, IsTokenLegitResponse, Role, User } from "./types/types";
 import { UserRepository, SongRepository } from "./repositories/";
 import { UserModel } from "./models/userModel";
-import { hashEmail } from "./helpers";
+import { createValidationCredentials, hashEmail } from "./helpers";
 
 describe('TDD tests', () => {
   beforeAll(async () => {
@@ -205,12 +205,7 @@ describe('TDD tests', () => {
     });
 
   });
-
-  describe('User repository tests', () => {
-    beforeAll(async () => {
-      await mongoose.connection.collection('users').deleteMany({});
-    });
-
+  describe('User tests', () => {
     const mockUser: User & { emailHash: string } = {
       email: 'a@a.com',
       emailHash: '23423423',
@@ -218,35 +213,42 @@ describe('TDD tests', () => {
       nick: 'testuser',
       password: '1234',
       role: 'basic',
-      status: "allowed"
+      status: "active"
     };
-    const userRepo = new UserRepository();
+    describe('User repository tests', () => {
+      beforeAll(async () => {
+        await mongoose.connection.collection('users').deleteMany({});
+      });
 
-    it('should save users', async () => {
-      await userRepo.save(mockUser);
-      const response = await userRepo.getUserByEmailHash(mockUser.emailHash);
-      expect(response).toBeTruthy();
-      expect(response?.id).toEqual(mockUser.id);
+      const userRepo = new UserRepository();
+
+      it('should save users', async () => {
+        await userRepo.save(mockUser);
+        const response = await userRepo.getUserByEmailHash(mockUser.emailHash);
+        expect(response).toBeTruthy();
+        expect(response?.id).toEqual(mockUser.id);
+      });
+
+      it('should get the users by id', async () => {
+        const idUser = { ...mockUser, email: 'id@id.com', id: 'idid', emailHash: '3322' };
+        await userRepo.save(idUser);
+        const response = await userRepo.getUserById(idUser.id);
+        expect(idUser.id).toEqual(response?.id);
+      });
+
+      it('should verify real email hashing', async () => {
+        const encryptedUser = { ...mockUser };
+        await userRepo.save(encryptedUser);
+        const rawUser = await UserModel.findOne({ _id: encryptedUser.id }).lean();
+        expect(rawUser?.email).not.toBe(encryptedUser.email);
+      });
+
     });
-
-    it('should get the users by id', async () => {
-      const idUser = { ...mockUser, email: 'id@id.com', id: 'idid', emailHash: '3322' };
-      await userRepo.save(idUser);
-      const response = await userRepo.getUserById(idUser.id);
-      expect(idUser.id).toEqual(response?.id);
-    });
-
-    it('should verify real email hashing', async () => {
-      const encryptedUser = { ...mockUser };
-      await userRepo.save(encryptedUser);
-      const rawUser = await UserModel.findOne({ _id: encryptedUser.id }).lean();
-      expect(rawUser?.email).not.toBe(encryptedUser.email);
-    });
-
 
     describe('User service test', () => {
       let userRepo: UserRepository;
-      let userService: UserService;;
+      let userService: UserService;
+      let authService: AuthService;
       const uniqueEmails: string[] = []
       for (let i = 0; i < 10; i++) uniqueEmails.push(i + "@email.com");
 
@@ -254,10 +256,11 @@ describe('TDD tests', () => {
         await UserModel.deleteMany({});
         userRepo = new UserRepository();
         userService = new UserService(userRepo);
+        authService = new AuthService(userRepo);
 
       });
 
-      it('should save users', async () => {
+      it('should create users', async () => {
         const createdUser = await userService.createUser({ email: uniqueEmails.pop()!, password: 'password', nick: 'nick' });
         expect(createdUser).toBeTruthy();
       });
@@ -319,14 +322,14 @@ describe('TDD tests', () => {
 
         const updatedData: User = {
           ...createdUser,
-          status: 'email sent',
+          status: 'verification_pending',
           role: 'admin'
         };
 
         const savedUser = await userRepo.save(updatedData);
 
         expect(savedUser.id).toBe(createdUser.id);
-        expect(savedUser.status).toBe('email sent');
+        expect(savedUser.status).toBe('verification_pending');
         expect(savedUser.role).toBe('admin');
 
         const userCount = await UserModel.countDocuments({ _id: savedUser.id });
@@ -334,6 +337,86 @@ describe('TDD tests', () => {
 
         const userInDb = await userRepo.getUserByEmailHash(savedUser.emailHash);
         expect(userInDb?.id).toBe(createdUser.id);
+      });
+      
+      it('should create user from only email and role', async () => {
+        const email = uniqueEmails.pop()!;
+        const role: Role = "user";
+        const user = await userService.createUser({ email, role });
+        expect(user.id).toBeTruthy();
+        expect(user.email).toBeTruthy();
+        expect(user.role).toBeTruthy();
+        expect(user.role).toEqual(role);
+        expect(user.status).toEqual('whiteListed');
+      });
+
+
+      it('should validate token lifecycle: invalid, valid, and expired states', async () => {
+        const user = await userService.createUser({ email: uniqueEmails.pop()! });
+        const credentials = createValidationCredentials();
+
+        expect(await authService.removeCredentials(user.id)).toBe(false);
+        // 1. Invalid token case
+        const invalidResult = await authService.isValidationTokenLegit(credentials.token);
+        expect(invalidResult.valid).toBe(false);
+        expect((invalidResult as { cause: string }).cause).toBe('invalid token');
+
+        // 2. Valid token case
+        await userService.saveUser({ ...user, credentials });
+
+        const validResult = await authService.isValidationTokenLegit(credentials.token);
+
+        expect(validResult.valid).toBe(true);
+        const success = validResult as { valid: true; credentials: typeof credentials };
+        expect(success.credentials).toEqual(credentials);
+
+        // 3. Expired token case
+        const expiredCredential = { ...credentials, expiresAt: new Date(Date.now() - 10) };
+        await userService.saveUser({ ...user, credentials: expiredCredential });
+
+        const expiredResult = await authService.isValidationTokenLegit(expiredCredential.token);
+        expect(expiredResult.valid).toBe(false);
+        expect((expiredResult as { cause: string }).cause).toBe('token expired');
+
+        expect(await authService.removeCredentials(user.id)).toBe(true);
+      });
+
+      it('Should save password and check password lifecycle', async () => {
+        const user = await userService.createUser({ email: uniqueEmails.pop()! });
+        expect(user.password).toBeFalsy();
+        const userPassword = 'iLoveUnicorns';
+        expect(await authService.checkUserPassword(user.id, userPassword)).toBe(false);
+        await authService.setUserPassword(user.id, userPassword);
+        expect(await authService.checkUserPassword(user.id, 'notLovingUnicorns')).toBe(false);
+        expect(await authService.checkUserPassword(user.id, userPassword)).toBe(true);
+
+      });
+
+      it('Should enable user Account if everything is ok', async () => {
+        const userToEnable = await userService.createUser({ email: uniqueEmails.pop()! });
+        expect(userToEnable.activatedAt).toBeFalsy();
+        const password = '12345isTheBestPassword';
+        await authService.setUserPassword(userToEnable.id, password);
+        await authService.enableUserAccount(userToEnable.id);
+
+        const user = await userService.getUserById(userToEnable.id);
+        expect(user.activatedAt).toBeTruthy();
+      });
+
+      it('Should create and save userCredentials', async () => {
+        const user = await userService.createUser({ email: uniqueEmails.pop()! });
+        expect(user).not.toHaveProperty('credentials');
+        const preparedUser = authService.prepareUserCredentials(user);
+        expect(preparedUser).toHaveProperty('credentials');
+        if (!preparedUser.credentials) throw new Error('credentials missing');
+        if (!preparedUser.credentials.token) throw new Error('token missing');
+
+        const { token } = preparedUser.credentials;
+        expect(await authService.getUserByToken(token)).toBeFalsy();
+        await userService.saveUser(preparedUser);
+        const userByToken = await authService.getUserByToken(token);
+        if (!userByToken) throw new Error('user not found');
+        expect(preparedUser.id).toEqual(userByToken.id);
       });
     });
   });

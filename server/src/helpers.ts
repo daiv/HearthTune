@@ -1,5 +1,8 @@
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import { Credential } from './types/types';
+import { MailOptions } from 'nodemailer/lib/json-transport';
+import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 export function checkEnvFile() {
   console.log('Checking env file...');
@@ -13,9 +16,11 @@ export function checkEnvFile() {
     const value = process.env[envVar];
     return !value || value.trim() === "";
   });
+
   if (missingEnvVariables.length > 0) throw new Error(`The next .env variables are missing: ${missingEnvVariables.join(', ')}`);
   else console.log('env file is ok');
 }
+
 export function hashEmail(text: string): string {
   return crypto
     .createHmac("sha256", process.env.HASHING_KEY!)
@@ -51,7 +56,22 @@ const mockMailResult = {
   messageId: '<a5162258-c1ac-e1b4-5fd7-a6948dbe1553@gmail.com>'
 }
 
-export async function sendEmail(to: string, token: string, sendItForReal: boolean = false) {
+export async function sendEmail(to: string, message: string, subject: string = ''): Promise<boolean> {
+  const mailOptions: MailOptions = {
+    to,
+    subject,
+    from: `HearthTune <${process.env.SMTP_USER}>`,
+    html: `<p>${message}</p>`
+  }
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    if (info.rejected.length === 0) return true;
+    else return false;
+  } catch (error) {
+    return false;
+  }
+}
+export async function sendActivationEmail(to: string, token: string, sendItForReal: boolean = false) {
   const activationUrl = `${process.env.SERVER_URL}/validation/${token}`;
   const mailOptions = {
     from: `HearthTune <${process.env.SMTP_USER}>`,
@@ -59,7 +79,7 @@ export async function sendEmail(to: string, token: string, sendItForReal: boolea
     subject: 'Account activation',
     html: `
       <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #eee;">
-        <h2>Welcome to Hearthtune!</h2>
+      <h2>Welcome to Hearthtune!</h2>
         <p>To activate your account and get the apk file press the button below:</p>
         <p style="text-align: center; margin: 30px 0;">
           <a href="${activationUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
@@ -70,6 +90,7 @@ export async function sendEmail(to: string, token: string, sendItForReal: boolea
         <p style="color: #007bff;">${activationUrl}</p>
       </div>`
   };
+
   try {
     if (sendItForReal) {
       const info = await transporter.sendMail(mailOptions);
@@ -88,4 +109,11 @@ export async function sendEmail(to: string, token: string, sendItForReal: boolea
 }
 export function expiresIn(hours: 1 | 5 | 12 | 24 | 48): Date {
   return new Date(Date.now() + hours * 60 * 60 * 1000);
+}
+export function createValidationCredentials(expiresAt: Date = expiresIn(48)): Credential {
+  const credentials: Credential = {
+    expiresAt,
+    token: crypto.randomUUID(),
+  }
+  return credentials;
 }
