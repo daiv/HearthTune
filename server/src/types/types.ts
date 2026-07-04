@@ -1,5 +1,6 @@
 import { Readable } from "node:stream";
 import { ISongService } from "../interfaces/ISongService";
+import { AuthService, UserService } from "@/services";
 
 export type SongResponse = {
   type: "local",
@@ -13,8 +14,14 @@ export type SongResponse = {
 
 
 export type resolverContext = {
-  songService: ISongService;
+  user?: User;
+  services: {
+    songs: ISongService;
+    user: UserService;
+    auth: AuthService;
+  }
 }
+
 export type Credential = {
   token: string;
   expiresAt: Date;
@@ -47,6 +54,7 @@ export type CreateUserDto = {
   nick?: string;
 }
 export type Role = 'superAdmin' | 'admin' | 'user' | 'basic';
+
 export type UserStatus =
   'whiteListed' |
   'verification_pending' |
@@ -65,4 +73,24 @@ export type MailOptions = {
   to: string;
   subject: string;
   html: string;
+};
+export type AuthPayLoad = {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export type Payload = {
+  userId: string;
+  jti: string;
+  type: TokenType;
+}
+
+
+export type TokenType = 'access' | 'refresh';
+
+export type Session = {
+  id: string;
+  userId: string;
+  tokenJTIHash: string;
+  deviceInfo: string;
 }

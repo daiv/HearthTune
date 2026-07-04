@@ -40,3 +40,13 @@ export class InvalidTokenException extends ServerError {
     super(message, 401);
   }
 }
+export class InvalidCredentialsException extends ServerError {
+  constructor(message: string = 'Invalid credentials') {
+    super(message, 401);
+  }
+}
+export class MissingUserRoleException extends ServerError {
+  constructor(message: string = 'Invalid role') {
+    super(message, 500);
+  }
+}

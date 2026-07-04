@@ -12,3 +12,16 @@ type Query {
   search (query: String!, limit:Int):[Song]
   getRelated(id:String, numberOfSongs:Int):[Song]
 }
+type Mutation {
+  login(email:String!, password:String!):AuthPayLoad
+}
+
+type AuthPayLoad{
+  accessToken: String!
+  refreshToken:String!
+}
+
+type AccessToken{
+  tokenId:String!
+  userId:String!
+}

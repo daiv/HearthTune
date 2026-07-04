@@ -1,11 +1,11 @@
-import { createValidationCredentials, sendActivationEmail, sendEmail } from "../helpers";
+import { createValidationCredentials, hashEmail, sendActivationEmail, sendEmail } from "../helpers";
 import { IAuthService } from "@/interfaces/IAuthService";
-import { User, Credential, IsTokenLegitResponse } from "@/types/types";
+import { User, Credential, IsTokenLegitResponse, AuthPayLoad } from "@/types/types";
 import { UserRepository } from "@/repositories";
-import { UserNotFoundException } from "../errors/ServerError";
+import { InvalidCredentialsException, MissingUserRoleException, UserNotFoundException } from "../errors/ServerError";
 import bcrypt from 'bcrypt';
 import { UserModel } from "../models/userModel";
-
+import jwt from 'jsonwebtoken';
 export class AuthService implements IAuthService {
 
   constructor(private userRepository: UserRepository) { }
@@ -135,5 +135,41 @@ export class AuthService implements IAuthService {
     const isEmailSentToAdmin = await sendEmail(superAdminEmail, message, 'new invitation request');
     if (isEmailSentToAdmin) return true;
     return false;
+  }
+  async login(email: string, password: string): Promise<AuthPayLoad> {
+    const user = await this.userRepository.getUserByEmailHash(hashEmail(email));
+
+    if (!user
+      || !user.id
+      || (!await this.checkUserPassword(user.id, password))
+    ) throw new InvalidCredentialsException();
+
+    if (!user.role) throw new MissingUserRoleException();
+
+    const accessPayload = {
+      userId: user.id,
+      role: user.role,
+      jti: crypto.randomUUID()
+    }
+
+    const accessToken = jwt.sign(
+      accessPayload,
+      process.env.ACCESS_TOKEN_KEY!,
+      { expiresIn: '5m' }
+    );
+
+    const refreshPayload = {
+      userId: accessPayload.userId,
+      jti: accessPayload.jti
+    }
+
+    const refreshToken = jwt.sign(
+      refreshPayload,
+      process.env.REFRESH_TOKEN_KEY!,
+      { expiresIn: '7d' }
+    )
+
+    return { accessToken, refreshToken };
+
   }
 }

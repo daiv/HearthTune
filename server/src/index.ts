@@ -44,7 +44,7 @@ const PORT = 4000;
     await userService.createUsersFromEnv();
     await authService.sendActivationLinkToWhiteListedUsers();
 
-    const graphql = await initGraphqlMiddleware(songService);
+    const graphql = await initGraphqlMiddleware(songService, userService, authService);
     app.use('/graphql', graphql);
 
     app.use(errorHandler);

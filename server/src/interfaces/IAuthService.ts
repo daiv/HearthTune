@@ -1,4 +1,4 @@
-import { IsTokenLegitResponse, User } from "@/types/types";
+import { AuthPayLoad, IsTokenLegitResponse, User } from "@/types/types";
 
 export interface IAuthService {
   sendActivationLink: (to: string, token: string) => Promise<boolean>;
@@ -13,4 +13,6 @@ export interface IAuthService {
   enableUserAccount: (userId: string) => Promise<boolean>;
   requestNewLinkToAdmin: (token: string) => Promise<boolean>;
   updateStateByExpiredToken: (token: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<AuthPayLoad>;
+  //createToken: (userId: string, type: TokenType, role: Role) => string;
 }

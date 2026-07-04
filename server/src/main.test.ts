@@ -8,7 +8,7 @@ import { Server } from "node:http";
 import { DownloadStatus, Song } from "@/common/types";
 import { AuthService, SongService, UserService } from "./services";
 import { describe, it, expect, afterAll, beforeAll, jest, beforeEach } from '@jest/globals';
-import { Credential, IsTokenLegitResponse, Role, User } from "./types/types";
+import { Role, User } from "./types/types";
 import { UserRepository, SongRepository } from "./repositories/";
 import { UserModel } from "./models/userModel";
 import { createValidationCredentials, hashEmail } from "./helpers";
@@ -102,7 +102,10 @@ describe('TDD tests', () => {
     const providers = [new MockProvider()];
     // const provider = new YtDlpProvider();
     const repo = new SongRepository();
-    const service = new SongService(providers, repo);
+    const songService = new SongService(providers, repo);
+    const userRepository = new UserRepository();
+    const userService = new UserService(userRepository);
+    const authService = new AuthService(userRepository);
 
     let httpServer: Server;
 
@@ -110,7 +113,17 @@ describe('TDD tests', () => {
       let server = express();
       server.use(express.json());
 
-      const graphql = await initGraphqlMiddleware(service);
+      const graphql = await initGraphqlMiddleware(songService, userService, authService,
+
+        async () => ({
+          user: { id: 'test-user', role: 'basic' } as User,
+          services: {
+            songs: songService,
+            user: userService,
+            auth: authService
+          }
+        })
+      );
       server.use('/graphql', graphql);
       httpServer = server.listen();
       request = supertest(httpServer);
@@ -132,14 +145,17 @@ describe('TDD tests', () => {
     duration}
     }`;
 
+      const spy = jest.spyOn(songService, 'search').mockResolvedValue([
+        { id: '9Yp3lc3PsjA', title: 'Test Song', description: 'desc', duration: 100 }
+      ]);
       const vars = { searchString: '9Yp3lc3PsjA', max: 1 }
-      const spy = jest.spyOn(service, 'search');
       const response = await request.post('/graphql')
         .send({ query: searchQuery, variables: vars });
       expect(spy).toHaveBeenCalledWith(vars.searchString, vars.max);
     });
 
     it('Should call getRelated and get results', async () => {
+
       const relatedQuery = `
     query related($searchString:String!){
     getRelated(id:$searchString){
@@ -246,6 +262,7 @@ describe('TDD tests', () => {
     });
 
     describe('User service test', () => {
+
       let userRepo: UserRepository;
       let userService: UserService;
       let authService: AuthService;
@@ -338,7 +355,7 @@ describe('TDD tests', () => {
         const userInDb = await userRepo.getUserByEmailHash(savedUser.emailHash);
         expect(userInDb?.id).toBe(createdUser.id);
       });
-      
+
       it('should create user from only email and role', async () => {
         const email = uniqueEmails.pop()!;
         const role: Role = "user";
@@ -417,6 +434,14 @@ describe('TDD tests', () => {
         const userByToken = await authService.getUserByToken(token);
         if (!userByToken) throw new Error('user not found');
         expect(preparedUser.id).toEqual(userByToken.id);
+      });
+    });
+  });
+
+  describe('Session tests', () => {
+    describe('Session repository', () => {
+      it('Should save session', async () => {
+
       });
     });
   });
