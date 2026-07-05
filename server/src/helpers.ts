@@ -21,7 +21,7 @@ export function checkEnvFile() {
   else console.log('env file is ok');
 }
 
-export function hashEmail(text: string): string {
+export function hashData(text: string): string {
   return crypto
     .createHmac("sha256", process.env.HASHING_KEY!)
     .update(text)

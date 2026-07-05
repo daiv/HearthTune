@@ -84,12 +84,11 @@ export type Payload = {
   jti: string;
   type: TokenType;
 }
-
+export type AccessPayload = Payload;
 
 export type TokenType = 'access' | 'refresh';
 
 export type Session = {
-  id: string;
   userId: string;
   tokenJTIHash: string;
   deviceInfo: string;

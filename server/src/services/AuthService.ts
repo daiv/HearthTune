@@ -1,4 +1,4 @@
-import { createValidationCredentials, hashEmail, sendActivationEmail, sendEmail } from "../helpers";
+import { createValidationCredentials, hashData, sendActivationEmail, sendEmail } from "../helpers";
 import { IAuthService } from "@/interfaces/IAuthService";
 import { User, Credential, IsTokenLegitResponse, AuthPayLoad } from "@/types/types";
 import { UserRepository } from "@/repositories";
@@ -137,7 +137,7 @@ export class AuthService implements IAuthService {
     return false;
   }
   async login(email: string, password: string): Promise<AuthPayLoad> {
-    const user = await this.userRepository.getUserByEmailHash(hashEmail(email));
+    const user = await this.userRepository.getUserByEmailHash(hashData(email));
 
     if (!user
       || !user.id

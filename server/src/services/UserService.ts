@@ -1,4 +1,4 @@
-import { hashEmail } from "../helpers";
+import { hashData } from "../helpers";
 import { IUserService } from "@/interfaces/IUserService";
 import { UserRepository } from "@/repositories/UserRepository";
 import { CreateUserDto, Role, User } from "@/types/types";
@@ -12,7 +12,7 @@ export class UserService implements IUserService {
     if (!data.email) throw new Error('bad user format');
     const { password, email, nick, role = 'basic' } = data;
     const hashedPassword = password ? await bcrypt.hash(password, 12) : undefined;
-    const emailHash = hashEmail(email);
+    const emailHash = hashData(email);
 
     const user: User & { emailHash: string } = {
       email,
@@ -62,7 +62,7 @@ export class UserService implements IUserService {
   }
 
   async getUserByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.getUserByEmailHash(hashEmail(email));
+    const user = await this.userRepository.getUserByEmailHash(hashData(email));
     if (!user) throw new Error('User not found');
     return user;
   }

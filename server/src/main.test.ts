@@ -7,11 +7,13 @@ import TestAgent from "supertest/lib/agent";
 import { Server } from "node:http";
 import { DownloadStatus, Song } from "@/common/types";
 import { AuthService, SongService, UserService } from "./services";
-import { describe, it, expect, afterAll, beforeAll, jest, beforeEach } from '@jest/globals';
-import { Role, User } from "./types/types";
+import { describe, it, expect, afterAll, beforeAll, jest, beforeEach, afterEach } from '@jest/globals';
+import { Role, Session, User } from "./types/types";
 import { UserRepository, SongRepository } from "./repositories/";
 import { UserModel } from "./models/userModel";
-import { createValidationCredentials, hashEmail } from "./helpers";
+import { createValidationCredentials, hashData } from "./helpers";
+import { SessionRepository } from "./repositories/SessionRepository";
+import { SessionModel } from "./models/sessionModel";
 
 describe('TDD tests', () => {
   beforeAll(async () => {
@@ -20,7 +22,7 @@ describe('TDD tests', () => {
       MONGO_INITDB_ROOT_PASSWORD,
       MONGO_INITDB_DATABASE,
       MONGO_HOSTNAME = 'db' } = process.env;
-    const MONGO_URI = `mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${MONGO_HOSTNAME}:27017/${MONGO_INITDB_DATABASE}?authSource=admin`;
+    const MONGO_URI = `mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${MONGO_HOSTNAME}:27017/${MONGO_INITDB_DATABASE}?authSource=admin&retryWrites=false`;
     await mongoose.connect(MONGO_URI);
 
     await mongoose.connection.collection('users').deleteMany({});
@@ -34,11 +36,11 @@ describe('TDD tests', () => {
     expect(suma).toBe(2);
   });
 
-  it('should see dotenv vars', () => {
+  it('Should see dotenv vars', () => {
     expect(process.env).toBeTruthy();
   });
 
-  it('should be connected to the db', async () => {
+  it('Should be connected to the db', async () => {
     expect(mongoose.connection.readyState).toBe(1);
   });
 
@@ -238,21 +240,21 @@ describe('TDD tests', () => {
 
       const userRepo = new UserRepository();
 
-      it('should save users', async () => {
+      it('Should save users', async () => {
         await userRepo.save(mockUser);
         const response = await userRepo.getUserByEmailHash(mockUser.emailHash);
         expect(response).toBeTruthy();
         expect(response?.id).toEqual(mockUser.id);
       });
 
-      it('should get the users by id', async () => {
+      it('Should get the users by id', async () => {
         const idUser = { ...mockUser, email: 'id@id.com', id: 'idid', emailHash: '3322' };
         await userRepo.save(idUser);
         const response = await userRepo.getUserById(idUser.id);
         expect(idUser.id).toEqual(response?.id);
       });
 
-      it('should verify real email hashing', async () => {
+      it('Should verify real email hashing', async () => {
         const encryptedUser = { ...mockUser };
         await userRepo.save(encryptedUser);
         const rawUser = await UserModel.findOne({ _id: encryptedUser.id }).lean();
@@ -277,7 +279,7 @@ describe('TDD tests', () => {
 
       });
 
-      it('should create users', async () => {
+      it('Should create users', async () => {
         const createdUser = await userService.createUser({ email: uniqueEmails.pop()!, password: 'password', nick: 'nick' });
         expect(createdUser).toBeTruthy();
       });
@@ -325,8 +327,8 @@ describe('TDD tests', () => {
 
       it('Should produce the same hash from the same string', () => {
         const { email } = mockUser;
-        const mockEmailHash = hashEmail(email);
-        expect(mockEmailHash).toEqual(hashEmail(email));
+        const mockEmailHash = hashData(email);
+        expect(mockEmailHash).toEqual(hashData(email));
       });
 
       it('Should update user data instead of creating a duplicate when using save', async () => {
@@ -356,7 +358,7 @@ describe('TDD tests', () => {
         expect(userInDb?.id).toBe(createdUser.id);
       });
 
-      it('should create user from only email and role', async () => {
+      it('Should create user from only email and role', async () => {
         const email = uniqueEmails.pop()!;
         const role: Role = "user";
         const user = await userService.createUser({ email, role });
@@ -368,7 +370,7 @@ describe('TDD tests', () => {
       });
 
 
-      it('should validate token lifecycle: invalid, valid, and expired states', async () => {
+      it('Should validate token lifecycle: invalid, valid, and expired states', async () => {
         const user = await userService.createUser({ email: uniqueEmails.pop()! });
         const credentials = createValidationCredentials();
 
@@ -439,10 +441,66 @@ describe('TDD tests', () => {
   });
 
   describe('Session tests', () => {
-    describe('Session repository', () => {
-      it('Should save session', async () => {
+    describe('SessionRepository', () => {
+      let repository: SessionRepository;
 
+      beforeAll(() => {
+        repository = new SessionRepository();
       });
+      afterEach(async () => {
+        await SessionModel.deleteMany({});
+      });
+
+      it('Should count sessions correctly for a specific user', async () => {
+        await repository.create({ userId: 'u1', tokenJTIHash: 't1', deviceInfo: 'd1' });
+        await repository.create({ userId: 'u1', tokenJTIHash: 't2', deviceInfo: 'd1' });
+
+        const count = await repository.countByUserId('u1');
+        expect(count).toBe(2);
+      });
+      it('Should find sessions by tokenhash', async () => {
+        const mockSession: Session = { userId: 'ut', tokenJTIHash: 'token', deviceInfo: 'info' };
+        await repository.create(mockSession);
+        const session = await repository.findByTokenHash('token');
+        if (!session) throw new Error('session not found');
+        expect(session.userId).toBe(mockSession.userId);
+      });
+      it('Should find sessions by userId', async () => {
+        const mockSession: Session = { userId: 'favId', tokenJTIHash: 'tokenhash', deviceInfo: 'android' };
+        await repository.create(mockSession);
+        let session = await repository.findByUserId(mockSession.userId);
+        expect(session.length).toBe(1);
+        expect(session[0].tokenJTIHash).toBe(mockSession.tokenJTIHash);
+        await repository.create({ userId: 'favId', tokenJTIHash: 'tok2', deviceInfo: 'notAndroid' });
+        session = await repository.findByUserId(mockSession.userId);
+        expect(session.length).toBe(2);
+        expect(session[1].tokenJTIHash).toBe('tok2');
+
+
+      })
+      it('Should remove by tokenHash', async () => {
+        const mockSession: Session = { userId: 'idi', tokenJTIHash: 'hashhh', deviceInfo: 'inffoo' };
+        const { userId: id } = mockSession;
+        await repository.create(mockSession);
+        let count = await repository.countByUserId(id);
+        expect(count).toBe(1);
+        await repository.removeByUserId(id);
+        count = await repository.countByUserId(id);
+        expect(count).toBe(0);
+      })
+      it('Should remove the oldest session correctly using sort', async () => {
+        await repository.create({ userId: 'u1', tokenJTIHash: 'old', deviceInfo: 'd1' });
+        await new Promise(r => setTimeout(r, 50));
+        await repository.create({ userId: 'u1', tokenJTIHash: 'new', deviceInfo: 'd1' });
+
+        await repository.removeOldest('u1');
+
+        const remaining = await repository.findByUserId('u1');
+        expect(remaining.length).toBe(1);
+        expect(remaining[0].tokenJTIHash).toBe('new');
+      });
+
     });
+
   });
 });

@@ -1,14 +1,14 @@
 import { IUserRepository } from "@/interfaces/IUserRepository";
 import { UserModel } from "../models/userModel";
 import { User, UserCredential, UserStatus } from "@/types/types";
-import { hashEmail } from "../helpers";
+import { hashData } from "../helpers";
 import { UserNotFoundException } from "../errors/ServerError";
 import { HydratedDocument } from "mongoose";
 
 export class UserRepository implements IUserRepository {
 
   async save(user: User) {
-    const existingId = (await this.getUserByEmailHash(hashEmail(user.email)))?.id;
+    const existingId = (await this.getUserByEmailHash(hashData(user.email)))?.id;
 
     const idToQuery = existingId || user.id;
 
