@@ -8,13 +8,14 @@ import { HydratedDocument } from "mongoose";
 export class UserRepository implements IUserRepository {
 
   async save(user: User) {
-    const existingId = (await this.getUserByEmailHash(hashData(user.email)))?.id;
+    const userToSave = { ...user, emailHash: hashData(user.email) }
+    const existingId = (await this.getUserByEmail(user.email))?.id;
 
     const idToQuery = existingId || user.id;
 
     const savedUserDoc = await UserModel.findOneAndUpdate(
       { _id: idToQuery },
-      { $set: user },
+      { $set: userToSave },
       {
         upsert: true,
         returnDocument: 'after'
@@ -36,8 +37,8 @@ export class UserRepository implements IUserRepository {
     return userDoc ? userDoc.toJSON() : null;
   }
 
-  async getUserByEmailHash(emailHash: string): Promise<User | null> {
-    const userDoc = await UserModel.findOne({ emailHash });
+  async getUserByEmail(email: string): Promise<User | null> {
+    const userDoc = await UserModel.findOne({ emailHash: hashData(email) });
     return userDoc ? userDoc.toJSON() : null;
   }
 
@@ -50,7 +51,7 @@ export class UserRepository implements IUserRepository {
     const userDoc = await UserModel.find({ status });
     return userDoc ? userDoc.map(user => user.toJSON()) : null;
   }
-  
+
   async getCredentialsFromValidationToken(token: string): Promise<UserCredential | null> {
     const userDoc: HydratedDocument<User> | null = await UserModel.findOne({ "credentials.token": token });
     return (this.extractCredentialFromUser(userDoc));

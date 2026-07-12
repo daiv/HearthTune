@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
-import { Credential } from './types/types';
+import { Credential, Role, TimeUnit } from './types/types';
 import { MailOptions } from 'nodemailer/lib/json-transport';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
@@ -27,6 +27,21 @@ export function hashData(text: string): string {
     .update(text)
     .digest("hex");
 }
+
+export function getMaxSessionsAllowed(role: Role): number {
+  switch (role) {
+    case 'basic': return 1;
+    case 'superAdmin': return Infinity;
+    case 'admin': return 3;
+    default: return 2;
+  }
+}
+export function isTrialExpired(activatedAt: Date): boolean {
+  const now = new Date().getTime();
+  const expirationDate = expiresIn(15, 'days', activatedAt).getTime();
+  return now > expirationDate;
+}
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -36,6 +51,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS,
   },
 });
+
 const mockMailResult = {
   accepted: ['@gmail.com'],
   rejected: [],
@@ -107,10 +123,24 @@ export async function sendActivationEmail(to: string, token: string, sendItForRe
   }
 
 }
-export function expiresIn(hours: 1 | 5 | 12 | 24 | 48): Date {
-  return new Date(Date.now() + hours * 60 * 60 * 1000);
+export function expiresIn(count: number, timeUnit: TimeUnit, startingDate: Date = new Date()): Date {
+  const minutes = 60 * 1000;
+  const hours = minutes * 60;
+  const days = hours * 24;
+
+  const UNIT_TO_MS: Record<TimeUnit, number> = {
+    minutes,
+    hours,
+    days
+  }
+
+  return new Date(startingDate.getTime() + count * UNIT_TO_MS[timeUnit]);
 }
-export function createValidationCredentials(expiresAt: Date = expiresIn(48)): Credential {
+
+// export function expiresIn(hours: 1 | 5 | 12 | 24 | 48): Date {
+//   return new Date(Date.now() + hours * 60 * 60 * 1000);
+// }
+export function createValidationCredentials(expiresAt: Date = expiresIn(2, 'days')): Credential {
   const credentials: Credential = {
     expiresAt,
     token: crypto.randomUUID(),

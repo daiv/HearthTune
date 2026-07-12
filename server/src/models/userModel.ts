@@ -52,6 +52,7 @@ const userSchema = new mongoose.Schema<MongoUser>({
   }
 }
   , {
+    timestamps: true,
     _id: false,
     toJSON: {
       virtuals: true,

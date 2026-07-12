@@ -10,7 +10,7 @@ const sessionSchema = new mongoose.Schema<Session>({
     index: true,
 
   },
-  tokenJTIHash: {
+  JTI: {
     type: String,
     required: true,
     unique: true,

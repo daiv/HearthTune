@@ -6,5 +6,5 @@ export interface IUserService {
   createUsersFromEnv: () => Promise<void>;
   getUserById: (id: string) => Promise<User>;
   getUserByEmail: (email: string) => Promise<User>;
-
+  setUserPassword: (userId: string, plainPassword: string) => Promise<User | null>;
 }

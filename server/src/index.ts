@@ -11,6 +11,9 @@ import { ISongsProvider } from './interfaces';
 import path from 'node:path';
 import { SongRepository, UserRepository } from '@/repositories';
 import { AuthController } from './controllers/AuthController';
+import { ActivationService } from './services/ActivationService';
+import { SessionService } from './services/SessionService';
+import { SessionRepository } from './repositories/SessionRepository';
 
 const app = express();
 const PORT = 4000;
@@ -35,14 +38,17 @@ const PORT = 4000;
     const userRepository = new UserRepository();
 
     const userService = new UserService(userRepository);
-    const authService = new AuthService(userRepository);
-    const authController = new AuthController(authService);
+    const sessionRepository = new SessionRepository();
+    const sessionService = new SessionService(sessionRepository);
+    const authService = new AuthService(userRepository, sessionService);
+    const activationService = new ActivationService(userRepository);
+    const authController = new AuthController(activationService, userService);
 
     app.use(express.json());
-    app.use(createRouter(songService, authService, authController));
+    app.use(createRouter(songService, activationService, authController));
 
     await userService.createUsersFromEnv();
-    await authService.sendActivationLinkToWhiteListedUsers();
+    await activationService.sendActivationLinkToWhiteListedUsers();
 
     const graphql = await initGraphqlMiddleware(songService, userService, authService);
     app.use('/graphql', graphql);

@@ -1,7 +1,8 @@
 import { ISessionRepository } from "@/interfaces/ISessionRepository";
 import { SessionModel } from "../models/sessionModel";
 import { Session } from "@/types/types";
-import mongoose, { DeleteResult, } from "mongoose";
+import { DeleteResult, } from "mongoose";
+import { hashData } from "../helpers";
 
 export class SessionRepository implements ISessionRepository {
 
@@ -13,12 +14,14 @@ export class SessionRepository implements ISessionRepository {
     return await SessionModel.find({ userId });
   }
 
-  async findByTokenHash(tokenJTIHash: string): Promise<Session | null> {
-    return await SessionModel.findOne({ tokenJTIHash });
+  async findByJti(tokenJTi: string): Promise<Session | null> {
+    const JTI = hashData(tokenJTi);
+    return await SessionModel.findOne({ JTI });
   }
 
   async create(sessionData: Session,): Promise<Session | null> {
-    const docs = await SessionModel.create([sessionData]);
+    const sessionDataWithHashedJTI: Session = { ...sessionData, JTI: hashData(sessionData.JTI) }
+    const docs = await SessionModel.create([sessionDataWithHashedJTI]);
     return docs[0];
   }
 
@@ -26,11 +29,23 @@ export class SessionRepository implements ISessionRepository {
     return await SessionModel.deleteMany({ userId });
   }
 
-  async removeByTokenHash(tokenJTIHash: string): Promise<DeleteResult> {
-    return await SessionModel.deleteOne({ tokenJTIHash });
+  async removeByJti(jti: string): Promise<DeleteResult> {
+    return await SessionModel.deleteOne({ JTI: hashData(jti) });
   }
 
   async removeOldest(userId: string,): Promise<DeleteResult> {
     return await SessionModel.deleteOne({ userId }).sort({ createdAt: 1 });
   }
+
+  async removeManyOldest(userId: string, count: number): Promise<DeleteResult | null> {
+    const toDelete = await SessionModel.find({ userId })
+      .sort({ createdAt: 1 })
+      .limit(count)
+      .select('_id');
+    if (toDelete.length === 0) return null;
+
+    const ids = toDelete.map(doc => doc.id);
+    return await SessionModel.deleteMany({ _id: { $in: ids } });
+  }
+
 }

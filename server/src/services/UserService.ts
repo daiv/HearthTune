@@ -1,3 +1,4 @@
+import { UserNotFoundException } from "../errors/ServerError";
 import { hashData } from "../helpers";
 import { IUserService } from "@/interfaces/IUserService";
 import { UserRepository } from "@/repositories/UserRepository";
@@ -28,7 +29,14 @@ export class UserService implements IUserService {
   async saveUser(user: User): Promise<User> {
     return await this.userRepository.save(user);
   }
-
+  async setUserPassword(userId: string, plainPassword: string): Promise<User | null> {
+    const password = await bcrypt.hash(plainPassword, 12);
+    const user = await this.userRepository.getUserById(userId);
+    if (!user) throw new UserNotFoundException();
+    user.password = password;
+    const savedUser = await this.userRepository.save(user);
+    return savedUser;
+  }
   async createUsersFromEnv() {
     const envEntries = process.env.USERS?.split(';') || [];
     if (envEntries.length % 2 !== 0) throw new Error('bad env.users format');
@@ -62,7 +70,7 @@ export class UserService implements IUserService {
   }
 
   async getUserByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.getUserByEmailHash(hashData(email));
+    const user = await this.userRepository.getUserByEmail(email);
     if (!user) throw new Error('User not found');
     return user;
   }

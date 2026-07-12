@@ -35,6 +35,7 @@ export type User = {
   role: Role;
   credentials?: Credential;
   activatedAt?: Date;
+  createdAt?: Date;
 }
 
 type MongoUserExtraFields =
@@ -43,7 +44,6 @@ type MongoUserExtraFields =
     emailHash: string;
     __v: number;
     __enc_email: boolean;
-
   };
 
 export type MongoUser = User & MongoUserExtraFields;
@@ -54,6 +54,7 @@ export type CreateUserDto = {
   nick?: string;
 }
 export type Role = 'superAdmin' | 'admin' | 'user' | 'basic';
+export type TimeUnit = 'days' | 'hours' | 'minutes';
 
 export type UserStatus =
   'whiteListed' |
@@ -74,22 +75,20 @@ export type MailOptions = {
   subject: string;
   html: string;
 };
-export type AuthPayLoad = {
+export type AuthPayload = {
   accessToken: string;
   refreshToken: string;
 }
 
-export type Payload = {
+export type AccessPayload = {
   userId: string;
   jti: string;
-  type: TokenType;
+  role: Role;
 }
-export type AccessPayload = Payload;
-
-export type TokenType = 'access' | 'refresh';
 
 export type Session = {
   userId: string;
-  tokenJTIHash: string;
-  deviceInfo: string;
+  JTI: string;
+  role: Role;
+  deviceInfo?: string;
 }
