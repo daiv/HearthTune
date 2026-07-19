@@ -1,7 +1,7 @@
 import express from 'express';
 import { SongController } from '@/controllers/SongController';
 import { checkValidationToken } from './middleware/checkValidationToken';
-import { AuthService, SongService } from './services';
+import { SongService } from './services';
 import { AuthController } from './controllers/AuthController';
 import { ActivationService } from './services/ActivationService';
 

@@ -1,8 +1,8 @@
-import { UserNotFoundException } from "../errors/ServerError";
-import { createValidationCredentials, sendActivationEmail, sendEmail } from "../helpers";
-import { IActivationService } from "../interfaces/IActivationService";
-import { UserModel } from "../models/userModel";
-import { UserRepository } from "../repositories";
+import { UserNotFoundException } from "@/errors/ServerError";
+import { createValidationCredentials, sendActivationEmail, sendEmail } from "@/helpers";
+import { IActivationService } from "@/interfaces/IActivationService";
+import { UserModel } from "@/models";
+import { UserRepository } from "@/repositories";
 import { Credential, IsTokenLegitResponse, User } from "@/types/types";
 
 export class ActivationService implements IActivationService {

@@ -6,16 +6,12 @@ import supertest from "supertest";
 import TestAgent from "supertest/lib/agent";
 import { Server } from "node:http";
 import { DownloadStatus, Song } from "@/common/types";
-import { AuthService, SongService, UserService } from "./services";
+import { AuthService, SongService, UserService, ActivationService, SessionService } from "@/services";
 import { describe, it, expect, afterAll, beforeAll, jest, beforeEach, afterEach } from '@jest/globals';
-import { Role, Session, User } from "./types/types";
-import { UserRepository, SongRepository } from "./repositories/";
-import { UserModel } from "./models/userModel";
+import { CreateUserDto, Role, Session, User } from "./types/types";
+import { UserRepository, SongRepository, SessionRepository } from "@/repositories/";
+import { UserModel, SessionModel } from "@/models/";
 import { createValidationCredentials, hashData } from "./helpers";
-import { SessionRepository } from "./repositories/SessionRepository";
-import { SessionModel } from "./models/sessionModel";
-import { ActivationService } from "./services/ActivationService";
-import { SessionService } from "./services/SessionService";
 import { ServerError } from "./errors/ServerError";
 
 describe('TDD tests', () => {
@@ -57,7 +53,7 @@ describe('TDD tests', () => {
 
     beforeEach(() => { spy.mockClear(); });
 
-    it('song/search -> Should clamp the limit of songs searched between 1 and provider.MAX_LIMIT', async () => {
+    it('song/search -> Should clamp the limit of songs', async () => {
       let limit = 70;
       const MAX_LIMIT = service.MAX_LIMIT;
       await service.search('rock', limit);
@@ -113,8 +109,35 @@ describe('TDD tests', () => {
     const sessionRepository = new SessionRepository();
     const sessionService = new SessionService(sessionRepository);
     const authService = new AuthService(userRepository, sessionService);
-
+    const GRAPH = '/graphql';
     let httpServer: Server;
+
+    const Query = {
+      query: {
+        search: `
+          query find($searchString:String!, $max: Int){
+          search(query:$searchString, limit:$max){
+          id,
+          title, 
+          description,
+          duration}
+          }`,
+      },
+      mutation: {
+        login: `
+        mutation loginTest($email:String!, $pass:String!, $deviceInfo:String){
+        login(email:$email, password:$pass, deviceInfo:$deviceInfo){
+        accessToken
+        refreshToken
+        }}`,
+        refresh: `
+        mutation refresh($refreshJTI:String!){
+        refreshTokens(token:$refreshJTI){
+        accessToken
+        refreshToken
+        }}`,
+      }
+    }
 
     beforeAll(async () => {
       let server = express();
@@ -128,13 +151,16 @@ describe('TDD tests', () => {
             songs: songService,
             user: userService,
             auth: authService
+          },
+          metadata: {
+            deviceInfo: 'Pixel-8 | Android 10',
+            appVersion: '1.0.0'
           }
         })
       );
-      server.use('/graphql', graphql);
+      server.use(GRAPH, graphql);
       httpServer = server.listen();
       request = supertest(httpServer);
-
     });
     afterAll(async () => {
       await new Promise<void>(resolve => {
@@ -156,7 +182,7 @@ describe('TDD tests', () => {
         { id: '9Yp3lc3PsjA', title: 'Test Song', description: 'desc', duration: 100 }
       ]);
       const vars = { searchString: '9Yp3lc3PsjA', max: 1 }
-      const response = await request.post('/graphql')
+      const response = await request.post(GRAPH)
         .send({ query: searchQuery, variables: vars });
       expect(spy).toHaveBeenCalledWith(vars.searchString, vars.max);
     });
@@ -170,7 +196,7 @@ describe('TDD tests', () => {
     }`;
 
       const vars = { searchString: '3LA8hq9plTY' };
-      const response = await request.post('/graphql')
+      const response = await request.post(GRAPH)
         .send({ query: relatedQuery, variables: vars });
       const { getRelated: songs } = response.body.data;
       expect(songs[0]).toHaveProperty("id");
@@ -178,7 +204,95 @@ describe('TDD tests', () => {
       expect(songs).toHaveLength(10);
 
     });
+    describe('Auth Tests', () => {
+      const activationService = new ActivationService(userRepository);
+      describe('Login tests', () => {
+        let userToCreate: CreateUserDto;
+        let createdUser: User;
+        beforeAll(async () => {
+          userToCreate = {
+            email: 'mock@mockmail.com',
+            password: '1234',
+            role: 'basic'
+          }
+          createdUser = await userService.createUser(userToCreate);
+        });
 
+        it('Should throw error when login in a not active account', async () => {
+          const vars = { email: userToCreate.email, pass: userToCreate.password, deviceInfo: 'Android' };
+          const response = await request.post(GRAPH)
+            .send({ query: Query.mutation.login, variables: vars });
+          expect(response.error).toBeDefined();
+          expect(response.body.data.login).toBeNull();
+          expect(response.body.errors[0].extensions.code).toBe('AccountNotActiveException');
+        });
+
+        it('Should throw error if credentials are incorrect ', async () => {
+          const vars = { email: userToCreate.email, pass: '032w', deviceInfo: 'Android' };
+          const response = await request.post(GRAPH)
+            .send({ query: Query.mutation.login, variables: vars });
+          expect(response.error).toBeDefined();
+          expect(response.body.data.login).toBeNull();
+          expect(response.body.errors[0].extensions.code).toBe('InvalidCredentialsException');
+        });
+
+        it('Should return tokens when credentials are ok', async () => {
+          await activationService.enableUserAccount(createdUser.id);
+          const vars = { email: userToCreate.email, pass: userToCreate.password, deviceInfo: 'Android' };
+          const response = await request.post(GRAPH)
+            .send({ query: Query.mutation.login, variables: vars });
+          expect(response.body).toBeTruthy();
+          expect(response.body.data.login).not.toBeNull();
+          expect(response.body.data.login).toHaveProperty('accessToken');
+          expect(response.body.data.login).toHaveProperty('refreshToken');
+        });
+      });
+
+      describe('Refresh tests', () => {
+        let activeUser: User;
+        beforeAll(async () => {
+          const userDTO: CreateUserDto = {
+            email: 'active@email.com',
+            password: '1234',
+          }
+          activeUser = await userService.createUser(userDTO);
+          activeUser.password = userDTO.password;
+          await activationService.enableUserAccount(activeUser.id);
+        });
+
+        it('Should not refresh tokens if session does not exist', async () => {
+          const variables = { refreshJTI: 'asdf' };
+          const response = await request.post(GRAPH)
+            .send({ query: Query.mutation.refresh, variables });
+          expect(response.error).toBeDefined();
+          expect(response.body.data.refreshTokens).toBeNull();
+          expect(response.body.errors[0].extensions.code).toBe('InvalidTokenException');
+        });
+
+        it('Should invalidate last token when refreshing session', async () => {
+          const JTI = 'longAndRandomJTI';
+          await sessionService.add(activeUser.id, JTI, 'user');
+          const currentSession = await sessionService.getSessionByJti(JTI);
+          let activeSessions = await sessionService.countSessions(activeUser.id);
+          expect(currentSession).not.toBe(undefined);
+          expect(currentSession?.JTI).toBe(hashData(JTI));
+          expect(activeSessions).toBe(1);
+
+          const variables = { refreshJTI: JTI }
+          const response = await request.post(GRAPH)
+            .send({ query: Query.mutation.refresh, variables });
+
+          const oldSession = await sessionService.getSessionByJti(JTI);
+
+          expect(oldSession).toBeNull();
+          activeSessions = await sessionService.countSessions(activeUser.id);
+          expect(activeSessions).toBe(1);
+          expect(response.body.data.refreshTokens.refreshToken).not.toBe(hashData(JTI));
+          expect(response.body.data.refreshTokens).toHaveProperty('accessToken');
+          expect(response.body.data.refreshTokens).toHaveProperty('refreshToken');
+        });
+      });
+    });
   });
 
 
@@ -340,7 +454,7 @@ describe('TDD tests', () => {
         expect(mockEmailHash).toEqual(hashData(email));
       });
 
-      it('Should update user data instead of creating a duplicate when using save', async () => {
+      it('Should override user data when using save', async () => {
         const email = uniqueEmails.pop()!;
         const password = 'initialPassword';
         const nick = 'originalNick';
@@ -380,7 +494,7 @@ describe('TDD tests', () => {
       });
 
 
-      it('Should validate token lifecycle: invalid, valid, and expired states', async () => {
+      it('Should validate validationToken lifecycle', async () => {
         const user = await userService.createUser({ email: uniqueEmails.pop()! });
         const credentials = createValidationCredentials();
 
@@ -451,7 +565,7 @@ describe('TDD tests', () => {
   });
 
   describe('Session tests', () => {
-    describe('SessionRepository', () => {
+    describe('Session Repository', () => {
       let repository: SessionRepository;
 
       beforeAll(() => {
@@ -516,7 +630,7 @@ describe('TDD tests', () => {
       });
 
     });
-    describe('Session service', () => {
+    describe('Session Service', () => {
       let repo: SessionRepository, service: SessionService;
 
       beforeAll(() => {

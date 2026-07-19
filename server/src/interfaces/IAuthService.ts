@@ -1,4 +1,4 @@
-import { AuthPayload, IsTokenLegitResponse, Role, User } from "@/types/types";
+import { AuthPayload, Role, } from "@/types/types";
 
 export interface IAuthService {
   checkUserPassword: (userId: string, plainPassword: string) => Promise<boolean>;

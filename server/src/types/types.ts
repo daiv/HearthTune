@@ -19,6 +19,10 @@ export type resolverContext = {
     songs: ISongService;
     user: UserService;
     auth: AuthService;
+  };
+  metadata: {
+    deviceInfo: string;
+    appVersion: string;
   }
 }
 
@@ -53,7 +57,8 @@ export type CreateUserDto = {
   password?: string;
   nick?: string;
 }
-export type Role = 'superAdmin' | 'admin' | 'user' | 'basic';
+export type Role = 'superAdmin' | 'admin' | 'user' | 'basic' | 'test';
+export type RolePermission = Record<Role, number>;
 export type TimeUnit = 'days' | 'hours' | 'minutes';
 
 export type UserStatus =

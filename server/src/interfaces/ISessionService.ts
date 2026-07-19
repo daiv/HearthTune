@@ -6,4 +6,5 @@ export interface ISessionService {
   remove: (jti: string) => Promise<DeleteResult>;
   removeAll: (userId: string) => Promise<DeleteResult>;
   getSessionByJti: (jti: string) => Promise<Session | null>;
+  countSessions: (userId: string) => Promise<number>;
 }

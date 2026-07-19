@@ -33,4 +33,7 @@ export class SessionService implements ISessionService {
   async getSessionByJti(jti: string): Promise<Session | null> {
     return await this.sessions.findByJti(jti);
   }
+  async countSessions(userId: string): Promise<number> {
+    return this.sessions.countByUserId(userId);
+  }
 }

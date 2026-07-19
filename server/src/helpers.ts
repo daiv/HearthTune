@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { Credential, Role, TimeUnit } from './types/types';
 import { MailOptions } from 'nodemailer/lib/json-transport';
-import SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { PERMISSION } from './constants';
 
 export function checkEnvFile() {
   console.log('Checking env file...');
@@ -147,3 +147,5 @@ export function createValidationCredentials(expiresAt: Date = expiresIn(2, 'days
   }
   return credentials;
 }
+export const atLeast = (minRole: Role) => (role: Role) => PERMISSION[role] >= PERMISSION[minRole];
+export const isExactly = (targetRole: Role) => (role: Role) => targetRole === role;

@@ -2,7 +2,8 @@ module.exports = {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   moduleNameMapper: {
-    '^@/common/(.*)$': '<rootDir>/../common/$1'
+    '^@/common/(.*)$': '<rootDir>/../common/$1',
+    '^@/(.*)$': '<rootDir>/src/$1'
   },
   transform: {
     '^.+\\.tsx?$': [

@@ -1,7 +1,7 @@
 import { ServerError } from "../errors/ServerError";
 import { GraphQLError } from "graphql/error";
 
-export const handleGraphQlError = (error: unknown) => {
+export const handleGraphQlError = (error: unknown): never => {
   if (error instanceof ServerError) {
     throw new GraphQLError(error.message, {
       extensions: {
@@ -10,8 +10,10 @@ export const handleGraphQlError = (error: unknown) => {
       }
     });
   }
+  if (error instanceof GraphQLError) throw error;
 
   console.error('Unhandled error', error);
+
   throw new GraphQLError("Internal Server Error", {
     extensions: {
       code: 'Internal Server Error',

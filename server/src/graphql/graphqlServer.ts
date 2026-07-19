@@ -1,10 +1,10 @@
 import jwt from 'jsonwebtoken';
 import { ApolloServer } from "@apollo/server";
-import { expressMiddleware } from "@as-integrations/express5";
+import { ExpressContextFunctionArgument, expressMiddleware } from "@as-integrations/express5";
 import { join } from "node:path";
 import { readFileSync } from 'node:fs'
 import { ISongService } from "@/interfaces";
-import { AccessPayload, resolverContext, User } from "../types/types";
+import { AccessPayload, resolverContext, User } from "@/types/types";
 import { AuthService, UserService } from "@/services";
 import { resolvers } from './resolvers';
 
@@ -17,13 +17,17 @@ export async function initGraphqlMiddleware(
   songService: ISongService,
   userService: UserService,
   authService: AuthService,
-  customContext?: (req: any) => Promise<resolverContext>
+  customContext?: (args: ExpressContextFunctionArgument) => Promise<resolverContext>
 ) {
   await server.start();
   return expressMiddleware(server, {
-    context: customContext || (async ({ req }): Promise<resolverContext> => {
+    context: customContext || (async ({ req }: ExpressContextFunctionArgument): Promise<resolverContext> => {
       const authHeader = req.headers.authorization || '';
       const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+      const metadata = {
+        deviceInfo: (req.headers['x-device-info'] as string || 'Unknown'),
+        appVersion: (req.headers['x-app-version'] as string || '0.0.0'),
+      };
       let user: User | undefined;
       if (token) {
         try {
@@ -38,9 +42,10 @@ export async function initGraphqlMiddleware(
           user,
           services: {
             songs: songService, user: userService, auth: authService,
-          }
+          },
+          metadata,
         }
-      )
+      );
     })
   });
 }

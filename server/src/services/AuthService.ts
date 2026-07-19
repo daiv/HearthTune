@@ -1,11 +1,12 @@
 import { IAuthService } from "@/interfaces/IAuthService";
 import { AccessPayload, AuthPayload, Role, Session } from "@/types/types";
 import { UserRepository } from "@/repositories";
-import { InvalidCredentialsException, InvalidTokenException, MissingUserRoleException, ServerError, TrialExpiredException, } from "../errors/ServerError";
+import { AccountNotActiveException, InvalidCredentialsException, InvalidTokenException, MissingUserRoleException, ServerError, TrialExpiredException, } from "@/errors/ServerError";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { isTrialExpired } from "@/helpers";
 import { SessionService } from "./SessionService";
-import { isTrialExpired } from "../helpers";
+
 export class AuthService implements IAuthService {
 
   constructor(private userRepository: UserRepository, private sessionService: SessionService) { }
@@ -17,14 +18,16 @@ export class AuthService implements IAuthService {
   }
 
   async login(email: string, password: string, deviceInfo: string = 'Unknown device'): Promise<AuthPayload> {
-    const user = await this.userRepository.getUserByEmail(email);
 
+    const user = await this.userRepository.getUserByEmail(email);
     if (!user
       || !user.id
       || (!await this.checkUserPassword(user.id, password))
     ) throw new InvalidCredentialsException();
 
     if (!user.role) throw new MissingUserRoleException();
+
+    if (user.status !== "active") throw new AccountNotActiveException();
 
     const session = await this.createSession(user.id, user.role, deviceInfo);
     if (!session) throw new ServerError();
@@ -52,7 +55,7 @@ export class AuthService implements IAuthService {
     const accessToken = jwt.sign(
       accessPayload,
       key,
-      { expiresIn: '60m' }
+      { expiresIn: '5m' }
     );
 
     const refreshToken = refreshJti;
@@ -80,7 +83,5 @@ export class AuthService implements IAuthService {
     if (!newSession) throw new ServerError();
 
     return this.createTokenPair(newSession.userId, newSession.JTI, newSession.role);
-
-
   }
 }

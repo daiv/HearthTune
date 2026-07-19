@@ -1,19 +1,16 @@
 import 'dotenv/config';
 import express from 'express';
-import { createRouter } from './router';
-import { checkEnvFile } from './helpers';
-import { initDatabase } from './models/model';
+import { createRouter } from '@/router';
+import { checkEnvFile } from '@/helpers';
+import { initDatabase } from '@/models/model';
 import { initGraphqlMiddleware } from './graphql/graphqlServer';
 import { YoutubeProvider } from '@/providers'
-import { AuthService, SongService, UserService } from '@/services';
-import { errorHandler } from './middleware/errorHandler';
-import { ISongsProvider } from './interfaces';
+import { AuthService, SongService, UserService, SessionService, ActivationService } from '@/services';
+import { errorHandler } from '@/middleware/errorHandler';
+import { ISongsProvider } from '@/interfaces';
 import path from 'node:path';
-import { SongRepository, UserRepository } from '@/repositories';
-import { AuthController } from './controllers/AuthController';
-import { ActivationService } from './services/ActivationService';
-import { SessionService } from './services/SessionService';
-import { SessionRepository } from './repositories/SessionRepository';
+import { SongRepository, UserRepository, SessionRepository } from '@/repositories';
+import { AuthController } from '@/controllers/AuthController';
 
 const app = express();
 const PORT = 4000;

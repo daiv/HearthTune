@@ -13,7 +13,8 @@ type Query {
   getRelated(id:String, numberOfSongs:Int):[Song]
 }
 type Mutation {
-  login(email:String!, password:String!):AuthPayLoad
+  login(email:String!, password:String!, deviceInfo:String):AuthPayLoad
+  refreshTokens(token:String!): AuthPayLoad
 }
 
 type AuthPayLoad{

@@ -50,7 +50,16 @@ export class MissingUserRoleException extends ServerError {
     super(message, 500);
   }
 }
-
+export class AccountNotActiveException extends ServerError {
+  constructor(message: string = 'Account is not ready') {
+    super(message, 403);
+  }
+}
+export class ForbiddenException extends ServerError {
+  constructor(message: string = 'Insufficient permissions') {
+    super(message, 403);
+  }
+}
 export class TrialExpiredException extends ServerError {
   constructor(message: string = "Your 15-day trial access has concluded. " +
     "I hope you've enjoyed exploring the application! " +
