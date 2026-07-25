@@ -10,9 +10,10 @@ export const protect = <TSource, TContext extends BaseContext, TArgs>(
 ): GraphQLFieldResolver<TSource, TContext, TArgs> => {
 
   return async (parent, args, context, info) => {
-    if (!context.user) throw new InvalidTokenException();
-    if (!check(context.user.role)) throw new ForbiddenException();
     try {
+      if (!context.user) throw new InvalidTokenException();
+      if (!check(context.user.role)) throw new ForbiddenException();
+
       return await fn(parent, args, context, info);
     } catch (error: unknown) {
       handleGraphQlError(error);

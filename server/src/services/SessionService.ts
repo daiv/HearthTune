@@ -13,14 +13,15 @@ export class SessionService implements ISessionService {
     const toDeleteCount = (currentSessions - maxSessionsAllowed) + 1;
 
     if (toDeleteCount > 0) await this.sessions.removeManyOldest(userId, toDeleteCount);
-
     const newSession: Session = {
       deviceInfo,
       JTI: jti,
       userId,
       role
     }
-    return await this.sessions.create(newSession);
+    const sessionCreated = await this.sessions.create(newSession);
+
+    return sessionCreated ? newSession : null;
   }
 
   async remove(jti: string): Promise<DeleteResult> {

@@ -20,7 +20,7 @@ export class SessionRepository implements ISessionRepository {
   }
 
   async create(sessionData: Session,): Promise<Session | null> {
-    const sessionDataWithHashedJTI: Session = { ...sessionData, JTI: hashData(sessionData.JTI) }
+    const sessionDataWithHashedJTI: Session = { ...sessionData, JTI: hashData(sessionData.JTI) };
     const docs = await SessionModel.create([sessionDataWithHashedJTI]);
     return docs[0];
   }

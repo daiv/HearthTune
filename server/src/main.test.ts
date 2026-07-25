@@ -271,7 +271,7 @@ describe('TDD tests', () => {
 
         it('Should invalidate last token when refreshing session', async () => {
           const JTI = 'longAndRandomJTI';
-          await sessionService.add(activeUser.id, JTI, 'user');
+          await sessionService.add(activeUser.id, JTI, 'user', 'testingDevice');
           const currentSession = await sessionService.getSessionByJti(JTI);
           let activeSessions = await sessionService.countSessions(activeUser.id);
           expect(currentSession).not.toBe(undefined);
@@ -287,7 +287,10 @@ describe('TDD tests', () => {
           expect(oldSession).toBeNull();
           activeSessions = await sessionService.countSessions(activeUser.id);
           expect(activeSessions).toBe(1);
-          expect(response.body.data.refreshTokens.refreshToken).not.toBe(hashData(JTI));
+          const { refreshToken, accessToken } = response.body.data.refreshTokens;
+          expect(refreshToken).not.toBe(null);
+          expect(accessToken).not.toBe(null);
+          expect(refreshToken).not.toBe(hashData(JTI));
           expect(response.body.data.refreshTokens).toHaveProperty('accessToken');
           expect(response.body.data.refreshTokens).toHaveProperty('refreshToken');
         });

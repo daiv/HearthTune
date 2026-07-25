@@ -63,8 +63,8 @@ export class YoutubeProvider implements ISongsProvider {
   }
 
   private rawToSong = (rawSong: YoutubeRawSong): Song => {
-    console.log('raw', rawSong);
-    console.log('continuing...');
+    // console.log('raw', rawSong);
+    // console.log('continuing...');
     const song: Song = {
       id: rawSong.id || '',
       description: rawSong.description || '',
@@ -72,13 +72,13 @@ export class YoutubeProvider implements ISongsProvider {
       title: rawSong.title || '',
       source: this.SOURCE
     };
-    console.log('id', rawSong.id);
-    console.log('description', rawSong.description);
-    console.log('duration', rawSong.duration);
-    console.log('title', rawSong.title);
-    console.log('source', this.SOURCE);
+    // console.log('id', rawSong.id);
+    // console.log('description', rawSong.description);
+    // console.log('duration', rawSong.duration);
+    // console.log('title', rawSong.title);
+    // console.log('source', this.SOURCE);
 
-    console.log('song created');
+    // console.log('song created');
 
     return song;
   }

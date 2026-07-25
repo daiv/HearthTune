@@ -1,7 +1,7 @@
 import { Song } from "@/common/types";
 import { SERVER_URL } from "@env";
 import { Track } from "react-native-track-player";
-
+import { DeviceInfo } from 'react-native-device-info';
 export const songToTrack = (song: Song): Track => {
   const songWithInstance = song.instanceId ? song : addInstanceId(song);
   const url =
@@ -50,3 +50,10 @@ export const checkMainPwd = (pwd: string): string => {
 export const checkMatchingPwd = (pass: string) => (pass2: string): string => pass === pass2 ? '' : 'passwords does not match';
 
 export const checkNick = (nick: string): string => nick && nick.length > 3 ? '' : 'nick is too short';
+
+export const getDeviceInfo = (): string => {
+  const brand = DeviceInfo.getBrand();
+  const model = DeviceInfo.getModel()
+  const apiLevel = DeviceInfo.getApiLevelSync();
+  return `${brand} ${model} ${apiLevel}`;
+}

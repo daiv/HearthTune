@@ -7,6 +7,7 @@ export class ServerError extends Error {
     Object.setPrototypeOf(this, new.target.prototype);
     this.statusCode = statusCode;
     Error.captureStackTrace(this, this.constructor);
+    console.warn('error is going to be', statusCode);
     console.error(message);
   }
 }

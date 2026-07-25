@@ -1,4 +1,4 @@
-import { Song } from "@/common/types"
+import { AuthPayload, Song } from "@/common/types"
 import { Dispatch } from "react";
 import { TextInput } from "react-native";
 
@@ -26,9 +26,8 @@ export type PlayListControlButton = {
   onPress: () => Promise<void> | void;
 }
 export type AuthContextData = {
-  userId: string;
   login: Function;
-  createAccount: Function;
+  tokens: AuthPayload | undefined;
 }
 export type FieldType = 'email' | 'password' | 'text';
 
@@ -53,4 +52,9 @@ export type ValidatedFields<T> = {
   ref: React.RefObject<TextInput | null>;
   type: FieldType;
   id: string;
+}
+export type LoginVariables = {
+  email: string;
+  password: string;
+  deviceInfo?: string;
 }

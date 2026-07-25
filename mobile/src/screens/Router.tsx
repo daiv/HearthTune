@@ -1,13 +1,13 @@
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Navigation } from '@/navigation/Navigation';
-import { AuthGateway } from "./AuthGateway";
+import { Login } from "./Login";
 
 export function Router() {
-  const { userId } = useAuthContext();
+  const { tokens } = useAuthContext();
   return <>
     {
-      userId ? <Navigation />
-        : <AuthGateway />
+      tokens ? <Navigation />
+        : <Login />
     }
   </>
 

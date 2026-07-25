@@ -4,6 +4,11 @@ export enum DownloadStatus {
   Ready = "Ready",
   Error = "Error",
 }
+export type AuthPayload = {
+  accessToken: string;
+  refreshToken: string;
+}
+
 export type Song = {
   id: string;
   title: string;

@@ -80,10 +80,7 @@ export type MailOptions = {
   subject: string;
   html: string;
 };
-export type AuthPayload = {
-  accessToken: string;
-  refreshToken: string;
-}
+
 
 export type AccessPayload = {
   userId: string;

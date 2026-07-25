@@ -1,11 +1,12 @@
 import { IAuthService } from "@/interfaces/IAuthService";
-import { AccessPayload, AuthPayload, Role, Session } from "@/types/types";
+import { AccessPayload, Role, Session } from "@/types/types";
 import { UserRepository } from "@/repositories";
 import { AccountNotActiveException, InvalidCredentialsException, InvalidTokenException, MissingUserRoleException, ServerError, TrialExpiredException, } from "@/errors/ServerError";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { isTrialExpired } from "@/helpers";
 import { SessionService } from "./SessionService";
+import { AuthPayload } from "@/common/types";
 
 export class AuthService implements IAuthService {
 
@@ -64,6 +65,7 @@ export class AuthService implements IAuthService {
   }
 
   async refreshTokens(jti: string): Promise<AuthPayload> {
+    console.warn('jti sent by client', jti);
     const currentSession = await this.sessionService.getSessionByJti(jti);
     if (!currentSession) throw new InvalidTokenException();
 

@@ -16,7 +16,7 @@ export const handleGraphQlError = (error: unknown): never => {
 
   throw new GraphQLError("Internal Server Error", {
     extensions: {
-      code: 'Internal Server Error',
+      code: 'INTERNAL_SERVER_ERROR',
       http: { status: 500 }
     }
   });
