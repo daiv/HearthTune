@@ -5,8 +5,8 @@ module.exports = {
     '^.+\\.tsx?$': 'ts-jest',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|react-native-device-info|react-native-track-player)/)',
-  ],
+  'node_modules/(?!(react-native|@react-native|react-native-device-info|react-native-track-player|react-native-keychain)/)',
+],
   moduleNameMapper: {
     '^@env$': '<rootDir>/__mocks__/@env.js',
     '^@/common/(.*)$': '<rootDir>/../common/$1',

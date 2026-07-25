@@ -1,7 +1,7 @@
 import { describe, expect, it, } from '@jest/globals';
 import { loginService, refreshService } from './services/authService';
 import { searchSongsFromServer } from './services/musicService';
-import { getAuthTokens, setAuthToken, setTokenRefreshHandler } from './graphql/client';
+import { gqlManager } from './graphql/GraphQLClientManager';
 
 describe('tests', () => {
 
@@ -16,11 +16,11 @@ describe('tests', () => {
         const tokens = await loginService(email, password);
         console.log('tokens from test are', tokens);
         const newTestTokens = await refreshService(tokens.refreshToken);
-        setAuthToken(newTestTokens);
+        gqlManager.setAuthToken(newTestTokens);
         console.log('tokens refreshed by tests', newTestTokens);
-        setTokenRefreshHandler(refreshService);
+        gqlManager.setTokenRefreshHandler(refreshService);
 
-        const clientTokens = getAuthTokens();
+        const clientTokens = gqlManager.getAuthTokens();
         expect(clientTokens).not.toBeNull();
         console.log('clientTokens are', clientTokens);
         const realSearch = await searchSongsFromServer('fito');

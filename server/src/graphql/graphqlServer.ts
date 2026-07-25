@@ -37,6 +37,7 @@ export async function initGraphqlMiddleware(
       const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
       const metadata = {
         deviceInfo: (req.headers['x-device-info'] as string || 'Unknown'),
+        deviceId: (req.headers['x-device-id'] as string),
         appVersion: (req.headers['x-app-version'] as string || '0.0.0'),
       };
       let user: User | undefined;
