@@ -18,6 +18,7 @@ export const GET_RELATED_SONGS = gql`
         id
         title
         duration
+        local
         source
         url
       }

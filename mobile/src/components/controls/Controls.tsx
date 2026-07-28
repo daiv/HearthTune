@@ -18,10 +18,10 @@ export function Controls() {
       </View>
       <SongProgressBar />
       <View style={[styles.controlPanel]}>
-        <SkipButton to='prev' />
+        <SkipButton to='Prev' />
         <PlayButton />
         <RepeatButton />
-        <SkipButton to='next' />
+        <SkipButton to='Next' />
       </View >
     </View>
   )

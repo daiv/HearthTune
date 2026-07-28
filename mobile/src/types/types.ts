@@ -13,7 +13,11 @@ export type PlayListContextData = {
   resetQueue: () => void;
   pauseAutoQueue: (enabled: boolean) => void;
   shuffleQueue: () => Promise<void>;
+  isCurrentTrackLocal: () => boolean;
+  skipSong: (to: 'Prev' | 'Next') => Promise<void>;
 }
+export type SkipSongFunctionArgs = 'Next' | 'Prev';
+
 export type PlayListControlProps = {
   enqueueRelatedSong: (isRetry?: boolean) => Promise<void>;
   resetQueue: () => void;
@@ -27,7 +31,9 @@ export type PlayListControlButton = {
 }
 export type AuthContextData = {
   login: Function;
-  tokens: AuthPayload | undefined;
+  isAuthenticated: boolean;
+  isInitializing: boolean;
+  tokens: AuthPayload | null;
 }
 export type FieldType = 'email' | 'password' | 'text';
 

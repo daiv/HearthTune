@@ -42,6 +42,7 @@ export class SongController {
       }
     }
   };
+  
   getArtifact = async (req: Request, res: Response) => {
     const { token } = req.params;
     console.log('david');

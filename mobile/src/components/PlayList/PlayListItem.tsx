@@ -9,6 +9,18 @@ export function PlayListItem({ song, index, isPlaying }: { song: Song, index: nu
 
   const { dequeue, skipToByInstanceId } = usePlayListContext();
   const formattedTime = formatTime(song.duration);
+  const color =
+    song.local === undefined
+      ?
+      'yellow'
+      :
+      song.local === true
+        ?
+        'green'
+        :
+        'red';
+
+
   return <View style={{ borderWidth: 1, borderColor: 'black' }}>
     <TouchableOpacity
       onPress={() => {
@@ -18,7 +30,7 @@ export function PlayListItem({ song, index, isPlaying }: { song: Song, index: nu
       <Text>index: {index}</Text>
       <Text>title: {song.title}</Text>
       <Text>duration: {formattedTime}</Text>
-      <Text>source: {song.source}</Text>
+      <Text style={{ color }}>source: {song.source}</Text>
     </TouchableOpacity>
 
     <TouchableOpacity
