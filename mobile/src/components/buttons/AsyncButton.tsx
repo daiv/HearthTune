@@ -4,7 +4,7 @@ import { ActivityIndicator, StyleProp, TouchableOpacity, View, ViewStyle } from 
 export function AsyncButton
   ({ onPress: action, children, style }:
     {
-      onPress: () => void | Promise<void>,
+      onPress: () => any,
       children: React.ReactNode,
       style?: StyleProp<ViewStyle>
     }) {

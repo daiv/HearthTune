@@ -13,7 +13,7 @@ describe('tests', () => {
       try {
         const [email, password] = ['', ''];
 
-        const tokens = await loginService(email, password);
+        const tokens = await loginService(email, password, 'd1');
         console.log('tokens from test are', tokens);
         const newTestTokens = await refreshService(tokens.refreshToken);
         gqlManager.setAuthToken(newTestTokens);

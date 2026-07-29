@@ -7,6 +7,7 @@ export interface ISessionRepository {
   findByJti: (jti: string) => Promise<Session | null>;
   create: (session: Session) => Promise<Session | null>;
   removeByUserId: (userId: string) => Promise<DeleteResult>;
+  removeByDeviceId: (deviceId: string) => Promise<DeleteResult>;
   removeByJti: (token: string) => Promise<DeleteResult>;
   removeOldest: (userId: string) => Promise<DeleteResult>;
   removeManyOldest: (userId: string, count: number) => Promise<DeleteResult | null>;

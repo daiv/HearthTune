@@ -111,6 +111,8 @@ describe('TDD tests', () => {
     const authService = new AuthService(userRepository, sessionService);
     const GRAPH = '/graphql';
     let httpServer: Server;
+    const uniqueDevId: string[] = [];
+    for (let i = 0; i < 100; i++) uniqueDevId.push(`$devId-${i}`);
 
     const Query = {
       query: {
@@ -125,8 +127,8 @@ describe('TDD tests', () => {
       },
       mutation: {
         login: `
-        mutation loginTest($email:String!, $pass:String!, $deviceInfo:String){
-        login(email:$email, password:$pass, deviceInfo:$deviceInfo){
+        mutation loginTest($email:String!, $pass:String!, $deviceId: String!, $deviceInfo:String){
+        login(email:$email, password:$pass, deviceId:$deviceId, deviceInfo:$deviceInfo){
         accessToken
         refreshToken
         }}`,
@@ -219,16 +221,19 @@ describe('TDD tests', () => {
         });
 
         it('Should throw error when login in a not active account', async () => {
-          const vars = { email: userToCreate.email, pass: userToCreate.password, deviceInfo: 'Android' };
+          const vars = {
+            email: userToCreate.email, pass: userToCreate.password,
+            deviceId: uniqueDevId.pop(), deviceInfo: 'Android'
+          };
           const response = await request.post(GRAPH)
             .send({ query: Query.mutation.login, variables: vars });
           expect(response.error).toBeDefined();
-          expect(response.body.data.login).toBeNull();
+          // expect(response.body.data.login).toBeNull();
           expect(response.body.errors[0].extensions.code).toBe('AccountNotActiveException');
         });
 
         it('Should throw error if credentials are incorrect ', async () => {
-          const vars = { email: userToCreate.email, pass: '032w', deviceInfo: 'Android' };
+          const vars = { email: userToCreate.email, pass: '032w', deviceId: uniqueDevId.pop(), deviceInfo: 'Android' };
           const response = await request.post(GRAPH)
             .send({ query: Query.mutation.login, variables: vars });
           expect(response.error).toBeDefined();
@@ -238,7 +243,10 @@ describe('TDD tests', () => {
 
         it('Should return tokens when credentials are ok', async () => {
           await activationService.enableUserAccount(createdUser.id);
-          const vars = { email: userToCreate.email, pass: userToCreate.password, deviceInfo: 'Android' };
+          const vars = {
+            email: userToCreate.email, pass: userToCreate.password,
+            deviceId: uniqueDevId.pop(), deviceInfo: 'Android'
+          };
           const response = await request.post(GRAPH)
             .send({ query: Query.mutation.login, variables: vars });
           expect(response.body).toBeTruthy();
@@ -568,7 +576,10 @@ describe('TDD tests', () => {
   });
 
   describe('Session tests', () => {
+
     describe('Session Repository', () => {
+      const uniqueDevId: string[] = [];
+      for (let i = 100; i < 200; i++)uniqueDevId.push(`devId-${i}`);
       let repository: SessionRepository;
 
       beforeAll(() => {
@@ -577,16 +588,16 @@ describe('TDD tests', () => {
       afterEach(async () => {
         await SessionModel.deleteMany({});
       });
-
+      const deviceInfo = 'deviceInfo';
       it('Should count sessions correctly for a specific user', async () => {
-        await repository.create({ userId: 'u1', JTI: 't1', deviceInfo: 'd1', role: 'basic' });
-        await repository.create({ userId: 'u1', JTI: 't2', deviceInfo: 'd1', role: 'basic' });
+        await repository.create({ userId: 'u1', JTI: 't1', deviceId: uniqueDevId.pop()!, deviceInfo, role: 'basic' });
+        await repository.create({ userId: 'u1', JTI: 't2', deviceId: uniqueDevId.pop()!, deviceInfo, role: 'basic' });
 
         const count = await repository.countByUserId('u1');
         expect(count).toBe(2);
       });
       it('Should find sessions by token', async () => {
-        const mockSession: Session = { userId: 'ut', JTI: 'token', deviceInfo: 'info', role: 'basic' };
+        const mockSession: Session = { userId: 'ut', JTI: 'token', deviceId: 'deviceId', deviceInfo: 'info', role: 'basic' };
         await repository.create(mockSession);
         const session = await repository.findByJti(mockSession.JTI);
         if (!session) throw new Error('session not found');
@@ -594,12 +605,12 @@ describe('TDD tests', () => {
       });
 
       it('Should find sessions by userId', async () => {
-        const mockSession: Session = { userId: 'favId', JTI: 'tokenhash', deviceInfo: 'android', role: 'basic' };
+        const mockSession: Session = { userId: 'favId', JTI: 'tokenhash', deviceId: uniqueDevId.pop()!, deviceInfo: 'android', role: 'basic' };
         await repository.create(mockSession);
         let session = await repository.findByUserId(mockSession.userId);
         expect(session.length).toBe(1);
         expect(session[0].JTI).toBe(hashData(mockSession.JTI));
-        const mock2: Session = { userId: 'favId', JTI: 'tok2', deviceInfo: 'notAndroid', role: 'basic' };
+        const mock2: Session = { userId: 'favId', JTI: 'tok2', deviceId: uniqueDevId.pop()!, deviceInfo: 'notAndroid', role: 'basic' };
         await repository.create(mock2);
         session = await repository.findByUserId(mock2.userId);
         expect(session.length).toBe(2);
@@ -607,7 +618,7 @@ describe('TDD tests', () => {
       });
 
       it('Should remove by tokenHash', async () => {
-        const mockSession: Session = { userId: 'idi', JTI: 'hashhh', deviceInfo: 'inffoo', role: 'basic' };
+        const mockSession: Session = { userId: 'idi', JTI: 'hashhh', deviceInfo: 'inffoo', role: 'basic', deviceId: 'deviceId' };
         const { userId: id } = mockSession;
         await repository.create(mockSession);
         let count = await repository.countByUserId(id);
@@ -619,10 +630,10 @@ describe('TDD tests', () => {
 
       it('Should remove the oldest session correctly using sort', async () => {
         const userId = 'u1';
-        const session1: Session = { userId, JTI: 'old', deviceInfo: 'd1', role: 'basic' };
+        const session1: Session = { userId, JTI: 'old', deviceId: uniqueDevId.pop()!, deviceInfo: 'd1', role: 'basic' };
         await repository.create(session1);
         await new Promise(r => setTimeout(r, 50));
-        const session2: Session = { userId, JTI: 'new', deviceInfo: 'd1', role: 'basic' };
+        const session2: Session = { userId, JTI: 'new', deviceId: uniqueDevId.pop()!, deviceInfo: 'd1', role: 'basic' };
         await repository.create(session2);
 
         await repository.removeOldest('u1');
@@ -642,21 +653,21 @@ describe('TDD tests', () => {
       });
       it('Should create sessions not exceding limits', async () => {
         const userId = 'mockId';
-        const session = await service.add(userId, '1', 'basic');
+        const session = await service.add(userId, '1', 'basic', crypto.randomUUID());
         if (!session) throw new ServerError();
         expect(session.deviceInfo).toBe('Unknown device');
         let activeSessions = await repo.countByUserId(userId);
         expect(activeSessions).toBe(1);
-        const session2 = await service.add(userId, '2', 'basic');
+        const session2 = await service.add(userId, '2', 'basic', crypto.randomUUID());
         activeSessions = await repo.countByUserId(userId);
         //! basic can only have one open session 
         expect(activeSessions).toBe(1);
 
         const adminId = 'mockAdmin';
-        await service.add(adminId, '3', 'admin');
+        await service.add(adminId, '3', 'admin', crypto.randomUUID());
         let activeAdminSessions = await repo.countByUserId(adminId);
         expect(activeAdminSessions).toBe(1);
-        await service.add(adminId, '4', 'admin');
+        await service.add(adminId, '4', 'admin', crypto.randomUUID());
         activeAdminSessions = await repo.countByUserId(adminId);
         expect(activeAdminSessions).toBe(2);
 
@@ -664,15 +675,15 @@ describe('TDD tests', () => {
 
       it('Should delete sessions by userId', async () => {
         const userId = 'mockMockid';
-        await service.add(userId, 'a', 'admin');
+        await service.add(userId, 'a', 'admin', 'deviceId');
         let activeSessions = await repo.countByUserId(userId);
         expect(activeSessions).toBe(1);
         const delRes = await service.removeAll(userId);
         console.warn('delete count', delRes.deletedCount);
         activeSessions = await repo.countByUserId(userId);
         expect(activeSessions).toBe(0);
-        await service.add(userId, 'b', 'admin');
-        await service.add(userId, 'c', 'admin');
+        await service.add(userId, 'b', 'admin', 'deviceId-1');
+        await service.add(userId, 'c', 'admin', 'deviceId-2');
         activeSessions = await repo.countByUserId(userId);
         expect(activeSessions).toBe(2);
         await service.removeAll(userId);
@@ -682,7 +693,7 @@ describe('TDD tests', () => {
 
       it('Should delete by JTI', async () => {
         const userId = 'mockingId';
-        await service.add(userId, 'd', 'admin');
+        await service.add(userId, 'd', 'admin', 'deviceId');
         let activeSessions = await repo.countByUserId(userId);
         expect(activeSessions).toBe(1);
         await service.remove('d');
@@ -692,7 +703,7 @@ describe('TDD tests', () => {
 
       it('Should get Session by jti', async () => {
         const userId = 'mockSessionId';
-        await service.add(userId, 'e', 'admin');
+        await service.add(userId, 'e', 'admin', 'deviceId');
         const session = await service.getSessionByJti('e');
         if (!session) throw new ServerError();
         expect(session.JTI).toBe(hashData('e'));

@@ -56,5 +56,6 @@ export const getDeviceInfo = (): string => {
   const brand = DeviceInfo.getBrand();
   const model = DeviceInfo.getModel()
   const apiLevel = DeviceInfo.getApiLevelSync();
-  return `${brand} ${model} ${apiLevel}`;
+  const appVersion = DeviceInfo.getVersion();
+  return `${brand} ${model} ${apiLevel} ${appVersion}`;
 }

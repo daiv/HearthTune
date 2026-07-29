@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { Input, AsyncButton } from "@/components";
 import { useValidation } from "@/hooks";
 import { checkEmail, checkMainPwd } from "@/helpers/helpers";
@@ -35,30 +35,92 @@ export function Login() {
     }
   }
 
-  return <View id="container" style={{ backgroundColor: 'lightgray', flex: 1 }}>
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.mainContainer}
+    >
+      <View style={styles.card}>
+        <Text style={styles.title}>Login</Text>
 
-    <Text>Login</Text>
+        <View style={styles.inputsContainer}>
+          {
+            fields.map((field, index) => {
+              return (
+                <Input
+                  ref={field.ref}
+                  onChangeText={field.setValue}
+                  errorMessage={field.error}
+                  type={field.type}
+                  placeHolder={field.type}
+                  nextRef={index < fields.length - 1 ? fields[index + 1].ref : undefined}
+                  key={field.id}
+                />
+              )
+            })
+          }
+        </View>
 
-    {
-      fields.map((field, index) => {
-        return <Input
-          ref={field.ref}
-          onChangeText={field.setValue}
-          errorMessage={field.error}
-          type={field.type}
-          placeHolder={field.id}
-          nextRef={index < fields.length - 1 ? fields[index + 1].ref : undefined}
-          key={field.id}
-        />
-      })
-    }
-
-    <View id="button-container">
-      <AsyncButton
-        onPress={handleSubmit}>
-        <Text>Login</Text>
-      </AsyncButton>
-
-    </View>
-  </View>
+        <View style={styles.buttonContainer}>
+          <AsyncButton
+            onPress={handleSubmit}
+            style={styles.loginButton}
+          >
+            <Text style={styles.buttonText}>Entrar</Text>
+          </AsyncButton>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
+  );
 }
+const shadows = { ios: 0.1, android: 0.2 };
+
+
+const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#f5f6fa', // Un gris muy suave y moderno
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 400, // Evita que se estire demasiado en tablets
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 24,
+    // Sombras sutiles y profesionales (iOS y Android)
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: shadows[Platform.OS as keyof typeof shadows],
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#2f3640',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  inputsContainer: {
+    gap: 16, // Separa los inputs de forma uniforme (requiere versiones recientes de RN, si falla usa marginBottom en los inputs)
+    marginBottom: 24,
+  },
+  buttonContainer: {
+    width: '100%',
+  },
+  loginButton: {
+    backgroundColor: '#007aff', // Color corporativo típico (Azul iOS)
+    borderRadius: 8,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

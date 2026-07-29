@@ -4,6 +4,7 @@ import { getRelatedSongsFromServer } from "@/services/musicService";
 import TrackPlayer, { Event, useTrackPlayerEvents } from "react-native-track-player";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PlayListContextData } from "@/types/types";
+
 export const usePlayerManager = () => {
   const [queue, setQueue] = useState<Song[]>([]);
 

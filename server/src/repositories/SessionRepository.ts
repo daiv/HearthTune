@@ -32,6 +32,9 @@ export class SessionRepository implements ISessionRepository {
   async removeByJti(jti: string): Promise<DeleteResult> {
     return await SessionModel.deleteOne({ JTI: hashData(jti) });
   }
+  async removeByDeviceId(deviceId: string): Promise<DeleteResult> {
+    return await SessionModel.deleteOne({ deviceId });
+  }
 
   async removeOldest(userId: string,): Promise<DeleteResult> {
     return await SessionModel.deleteOne({ userId }).sort({ createdAt: 1 });

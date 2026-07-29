@@ -18,7 +18,7 @@ export class AuthService implements IAuthService {
     return await bcrypt.compare(plainPassword, password)
   }
 
-  async login(email: string, password: string, deviceInfo: string = 'Unknown device'): Promise<AuthPayload> {
+  async login(email: string, password: string, deviceId: string, deviceInfo: string = 'Unknown device'): Promise<AuthPayload> {
 
     const user = await this.userRepository.getUserByEmail(email);
     if (!user
@@ -30,15 +30,18 @@ export class AuthService implements IAuthService {
 
     if (user.status !== "active") throw new AccountNotActiveException();
 
-    const session = await this.createSession(user.id, user.role, deviceInfo);
+    const session = await this.createSession(user.id, user.role, deviceId, deviceInfo);
     if (!session) throw new ServerError();
 
     return this.createTokenPair(session.userId, session.JTI, user.role);
   }
-
-  async createSession(id: string, role: Role, deviceInfo?: string): Promise<Session> {
+  async logout(jti: string): Promise<boolean> {
+    const result = await this.sessionService.remove(jti);
+    return result.deletedCount > 0;
+  }
+  async createSession(id: string, role: Role, deviceId: string, deviceInfo?: string): Promise<Session> {
     const jti = crypto.randomUUID();
-    const session = await this.sessionService.add(id, jti, role, deviceInfo);
+    const session = await this.sessionService.add(id, jti, role, deviceId, deviceInfo);
     if (!session) throw new ServerError();
     return session;
   }
@@ -80,8 +83,8 @@ export class AuthService implements IAuthService {
     if (removeResult.deletedCount === 0) throw new InvalidTokenException();
 
 
-    const { userId, deviceInfo } = currentSession;
-    const newSession = await this.createSession(userId, user.role, deviceInfo);
+    const { userId, deviceInfo, deviceId } = currentSession;
+    const newSession = await this.createSession(userId, user.role, deviceId, deviceInfo);
     if (!newSession) throw new ServerError();
 
     return this.createTokenPair(newSession.userId, newSession.JTI, newSession.role);

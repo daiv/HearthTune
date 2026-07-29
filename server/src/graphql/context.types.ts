@@ -44,3 +44,8 @@ export interface RefreshContext extends Omit<BaseContext, 'services'> {
     auth: Pick<IAuthService, 'refreshTokens'>;
   }
 }
+export interface LogoutContext extends Omit<BaseContext, 'services'> {
+  services: {
+    auth: Pick<IAuthService, 'logout'>;
+  }
+}

@@ -15,6 +15,11 @@ const sessionSchema = new mongoose.Schema<Session>({
     required: true,
     unique: true,
   },
+  deviceId: {
+    type: String,
+    unique: true,
+  },
+
   deviceInfo: {
     type: String,
     required: true,

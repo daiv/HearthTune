@@ -4,6 +4,6 @@ export const PERMISSION: RolePermission = {
   test: 0,
   basic: 1,
   user: 2,
-  admin: 3,
-  superAdmin: 4,
+  admin: 5,
+  superAdmin: 10,
 }

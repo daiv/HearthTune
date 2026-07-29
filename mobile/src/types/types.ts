@@ -31,6 +31,7 @@ export type PlayListControlButton = {
 }
 export type AuthContextData = {
   login: Function;
+  logout: () => Promise<boolean>;
   isAuthenticated: boolean;
   isInitializing: boolean;
   tokens: AuthPayload | null;

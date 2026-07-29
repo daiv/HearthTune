@@ -1,7 +1,7 @@
 import { AuthPayload } from "@/common/types";
 import { AuthContext } from "@/contexts/AuthContext";
 import { gqlManager } from "@/graphql/GraphQLClientManager";
-import { loginService, refreshService } from "@/services/authService";
+import { loginService, logoutService, refreshService } from "@/services/authService";
 import { secureStorage } from "@/services/SecureStorage";
 import { AuthContextData } from "@/types/types";
 import React, { useCallback, useEffect, useState } from "react";
@@ -15,7 +15,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAuthenticated = !!tokens;
   useEffect(function loadDeviceId() {
-
     const initDevice = async () => {
       try {
         const storedId = await secureStorage.getDeviceId();
@@ -42,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return !!tokens;
     } catch (error) {
       await secureStorage.deleteRefreshToken();
+
       setTokens(null);
       return false;
     }
@@ -86,17 +86,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const tokens: AuthPayload = await loginService(email, password);
+      if (!deviceId) throw new Error('Missing deviceId');
+      const tokens: AuthPayload = await loginService(email, password, deviceId);
       await handleSaveTokens(tokens);
       return tokens;
     } catch (error) {
       console.error('error', error);
       throw error;
     }
-  }, [handleSaveTokens]);
+  }, [deviceId, handleSaveTokens]);
+  const logout = useCallback(async (): Promise<boolean> => {
+    if (!tokens) return false;
+    const isLogoutSuccessful = await logoutService(tokens?.refreshToken);
+    if (isLogoutSuccessful) {
+      handleSaveTokens(null);
+      return true;
+    }
+    else {
+      console.error('unable to logout, try again later');
+      return false;
+    }
+  }, [tokens, handleSaveTokens, logoutService]);
 
   const contextValue: AuthContextData = {
-    login, tokens, isAuthenticated, isInitializing
+    login, tokens, isAuthenticated, isInitializing, logout
   }
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
 

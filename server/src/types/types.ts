@@ -92,5 +92,6 @@ export type Session = {
   userId: string;
   JTI: string;
   role: Role;
+  deviceId: string,
   deviceInfo?: string;
 }

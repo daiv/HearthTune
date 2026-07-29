@@ -1,4 +1,4 @@
-import { getMaxSessionsAllowed, hashData } from "../helpers";
+import { getMaxSessionsAllowed } from "../helpers";
 import { ISessionService } from "@/interfaces/ISessionService";
 import { SessionRepository } from "../repositories/SessionRepository";
 import { Role, Session } from "@/types/types";
@@ -7,7 +7,8 @@ import { DeleteResult } from "mongoose";
 export class SessionService implements ISessionService {
   constructor(private sessions: SessionRepository) { }
 
-  async add(userId: string, jti: string, role: Role, deviceInfo: string = 'Unknown device'): Promise<Session | null> {
+  async add(userId: string, jti: string, role: Role, deviceId: string, deviceInfo: string = 'Unknown device'): Promise<Session | null> {
+    await this.sessions.removeByDeviceId(deviceId);
     let currentSessions = await this.sessions.countByUserId(userId);
     const maxSessionsAllowed = getMaxSessionsAllowed(role);
     const toDeleteCount = (currentSessions - maxSessionsAllowed) + 1;
@@ -15,6 +16,7 @@ export class SessionService implements ISessionService {
     if (toDeleteCount > 0) await this.sessions.removeManyOldest(userId, toDeleteCount);
     const newSession: Session = {
       deviceInfo,
+      deviceId,
       JTI: jti,
       userId,
       role
