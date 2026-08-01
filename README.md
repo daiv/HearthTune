@@ -1,27 +1,26 @@
 # HearthTune
-## Tech Stack
-* **Server:**<br>
-    <picture>![Node.js](https://img.shields.io/badge/Node.js-339933?logo=node.js&logoColor=white)</picture>
-    <picture>![Express](https://img.shields.io/badge/Express.js-000000?logo=express&logoColor=white)</picture>
-    <picture>![HTTP](https://img.shields.io/badge/HTTP-API-lightgrey)</picture>
-    <picture>![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)</picture>
-    <picture>![Docker](https://img.shields.io/badge/docker-231bd5?style=flat&logo=docker&logoColor=white)</picture>
-    <picture>![Graphql](https://img.shields.io/badge/GraphQl-531bd5?style=flat&logo=graphql&logoColor=white)</picture>
-    <picture>![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)</picture>
 
-* **Mobile:**<br>
-    <picture>![React Native](https://img.shields.io/badge/React_Native-61DAFB?style=flat&logo=react&logoColor=black)</picture>
-    <picture>![Expo](https://img.shields.io/badge/Expo-000020?style=flat&logo=expo&logoColor=white)</picture>
-    <picture>![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)</picture>
-    <picture>![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?style=flat&logo=react-query&logoColor=white)</picture>
-    <picture>![Graphql](https://img.shields.io/badge/GraphQl-531bd5?style=flat&logo=graphql&logoColor=white)</picture>
+Music Streaming & Playlist Management Application
 
-# Music Streaming & Playlist Management Application
 
 ## Overview
 This application is a full-stack music streaming and playlist management solution featuring a React Native mobile client and a Node.js/TypeScript backend server integrated with GraphQL and MongoDB. It provides multi-source audio playback, intelligent queue management, user authentication, and a modern mobile interface.
 
 ---
+
+<div display:flex>
+<p>
+  <img style=width:33%; padding-right: 1%; height: auto src="./githubAssets/login.png"/>
+  <img style=width:33%; padding-right: 1%; height: auto src="./githubAssets/idle.png"/>
+  <img style=width:33%; height: auto src="./githubAssets/searching.png"/>
+</p>
+<p style=display: fle justify-content: centerx>
+  <img style=width:49%; padding-right: 1%; height: auto src="./githubAssets/searchResult.png"/>
+  <img style=width:49%; height: auto src="./githubAssets/playing.png"/>
+</p>
+</div>
+
+
 
 ## Core Features & Architecture
 
@@ -47,3 +46,20 @@ This application is a full-stack music streaming and playlist management solutio
 * **User Lifecycle:** End-to-end user invitation, registration flows, and validation logic.
 * **Role-Based Access Control (RBAC):** Granular authorization policies securing backend operations and user data.
 * **Device Tracking:** Device ID enforcement and secure local storage tracking for enhanced client security.
+
+## Tech Stack
+* **Server:**<br>
+    <picture>![Node.js](https://img.shields.io/badge/Node.js-339933?logo=node.js&logoColor=white)</picture>
+    <picture>![Express](https://img.shields.io/badge/Express.js-000000?logo=express&logoColor=white)</picture>
+    <picture>![HTTP](https://img.shields.io/badge/HTTP-API-lightgrey)</picture>
+    <picture>![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)</picture>
+    <picture>![Docker](https://img.shields.io/badge/docker-231bd5?style=flat&logo=docker&logoColor=white)</picture>
+    <picture>![Graphql](https://img.shields.io/badge/GraphQl-531bd5?style=flat&logo=graphql&logoColor=white)</picture>
+    <picture>![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)</picture>
+
+* **Mobile:**<br>
+    <picture>![React Native](https://img.shields.io/badge/React_Native-61DAFB?style=flat&logo=react&logoColor=black)</picture>
+    <picture>![Expo](https://img.shields.io/badge/Expo-000020?style=flat&logo=expo&logoColor=white)</picture>
+    <picture>![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)</picture>
+    <picture>![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?style=flat&logo=react-query&logoColor=white)<picture>
+    <picture>![Graphql](https://img.shields.io/badge/GraphQl-531bd5?style=flat&logo=graphql&logoColor=white)</picture>
