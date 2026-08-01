@@ -13,7 +13,6 @@ export const protect = <TSource, TContext extends BaseContext, TArgs>(
     try {
       if (!context.user) throw new InvalidTokenException();
       if (!check(context.user.role)) throw new ForbiddenException();
-
       return await fn(parent, args, context, info);
     } catch (error: unknown) {
       handleGraphQlError(error);

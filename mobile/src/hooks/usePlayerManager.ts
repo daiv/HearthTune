@@ -1,9 +1,10 @@
 import { Song } from "@/common/types";
 import { addInstanceId, songToTrack, trackToSong } from "@/helpers/helpers";
 import { getRelatedSongsFromServer } from "@/services/musicService";
-import TrackPlayer, { Event, useTrackPlayerEvents } from "react-native-track-player";
+import TrackPlayer, { Event, Track, useTrackPlayerEvents } from "react-native-track-player";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PlayListContextData } from "@/types/types";
+import { getSignedUrlService } from "@/services/authService";
 
 export const usePlayerManager = () => {
   const [queue, setQueue] = useState<Song[]>([]);
@@ -50,9 +51,37 @@ export const usePlayerManager = () => {
 
     ], async event => {
       const { position, duration } = event;
-      manageAutoQueue(position, duration);
+      await manageAutoQueue(position, duration);
     }
   );
+
+  useTrackPlayerEvents(
+    [Event.PlayerError, Event.PlaybackError],
+
+    async function logErrors(event) {
+      console.error('player error', event);
+      const activeTrack = await TrackPlayer.getActiveTrack();
+      console.log('activeTrack is', activeTrack);
+    }
+  );
+
+  useTrackPlayerEvents(
+    
+    [Event.PlaybackActiveTrackChanged],
+
+    async function updateRefsAndTrigerTracksSignature(event) {
+      const activeIndex = event.index ?? await TrackPlayer.getActiveTrackIndex();
+      songIndexRef.current = activeIndex || 0;
+      isLastSongRef.current = queueRef.current.length - 1 === songIndexRef.current;
+
+      isSongAdditionTrigeredRef.current = isCurrentTrackBeyondMiddlePointRef.current = false;
+
+      console.log('playing id ', queueRef.current[songIndexRef.current]?.id);
+      console.log('songIndex', songIndexRef.current);
+      if (!activeIndex || activeIndex >= queueRef.current.length) return;
+      // if (!isLastSongRef.current) await signTrackAtPosition(activeIndex + 1);
+    });
+
 
   const manageAutoQueue = async (position: number, duration: number) => {
     if (pauseAutoQueueRef.current || !isLastSongRef.current || !position || duration <= 0) return;
@@ -70,32 +99,42 @@ export const usePlayerManager = () => {
     }
   }
 
-  useTrackPlayerEvents([Event.PlaybackActiveTrackChanged], async event => {
-    const activeIndex = await TrackPlayer.getActiveTrackIndex();
-    songIndexRef.current = activeIndex ?? 0;
-    isLastSongRef.current = queueRef.current.length - 1 === songIndexRef.current;
+  const signTrackAtPosition = async (position: number) => {
+    if (position >= queueRef.current.length) return;
 
-    isSongAdditionTrigeredRef.current = isCurrentTrackBeyondMiddlePointRef.current = false;
+    const signedSong: Song = await updateSongWithSignedUrl(queueRef.current[position]);
 
-    console.log('playing id ', queueRef.current[songIndexRef.current]?.id);
-    console.log('songIndex', songIndexRef.current);
-  });
+    const signedTrack: Track = songToTrack(signedSong);
+
+    queueRef.current = queueRef.current.toSpliced(position, 1, signedSong);
+    await TrackPlayer.remove([position]);
+    await TrackPlayer.add(signedTrack, position);
+  }
+
+  const updateSongWithSignedUrl = async (song: Song): Promise<Song> => {
+    const response = await getSignedUrlService(song.id, song.source);
+    console.log('no error, response is', response);
+    console.log('signedURL is', response);
+    const signedSong: Song = { ...song, url: response.signedUrl }
+    return signedSong;
+  }
 
   const enqueue = useCallback(async (song: Song, addedManually: boolean = true) => {
     if (addedManually) relatedCandidatesRef.current = [];
     const songWithInstance = addInstanceId(song);
-
     console.log('added song', songWithInstance);
-
+    const queueLength = queueRef.current.length;
     try {
-      await TrackPlayer.add(songToTrack(songWithInstance));
-      const nextQueue = [...queueRef.current, songWithInstance];
+      const songReadyToAdd = (queueLength < 3) || !addedManually || songIndexRef.current === queueLength ?
+        await updateSongWithSignedUrl(songWithInstance)
+        : songWithInstance;
+      await TrackPlayer.add(songToTrack(songReadyToAdd));
+      const nextQueue = [...queueRef.current, songReadyToAdd];
       queueRef.current = nextQueue;
       setQueue(nextQueue);
     } catch (error) {
       console.error('error enqueuing song', error);
     }
-
   }, []);
 
   const loadPlayList = useCallback(async (songs: Song[]) => {
@@ -109,6 +148,7 @@ export const usePlayerManager = () => {
   const resetQueue = useCallback(async () => {
     await TrackPlayer.reset();
     queueRef.current = [];
+    songIndexRef.current = 0;
     setQueue([]);
   }, []);
 
@@ -154,7 +194,7 @@ export const usePlayerManager = () => {
     }
   }, [enqueue]);
 
-  const skipToByInstanceId = useCallback((instanceId: string) => {
+  const skipToByInstanceId = useCallback(async (instanceId: string) => {
     if (!instanceId) {
       console.log('bad instance Id');
       syncQueue();
@@ -165,6 +205,7 @@ export const usePlayerManager = () => {
 
     if (index !== -1) {
       songIndexRef.current = index;
+      await signTrackAtPosition(index);
       TrackPlayer.skip(index);
     }
     else {
@@ -214,20 +255,23 @@ export const usePlayerManager = () => {
 
     return queueRef.current[songIndexRef.current].local || false;
   };
+
   const skipSong = useCallback(async (to: 'Prev' | 'Next') => {
     const length = queueRef.current.length;
     const currentIndex = songIndexRef.current;
     if (length === 0 ||
-      (to === 'Next' && currentIndex === length - 1) ||
+      (to === 'Next' && currentIndex >= length - 1) ||
       (to === 'Prev' && currentIndex === 0)
     ) return;
     try {
       if (to === 'Next') {
-        songIndexRef.current = currentIndex + 1;
+        if (queueRef.current[currentIndex + 1].url === 'empty') signTrackAtPosition(currentIndex + 1);
         await TrackPlayer.skipToNext();
+        songIndexRef.current = currentIndex + 1;
       } else {
-        songIndexRef.current = currentIndex - 1;
+        if (queueRef.current[currentIndex - 1].url === 'empty') signTrackAtPosition(currentIndex - 1);
         await TrackPlayer.skipToPrevious();
+        songIndexRef.current = currentIndex - 1;
       }
     } catch (error) {
       songIndexRef.current = currentIndex;

@@ -24,7 +24,7 @@ class GraphQLClientManager {
 
     if (deviceId) this.client.setHeader('x-device-id', deviceId);
   }
-  
+
   public setTokenRefreshHandler(handler: RefreshHandler) {
     this.refreshTokenHandler = handler;
   }

@@ -24,3 +24,10 @@ export const GET_RELATED_SONGS = gql`
       }
     }
 `;
+export const GET_SIGNED_URL = gql`
+query getSignedUrl($songId:String!, $provider:String!){
+  getSignedUrl(songId:$songId, provider:$provider){
+    signedUrl
+  }
+}
+`

@@ -21,6 +21,10 @@ export type Song = {
   addedManually?: boolean;
   local?: boolean;
   requestedBy?: string;
-  source?: 'Soundcloud' | 'Youtube';
+  source: 'Soundcloud' | 'Youtube' | 'Unknown';
   url?: string;
 };
+
+export type SignedUrl = {
+  signedUrl: string;
+}

@@ -79,18 +79,17 @@ const shadows = { ios: 0.1, android: 0.2 };
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#f5f6fa', // Un gris muy suave y moderno
+    backgroundColor: '#f5f6fa', 
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   card: {
     width: '100%',
-    maxWidth: 400, // Evita que se estire demasiado en tablets
+    maxWidth: 400, 
     backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 24,
-    // Sombras sutiles y profesionales (iOS y Android)
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: shadows[Platform.OS as keyof typeof shadows],
@@ -105,14 +104,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   inputsContainer: {
-    gap: 16, // Separa los inputs de forma uniforme (requiere versiones recientes de RN, si falla usa marginBottom en los inputs)
+    gap: 16,
     marginBottom: 24,
   },
   buttonContainer: {
     width: '100%',
   },
   loginButton: {
-    backgroundColor: '#007aff', // Color corporativo típico (Azul iOS)
+    backgroundColor: '#007aff', 
     borderRadius: 8,
     height: 48,
     justifyContent: 'center',

@@ -49,3 +49,8 @@ export interface LogoutContext extends Omit<BaseContext, 'services'> {
     auth: Pick<IAuthService, 'logout'>;
   }
 }
+export interface SignUrlContext extends Omit<BaseContext, 'services'> {
+  services: {
+    auth: Pick<IAuthService, 'getSignedUrl'>;
+  }
+}

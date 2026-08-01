@@ -7,3 +7,4 @@ export const PERMISSION: RolePermission = {
   admin: 5,
   superAdmin: 10,
 }
+export const PORT = 4000;

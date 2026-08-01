@@ -18,7 +18,7 @@ const server = new ApolloServer<resolverContext>({
   resolvers,
   formatError: (formattedError, error) => {
 
-    if (process.env.NODE_ENV === 'production')
+    // if (process.env.NODE_ENV === 'production')
       delete formattedError.extensions?.stacktrace;
     return formattedError;
   }
@@ -41,13 +41,10 @@ export async function initGraphqlMiddleware(
         appVersion: (req.headers['x-app-version'] as string || '0.0.0'),
       };
       let user: User | undefined;
-      console.log('authheader', authHeader);
       const operationName = req.body.operationName;
       const isOperationLoginOrRefresh =
         operationName === 'Login' ||
         operationName === 'Refresh';
-
-      console.log('operationName=', operationName);
 
       if (token && !isOperationLoginOrRefresh) {
         try {

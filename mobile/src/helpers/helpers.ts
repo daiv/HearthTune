@@ -5,13 +5,10 @@ import { DeviceInfo } from 'react-native-device-info';
 
 export const songToTrack = (song: Song): Track => {
   const songWithInstance = song.instanceId ? song : addInstanceId(song);
-  const url =
-    `${SERVER_URL + (song.source === 'Youtube' ? song.id : song.url)}/${song.source}`;
-
   const track: Track = {
     id: song.id,
     title: song.title,
-    url,
+    url: song.url || 'empty',
     mediaId: songWithInstance.instanceId
   }
   return track;
@@ -24,6 +21,8 @@ export const trackToSong = (track: Track): Song => {
     duration: track.duration || 0,
     description: track.description ?? '',
     instanceId: track.mediaId,
+    source: 'Youtube',
+    url: track.url
   }
   const songWithInstanceId = song.instanceId ? song : addInstanceId(song);
   return songWithInstanceId;

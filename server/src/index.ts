@@ -11,9 +11,9 @@ import { ISongsProvider } from '@/interfaces';
 import path from 'node:path';
 import { SongRepository, UserRepository, SessionRepository } from '@/repositories';
 import { AuthController } from '@/controllers/AuthController';
+import { PORT } from './constants';
 
 const app = express();
-const PORT = 4000;
 
 (async function startServer() {
   try {
@@ -53,7 +53,6 @@ const PORT = 4000;
     app.use(errorHandler);
 
     app.listen(PORT, () => { console.log('server is up and listening to port ', PORT) });
-
   } catch (error: unknown) {
     if (error instanceof Error)
       console.error('Unable to start server', error.message);

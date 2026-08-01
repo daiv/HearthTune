@@ -12,7 +12,7 @@ export function PlayListItem({ song, index, isPlaying }: { song: Song, index: nu
   const color =
     song.local === undefined
       ?
-      'yellow'
+      'orange'
       :
       song.local === true
         ?

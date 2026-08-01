@@ -4,9 +4,9 @@ import { UserRepository } from "@/repositories";
 import { AccountNotActiveException, InvalidCredentialsException, InvalidTokenException, MissingUserRoleException, ServerError, TrialExpiredException, } from "@/errors/ServerError";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { isTrialExpired } from "@/helpers";
+import { expiresIn, hashData, isTrialExpired } from "@/helpers";
 import { SessionService } from "./SessionService";
-import { AuthPayload } from "@/common/types";
+import { AuthPayload, SignedUrl } from "@/common/types";
 
 export class AuthService implements IAuthService {
 
@@ -88,5 +88,15 @@ export class AuthService implements IAuthService {
     if (!newSession) throw new ServerError();
 
     return this.createTokenPair(newSession.userId, newSession.JTI, newSession.role);
+  }
+  async getSignedUrl(songId: string, provider: string, userId: string): Promise<SignedUrl> {
+    const expiresAt = expiresIn(30, "minutes").toISOString();
+    const dataToSign = `${songId}:${provider}:${userId}:${expiresAt}`;
+    const signature = hashData(dataToSign);
+    const baseUrl = process.env.SERVER_URL;
+    return {
+      signedUrl: `${baseUrl}/song/play?songId=${songId}&provider=${provider
+        }&userId=${userId}&expiresAt=${expiresAt}&sign=${signature}`
+    };
   }
 }

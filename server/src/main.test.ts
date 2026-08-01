@@ -181,7 +181,7 @@ describe('TDD tests', () => {
     }`;
 
       const spy = jest.spyOn(songService, 'search').mockResolvedValue([
-        { id: '9Yp3lc3PsjA', title: 'Test Song', description: 'desc', duration: 100 }
+        { id: '9Yp3lc3PsjA', title: 'Test Song', description: 'desc', duration: 100, source: 'Youtube' }
       ]);
       const vars = { searchString: '9Yp3lc3PsjA', max: 1 }
       const response = await request.post(GRAPH)
@@ -316,7 +316,8 @@ describe('TDD tests', () => {
       duration: 10,
       played: 0,
       downloadStatus: DownloadStatus.DownloadPending,
-      lastPlayed: now
+      lastPlayed: now,
+      source: 'Unknown'
     };
     const repo = new SongRepository();
     beforeAll(async () => {

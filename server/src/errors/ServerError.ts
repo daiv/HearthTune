@@ -68,3 +68,8 @@ export class TrialExpiredException extends ServerError {
     super(message, 401);
   }
 }
+export class MissingFieldsException extends ServerError {
+  constructor(message: string = 'Missing fields') {
+    super(message, 400);
+  }
+}

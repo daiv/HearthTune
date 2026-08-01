@@ -21,10 +21,19 @@ export function checkEnvFile() {
   else console.log('env file is ok');
 }
 
-export function hashData(text: string): string {
+// export function hashData(text: string): string {
+//   return crypto
+//     .createHmac("sha256", process.env.HASHING_KEY!)
+//     .update(text)
+//     .digest("hex");
+// }
+export function hashData<T>(data: T, customHashingKey?: string): string {
+  const preparedData = typeof data === 'string' ? data : JSON.stringify(data);
+  const key = customHashingKey || process.env.HASHING_KEY;
+  if (!key) throw new Error('Missing hashing key');
   return crypto
-    .createHmac("sha256", process.env.HASHING_KEY!)
-    .update(text)
+    .createHmac("sha256", key)
+    .update(preparedData)
     .digest("hex");
 }
 
@@ -123,7 +132,11 @@ export async function sendActivationEmail(to: string, token: string, sendItForRe
   }
 
 }
-export function expiresIn(count: number, timeUnit: TimeUnit, startingDate: Date = new Date()): Date {
+export function expiresIn(
+  count: number, 
+  timeUnit: TimeUnit, 
+  startingDate: Date = new Date())
+  : Date {
   const minutes = 60 * 1000;
   const hours = minutes * 60;
   const days = hours * 24;

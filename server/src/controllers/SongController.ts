@@ -6,13 +6,11 @@ export class SongController {
   constructor(private service: ISongService) { }
 
   playSong = async (req: Request, res: Response) => {
-    const { user } = { user: 'developer' };//req.header 
-    const { id, provider = 'Youtube' } = req.params;
-    console.log('client asked for id ' + id);
+    const { songId: id, provider = 'Youtube' } = req.query;
+    if (typeof id !== 'string' || typeof provider !== 'string') throw new Error();
 
     try {
       const audioSource = await this.service.getAudioSource(id, provider);
-      console.log('type is', audioSource.type);
       if (audioSource.type === 'local') return res.sendFile(audioSource.localPath);
       else if (audioSource.type === 'external') {
         res.writeHead(200, {
@@ -42,7 +40,7 @@ export class SongController {
       }
     }
   };
-  
+
   getArtifact = async (req: Request, res: Response) => {
     const { token } = req.params;
     console.log('david');

@@ -1,4 +1,4 @@
-import { AuthPayload } from "@/common/types";
+import { AuthPayload, SignedUrl } from "@/common/types";
 import { Role, } from "@/types/types";
 
 export interface IAuthService {
@@ -7,4 +7,5 @@ export interface IAuthService {
   logout: (jti: string) => Promise<boolean>;
   createTokenPair: (userId: string, jti: string, role: Role) => AuthPayload;
   refreshTokens: (jti: string) => Promise<AuthPayload>;
+  getSignedUrl: (songId: string, provider: string, userId: string) => Promise<SignedUrl>;
 }

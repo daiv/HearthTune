@@ -1,29 +1,34 @@
-type Song {
-  id: ID!
-  title: String
-  duration: Int
-  description: String
-  played: Int
-  local: Boolean
-  source: String
-  url: String
-}
-type Query {
-  search (query: String!, limit:Int):[Song]
-  getRelated(id:String, numberOfSongs:Int):[Song]
-}
-type Mutation {
-  login(email:String!, password:String!, deviceId:String!, deviceInfo:String):AuthPayLoad
-  logout(jti:String!):Boolean
-  refreshTokens(token:String!): AuthPayLoad
-}
+  type Song {
+    id: ID!
+    title: String
+    duration: Int
+    description: String
+    played: Int
+    local: Boolean
+    source: String
+    url: String
+  }
 
-type AuthPayLoad{
-  accessToken: String!
-  refreshToken:String!
-}
+  type AuthPayLoad{
+    accessToken: String!
+    refreshToken:String!
+  }
 
-type AccessToken{
-  tokenId:String!
-  userId:String!
-}
+  type AccessToken{
+    tokenId:String!
+    userId:String!
+  }
+  type SignedUrl{
+    signedUrl:String
+  }
+  type Query {
+    search (query: String!, limit:Int):[Song]
+    getRelated(id:String, numberOfSongs:Int):[Song]
+    getSignedUrl(songId:String!, provider:String!): SignedUrl!
+  }
+
+  type Mutation {
+    login(email:String!, password:String!, deviceId:String!, deviceInfo:String):AuthPayLoad
+    logout(jti:String!):Boolean
+    refreshTokens(token:String!): AuthPayLoad
+  }
