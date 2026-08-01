@@ -66,7 +66,7 @@ export const usePlayerManager = () => {
   );
 
   useTrackPlayerEvents(
-    
+
     [Event.PlaybackActiveTrackChanged],
 
     async function updateRefsAndTrigerTracksSignature(event) {
@@ -142,6 +142,7 @@ export const usePlayerManager = () => {
     await TrackPlayer.add(songs.map(songToTrack));
     const newQueue = [...songs];
     queueRef.current = newQueue;
+    await signTrackAtPosition(0);
     setQueue(newQueue);
   }, [queueRef]);
 

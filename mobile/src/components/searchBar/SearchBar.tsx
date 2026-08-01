@@ -3,7 +3,6 @@ import { StyleSheet, ActivityIndicator, FlatList, Text, TextInput, TouchableOpac
 import { useGraphQl } from "@/hooks/";
 import { SEARCH_SONGS } from "@/graphql/queries";
 import { Song } from '@/common/types'
-import { globalStyles } from "@/globalStyles";
 import { SearchItem } from "./SearchItem";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
@@ -17,6 +16,7 @@ export function SearchBar() {
     { query: searchQuery },
     { enabled: searchQuery.length > 3 }
   )
+  const songs = [... new Map(data?.search?.map(s => [s.id, s]) || []).values()];
   const handleClick = () => {
     setSearchQuery(input);
     setInput('');
@@ -48,11 +48,11 @@ export function SearchBar() {
         </View>
       }
 
-      {data?.search ?
+      {songs ?
         <View style={{ flex: 1 }}>
-          <Text style={styles.resultsCount}>Found {data.search.length} results</Text>
+          <Text style={styles.resultsCount}>Found {songs.length} results</Text>
           <FlatList<Song>
-            data={data.search.sort((currentSong, otherSong) => (
+            data={songs.sort((currentSong, otherSong) => (
               Number(otherSong.local) - (Number(currentSong.local)))
             )}
             keyExtractor={item => item.id}
