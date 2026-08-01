@@ -9,3 +9,4 @@ export function Button({ onPress: exec, children, style }: { onPress: () => void
   </TouchableOpacity>
 
 }
+

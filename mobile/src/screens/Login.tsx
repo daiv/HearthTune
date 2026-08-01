@@ -4,6 +4,7 @@ import { Input, AsyncButton } from "@/components";
 import { useValidation } from "@/hooks";
 import { checkEmail, checkMainPwd } from "@/helpers/helpers";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { globalStyles } from "@/globalStyles";
 
 export function Login() {
   const { login } = useAuthContext();
@@ -64,9 +65,9 @@ export function Login() {
         <View style={styles.buttonContainer}>
           <AsyncButton
             onPress={handleSubmit}
-            style={styles.loginButton}
+            style={globalStyles.button}
           >
-            <Text style={styles.buttonText}>Entrar</Text>
+            <Text style={globalStyles.buttonText}>Entrar</Text>
           </AsyncButton>
         </View>
       </View>
@@ -79,14 +80,14 @@ const shadows = { ios: 0.1, android: 0.2 };
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#f5f6fa', 
+    backgroundColor: '#f5f6fa',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   card: {
     width: '100%',
-    maxWidth: 400, 
+    maxWidth: 400,
     backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 24,
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   loginButton: {
-    backgroundColor: '#007aff', 
+    backgroundColor: '#007aff',
     borderRadius: 8,
     height: 48,
     justifyContent: 'center',
