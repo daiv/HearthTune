@@ -5,6 +5,7 @@ import TrackPlayer, { Event, Track, useTrackPlayerEvents } from "react-native-tr
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PlayListContextData } from "@/types/types";
 import { getSignedUrlService } from "@/services/authService";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const usePlayerManager = () => {
   const [queue, setQueue] = useState<Song[]>([]);
@@ -18,6 +19,8 @@ export const usePlayerManager = () => {
   const songIndexRef = useRef(0);
   const pauseAutoQueueRef = useRef(false);
   const isShufflingRef = useRef(false);
+
+  const queryClient = useQueryClient();
 
   const syncQueue = useCallback(async () => {
     if (isSyncingRef.current) return;
@@ -79,7 +82,8 @@ export const usePlayerManager = () => {
       console.log('playing id ', queueRef.current[songIndexRef.current]?.id);
       console.log('songIndex', songIndexRef.current);
       if (!activeIndex || activeIndex >= queueRef.current.length) return;
-      // if (!isLastSongRef.current) await signTrackAtPosition(activeIndex + 1);
+      
+      if (!isLastSongRef.current) await signTrackAtPosition(activeIndex + 1);
     });
 
 
@@ -112,12 +116,16 @@ export const usePlayerManager = () => {
   }
 
   const updateSongWithSignedUrl = async (song: Song): Promise<Song> => {
-    const response = await getSignedUrlService(song.id, song.source);
-    console.log('no error, response is', response);
-    console.log('signedURL is', response);
-    const signedSong: Song = { ...song, url: response.signedUrl }
-    return signedSong;
-  }
+    const signedUrlData = await queryClient.ensureQueryData({
+      queryKey: ['signedUrl', song.id, song.source],
+      queryFn: () => getSignedUrlService(song.id, song.source),
+      staleTime: 25 * 60 * 1000,
+    });
+    return {
+      ...song,
+      url: signedUrlData?.signedUrl || ''
+    };
+  };
 
   const enqueue = useCallback(async (song: Song, addedManually: boolean = true) => {
     if (addedManually) relatedCandidatesRef.current = [];

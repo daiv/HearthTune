@@ -82,7 +82,6 @@ export class AuthService implements IAuthService {
     const removeResult = await this.sessionService.remove(jti);
     if (removeResult.deletedCount === 0) throw new InvalidTokenException();
 
-
     const { userId, deviceInfo, deviceId } = currentSession;
     const newSession = await this.createSession(userId, user.role, deviceId, deviceInfo);
     if (!newSession) throw new ServerError();
@@ -90,13 +89,16 @@ export class AuthService implements IAuthService {
     return this.createTokenPair(newSession.userId, newSession.JTI, newSession.role);
   }
   async getSignedUrl(songId: string, provider: string, userId: string): Promise<SignedUrl> {
+
     const expiresAt = expiresIn(30, "minutes").toISOString();
     const dataToSign = `${songId}:${provider}:${userId}:${expiresAt}`;
     const signature = hashData(dataToSign);
     const baseUrl = process.env.SERVER_URL;
+
+    const signedUrl = `${baseUrl}/song/play?songId=${songId}&provider=${provider
+      }&userId=${userId}&expiresAt=${expiresAt}&sign=${signature}`;
     return {
-      signedUrl: `${baseUrl}/song/play?songId=${songId}&provider=${provider
-        }&userId=${userId}&expiresAt=${expiresAt}&sign=${signature}`
+      signedUrl
     };
   }
 }
