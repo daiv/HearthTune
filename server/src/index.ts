@@ -12,6 +12,8 @@ import path from 'node:path';
 import { SongRepository, UserRepository, SessionRepository } from '@/repositories';
 import { AuthController } from '@/controllers/AuthController';
 import { PORT } from './constants';
+import { MailingService } from './services/MailingService';
+import { NodeMailer } from './providers/email/Nodemailer';
 
 const app = express();
 
@@ -38,7 +40,8 @@ const app = express();
     const sessionRepository = new SessionRepository();
     const sessionService = new SessionService(sessionRepository);
     const authService = new AuthService(userRepository, sessionService);
-    const activationService = new ActivationService(userRepository);
+    const mailService = new MailingService(new NodeMailer());
+    const activationService = new ActivationService(userRepository, mailService);
     const authController = new AuthController(activationService, userService);
 
     app.use(express.json());

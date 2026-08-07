@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { MockProvider } from "./mocks/MockProvider";
+import { MockSongsProvider } from "./mocks/MockSongsProvider";
 import express from 'express';
 import { initGraphqlMiddleware } from "./graphql/graphqlServer";
 import supertest from "supertest";
@@ -13,6 +13,8 @@ import { UserRepository, SongRepository, SessionRepository } from "@/repositorie
 import { UserModel, SessionModel } from "@/models/";
 import { createValidationCredentials, hashData } from "./helpers";
 import { ServerError } from "./errors/ServerError";
+import { MailingService } from "./services/MailingService";
+import { MockNodeMailer } from "./mocks/MockNodemailer";
 
 describe('TDD tests', () => {
   beforeAll(async () => {
@@ -44,7 +46,7 @@ describe('TDD tests', () => {
   });
 
   describe('Songs service', () => {
-    const providers = [new MockProvider()];
+    const providers = [new MockSongsProvider()];
     const mockProvider = providers[0];
     const repo = new SongRepository();
     const service = new SongService(providers, repo);
@@ -100,7 +102,7 @@ describe('TDD tests', () => {
 
   describe('Graphql', () => {
     let request: TestAgent;
-    const providers = [new MockProvider()];
+    const providers = [new MockSongsProvider()];
     // const provider = new YtDlpProvider();
     const repo = new SongRepository();
     const songService = new SongService(providers, repo);
@@ -207,7 +209,8 @@ describe('TDD tests', () => {
 
     });
     describe('Auth Tests', () => {
-      const activationService = new ActivationService(userRepository);
+      const mailService = new MailingService(new MockNodeMailer());
+      const activationService = new ActivationService(userRepository, mailService);
       describe('Login tests', () => {
         let userToCreate: CreateUserDto;
         let createdUser: User;
@@ -401,6 +404,7 @@ describe('TDD tests', () => {
       let authService: AuthService;
       let sessionRepo: SessionRepository;
       let sessionService: SessionService;
+      let mailingService: MailingService;
       const uniqueEmails: string[] = []
       for (let i = 0; i < 10; i++) uniqueEmails.push(i + "@email.com");
 
@@ -408,7 +412,8 @@ describe('TDD tests', () => {
         await UserModel.deleteMany({});
         userRepo = new UserRepository();
         userService = new UserService(userRepo);
-        activationService = new ActivationService(userRepo);
+        mailingService = new MailingService(new MockNodeMailer());
+        activationService = new ActivationService(userRepo, mailingService);
         sessionRepo = new SessionRepository();
         sessionService = new SessionService(sessionRepo);
         authService = new AuthService(userRepo, sessionService);

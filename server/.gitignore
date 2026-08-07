@@ -4,4 +4,5 @@ dist
 .env*
 src/providers/youtube_cookies.txt
 storage/music/*
+storage/artifacts/*
 !storage/music/.gitkeep

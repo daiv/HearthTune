@@ -3,7 +3,7 @@ import { ISongsProvider } from "@/interfaces";
 import { Song } from "@/common/types";
 
 
-export class MockProvider implements ISongsProvider {
+export class MockSongsProvider implements ISongsProvider {
   readonly FILE_EXTENSION = 'm4a';
   readonly SOURCE = "Youtube";
   searchSongs(query: string, limit: number = 10): Promise<Song[]> {

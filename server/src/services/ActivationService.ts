@@ -1,16 +1,19 @@
 import { UserNotFoundException } from "@/errors/ServerError";
-import { createValidationCredentials, sendActivationEmail, sendEmail } from "@/helpers";
+import { createValidationCredentials } from "@/helpers";
 import { IActivationService } from "@/interfaces/IActivationService";
+import { IMailingService } from "@/interfaces/IMailingService";
 import { UserModel } from "@/models";
 import { UserRepository } from "@/repositories";
 import { Credential, IsTokenLegitResponse, User } from "@/types/types";
 
 export class ActivationService implements IActivationService {
-  constructor(private userRepository: UserRepository) { }
+  constructor(
+    private userRepository: UserRepository,
+    private mailService: IMailingService) { }
 
   async sendActivationLink(to: string, token: string): Promise<boolean> {
-    const mailSuccess = await sendActivationEmail(to, token);
-    return mailSuccess.rejected.length === 0;
+    const mailSuccess = await this.mailService.sendActivationEmail(to, token);
+    return mailSuccess;
   }
   async enableUserAccount(userId: string): Promise<boolean> {
 
@@ -58,9 +61,8 @@ export class ActivationService implements IActivationService {
       <p>Click here to approve the request:</p>
       <a href="${activationLink}">Approve New Access</a>
     `;
-    const isEmailSentToAdmin = await sendEmail(superAdminEmail, message, 'new invitation request');
-    if (isEmailSentToAdmin) return true;
-    return false;
+    const isEmailSentToAdmin = await this.mailService.sendEmail(superAdminEmail, message, 'new invitation request');
+    return isEmailSentToAdmin;
   }
   async sendActivationLinkTo(usersToEmail: User[]): Promise<void> {
     type UserResponse = User & { emailSent: boolean };

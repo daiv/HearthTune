@@ -1,7 +1,6 @@
 import { InvalidTokenException, UserNotFoundException } from "@/errors/ServerError";
 import { IActivationService } from "@/interfaces/IActivationService";
 import { IAuthController } from "@/interfaces/IAuthController";
-import { IAuthService } from "@/interfaces/IAuthService";
 import { IUserService } from "@/interfaces/IUserService";
 import { Request, Response } from 'express';
 
