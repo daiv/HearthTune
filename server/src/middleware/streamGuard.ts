@@ -9,9 +9,15 @@ export const streamGuard = (req: Request, res: Response, next: NextFunction) => 
     !userId ||
     !expiresAt ||
     !sign
-  ) {
-    throw new MissingFieldsException();
-  }
+    ||
+    typeof songId !== 'string' ||
+    typeof provider !== 'string' ||
+    typeof userId !== 'string' ||
+    typeof expiresAt !== 'string' ||
+    typeof sign !== 'string'
+
+  ) throw new MissingFieldsException();
+
 
   if (Date.now() > Number(expiresAt)) throw new InvalidTokenException();
   const dataToSign = `${songId}:${provider}:${userId}:${expiresAt}`;

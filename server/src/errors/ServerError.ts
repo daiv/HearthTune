@@ -1,3 +1,4 @@
+import { Server } from "node:http";
 
 export class ServerError extends Error {
   readonly statusCode: number;
@@ -35,7 +36,11 @@ export class UserNotFoundException extends ServerError {
     super(message, 404);
   }
 }
-
+export class SongNotFoundException extends ServerError {
+  constructor(message: string = 'Song not found') {
+    super(message, 404);
+  }
+}
 export class InvalidTokenException extends ServerError {
   constructor(message: string = 'Invalid or expired token') {
     super(message, 401);

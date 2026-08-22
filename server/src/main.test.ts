@@ -11,7 +11,7 @@ import { describe, it, expect, afterAll, beforeAll, jest, beforeEach, afterEach 
 import { CreateUserDto, Role, Session, User } from "./types/types";
 import { UserRepository, SongRepository, SessionRepository } from "@/repositories/";
 import { UserModel, SessionModel } from "@/models/";
-import { createValidationCredentials, hashData } from "./helpers";
+import { createValidationCredentials, hashData, sanitize } from "./helpers";
 import { ServerError } from "./errors/ServerError";
 import { MailingService } from "./services/MailingService";
 import { MockNodeMailer } from "./mocks/MockNodemailer";
@@ -44,7 +44,27 @@ describe('TDD tests', () => {
   it('Should be connected to the db', async () => {
     expect(mongoose.connection.readyState).toBe(1);
   });
+  describe('Helper functions', () => {
+    it('Should sanitize queries', () => {
+      const testCases: { query: string, expected: string }[] = [
+        { query: 'rock', expected: 'rock' },
+        { query: 'rock    ', expected: 'rock' },
+        { query: '   rock', expected: 'rock' },
+        { query: 'rock-', expected: 'rock-' },
+        { query: 'r@ock-', expected: 'rock-' },
+        { query: 'r@oc\k-', expected: 'rock-' },
+        { query: 'Linkin @@@@ Park', expected: 'Linkin Park' },
+        { query: '<script> ../etc/passwd', expected: 'script ..etcpasswd' },
+        { query: 'Ke$ha & P!nk', expected: 'Ke$ha & P!nk' },
+        { query: 'Rock 🎸 Metal', expected: 'Rock Metal' },
+        { query: 'La Fuga', expected: 'La Fuga' },
+      ];
+      for (const test of testCases) {
+        expect(sanitize(test.query)).toEqual(test.expected);
+      }
 
+    })
+  })
   describe('Songs service', () => {
     const providers = [new MockSongsProvider()];
     const mockProvider = providers[0];
@@ -66,37 +86,6 @@ describe('TDD tests', () => {
       expect(spy).toHaveBeenCalledWith('rock', 1);
 
     });
-
-    it('song/search -> Should sanitize the query', async () => {
-      const testCases: { query: string, limit: number, expected: string }[] = [
-        { query: 'rock', limit: 0, expected: 'rock' },
-        { query: 'rock    ', limit: 0, expected: 'rock' },
-        { query: '   rock', limit: 0, expected: 'rock' },
-        { query: 'rock-', limit: 0, expected: 'rock-' },
-        { query: 'r@ock-', limit: 0, expected: 'rock-' },
-        { query: 'r@oc\k-', limit: 0, expected: 'rock-' },
-        { query: 'Linkin @@@@ Park', limit: 0, expected: 'Linkin Park' },
-        { query: '<script> ../etc/passwd', limit: 0, expected: 'script ..etcpasswd' },
-        { query: 'Ke$ha & P!nk', limit: 0, expected: 'Ke$ha & P!nk' },
-        { query: 'Rock 🎸 Metal', limit: 0, expected: 'Rock Metal' },
-        { query: 'La Fuga', limit: 0, expected: 'La Fuga' },
-      ];
-
-      const spy = jest.spyOn(mockProvider, 'searchSongs');
-
-      for (const test of testCases) {
-        await service.search(test.query, test.limit);
-        expect(spy).toHaveBeenLastCalledWith(test.expected, 1);
-      }
-
-    });
-
-    /* it('song/play/:id', async () => {
-      const songId = "9Yp3lc3PsjA";
-      const spy = jest.spyOn(provider, 'getAudioSource');
-      await service.getAudioSource(songId);
-      expect(spy).toHaveBeenCalledWith(songId);
-    }); */
 
   });
 
@@ -183,7 +172,7 @@ describe('TDD tests', () => {
     }`;
 
       const spy = jest.spyOn(songService, 'search').mockResolvedValue([
-        { id: '9Yp3lc3PsjA', title: 'Test Song', description: 'desc', duration: 100, source: 'Youtube' }
+        { id: '9Yp3lc3PsjA', title: 'Test Song', description: 'desc', duration: 100, provider: 'Youtube' }
       ]);
       const vars = { searchString: '9Yp3lc3PsjA', max: 1 }
       const response = await request.post(GRAPH)
@@ -194,7 +183,7 @@ describe('TDD tests', () => {
     it('Should call getRelated and get results', async () => {
 
       const relatedQuery = `
-    query related($searchString:String!){
+    query related($searchString:ID!){
     getRelated(id:$searchString){
     id,title}
     }`;
@@ -202,6 +191,7 @@ describe('TDD tests', () => {
       const vars = { searchString: '3LA8hq9plTY' };
       const response = await request.post(GRAPH)
         .send({ query: relatedQuery, variables: vars });
+      console.log('response is ', response.body); 
       const { getRelated: songs } = response.body.data;
       expect(songs[0]).toHaveProperty("id");
       expect(songs[0]).toHaveProperty("title");
@@ -320,7 +310,7 @@ describe('TDD tests', () => {
       played: 0,
       downloadStatus: DownloadStatus.DownloadPending,
       lastPlayed: now,
-      source: 'Unknown'
+      provider: 'Unknown'
     };
     const repo = new SongRepository();
     beforeAll(async () => {

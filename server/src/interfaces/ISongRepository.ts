@@ -3,36 +3,32 @@ import { DeleteResult, Document, UpdateWriteOpResult } from "mongoose";
 
 export interface ISongRepository {
   save
-    (
-      song: Song
-    )
+    (song: Song)
     : Promise<Document>;
 
   exists
-    (
-      id: string
-    )
+    (id: string)
     : Promise<boolean>;
 
+  search
+    (query: string)
+    : Promise<Song[]>;
+
   delete
-    (
-      id: string
-    )
+    (id: string)
     : Promise<DeleteResult>;
 
   addOneMorePlayed
-    (
-      id: string
-    )
+    (id: string)
     : Promise<UpdateWriteOpResult>;
 
   isReady
-    (
-      id: string
-    ): Promise<boolean>;
+    (id: string)
+    : Promise<boolean>;
 
   setSongState
-    (id: string,
+    (
+      id: string,
       status: DownloadStatus
     )
     : Promise<boolean>;
@@ -42,11 +38,10 @@ export interface ISongRepository {
     : Promise<DownloadStatus | undefined>;
 
   getSongDetails
-    (
-      id?: string
-    )
+    (id: string)
     : Promise<Song | null>;
 
-  delete(id: string): Promise<DeleteResult>;
+  delete(id: string)
+    : Promise<DeleteResult>;
 }
 

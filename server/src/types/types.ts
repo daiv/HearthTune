@@ -1,6 +1,7 @@
 import { Readable } from "node:stream";
 import { ISongService } from "../interfaces/ISongService";
 import { AuthService, UserService } from "@/services";
+import { Song } from "@/common/types";
 
 export type SongResponse = {
   type: "local",
@@ -94,4 +95,17 @@ export type Session = {
   role: Role;
   deviceId: string,
   deviceInfo?: string;
+}
+
+export type SearchResult = {
+  localSearch: Song[];
+  deepSearch: Promise<Song[]>;
+}
+export type SearchQueryPayload = {
+  localSearch: Pick<SearchResult, 'deepSearch'>;
+  query: string;
+  limit?: number;
+}
+export type ProtectOptions = {
+  sanitizeQuery?: boolean
 }

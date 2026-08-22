@@ -5,7 +5,7 @@ import { Song } from "@/common/types";
 
 export class MockSongsProvider implements ISongsProvider {
   readonly FILE_EXTENSION = 'm4a';
-  readonly SOURCE = "Youtube";
+  readonly PROVIDER = "Youtube";
   searchSongs(query: string, limit: number = 10): Promise<Song[]> {
     return new Promise(resolve => {
       if (limit > 10) limit = 10;
@@ -29,70 +29,70 @@ export const mockSongs: Song[] = [
     id: 'vkHd4ejXrAE',
     description: null,
     duration: 209,
-    source: 'Unknown',
+    provider: 'Unknown',
     title: '5 sentidos - Dvicio / Taburete (Letra)'
   },
   {
     id: 'r7kPoxLabGg',
     description: null,
     duration: 536,
-    source: 'Unknown',
+    provider: 'Unknown',
     title: 'Week end à Valence - #2 - Chulilla et Fuente de los Banos'
   },
   {
     id: 'kZqaX66KdfM',
     description: null,
     duration: 540,
-    source: 'Unknown',
+    provider: 'Unknown',
     title: '5 sentidos Dvicio Ft Taburete Cover y como tocar la canción en Ukulele 🎶'
   },
   {
     id: '1N_RqUQrk6M',
     description: null,
     duration: 487,
-    source: 'Unknown',
+    provider: 'Unknown',
     title: 'Mini album Bundle of joy INSPIRACIÓN'
   },
   {
     id: 'fAHq_vH8H1U',
     description: null,
     duration: 779,
-    source: 'Unknown',
+    provider: 'Unknown',
     title: 'Porto Grenoble Mai 2019'
   },
   {
     id: 'lTV6KedU3Q8',
     description: null,
     duration: 147,
-    source: 'Unknown',
+    provider: 'Unknown',
     title: 'Top  canciones  para  Carnaval'
   },
   {
     id: 'P1WUQGmsBHA',
     description: null,
     duration: 213,
-    source: 'Unknown',
+    provider: 'Unknown',
     title: 'Dvicio-Taburete, 5 sentidos (lyrics, letra )'
   },
   {
     id: '5hU3mTRz65E',
     description: null,
     duration: 322,
-    source: 'Unknown',
+    provider: 'Unknown',
     title: 'Como componer un éxito de reggaetón (La fórmula Danza Koduro)'
   },
   {
     id: 'STh3vrD5NhI',
     description: null,
     duration: 30,
-    source: 'Unknown',
+    provider: 'Unknown',
     title: 'Filtro del tartazo para Dvicio'
   },
   {
     id: 'Xt3mwc_ctUQ',
     description: null,
     duration: 159,
-    source: 'Unknown',
+    provider: 'Unknown',
     title: '【Nightcore】→ 5 Sentidos'
   }
 ]

@@ -82,7 +82,7 @@ export const usePlayerManager = () => {
       console.log('playing id ', queueRef.current[songIndexRef.current]?.id);
       console.log('songIndex', songIndexRef.current);
       if (!activeIndex || activeIndex >= queueRef.current.length) return;
-      
+
       if (!isLastSongRef.current) await signTrackAtPosition(activeIndex + 1);
     });
 
@@ -117,8 +117,8 @@ export const usePlayerManager = () => {
 
   const updateSongWithSignedUrl = async (song: Song): Promise<Song> => {
     const signedUrlData = await queryClient.ensureQueryData({
-      queryKey: ['signedUrl', song.id, song.source],
-      queryFn: () => getSignedUrlService(song.id, song.source),
+      queryKey: ['signedUrl', song.id, song.provider],
+      queryFn: () => getSignedUrlService(song.id, song.provider),
       staleTime: 25 * 60 * 1000,
     });
     return {

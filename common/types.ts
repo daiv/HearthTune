@@ -15,14 +15,15 @@ export type Song = {
   duration: number;
   description: string | null;
   played?: number;
+  local?: boolean;
+  provider: 'Soundcloud' | 'Youtube' | 'Unknown';
+  url?: string;
+
   lastPlayed?: Date;
   downloadStatus?: DownloadStatus | undefined;
   instanceId?: string;
   addedManually?: boolean;
-  local?: boolean;
   requestedBy?: string;
-  source: 'Soundcloud' | 'Youtube' | 'Unknown';
-  url?: string;
 };
 
 export type SignedUrl = {

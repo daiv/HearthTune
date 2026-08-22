@@ -21,7 +21,7 @@ export interface BaseContext {
 
 export interface MusicContext extends Omit<BaseContext, 'services'> {
   services: {
-    songs: Pick<ISongService, 'search' | 'getRelatedSongs'>;
+    songs: Pick<ISongService, 'search' | 'getRelatedSongs' | 'searchLocally'>;
   };
 }
 

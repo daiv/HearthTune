@@ -8,7 +8,10 @@ const songSchema = new mongoose.Schema<Song>({
     required: true,
     unique: true
   },
-
+  provider: {
+    type: String,
+    required: true,
+  },
   description:
   {
     type: String,

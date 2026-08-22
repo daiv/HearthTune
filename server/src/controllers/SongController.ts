@@ -6,11 +6,10 @@ export class SongController {
   constructor(private service: ISongService) { }
 
   playSong = async (req: Request, res: Response) => {
-    const { songId: id, provider = 'Youtube' } = req.query;
-    if (typeof id !== 'string' || typeof provider !== 'string') throw new Error();
+    const { songId, provider = 'Youtube', userId } = req.query as { songId: string, provider: string, userId: string };
 
     try {
-      const audioSource = await this.service.getAudioSource(id, provider);
+      const audioSource = await this.service.getAudioSource(songId, provider, userId!);
       if (audioSource.type === 'local') return res.sendFile(audioSource.localPath);
       else if (audioSource.type === 'external') {
         res.writeHead(200, {
@@ -31,7 +30,7 @@ export class SongController {
       console.error('error ', error);
       if (error instanceof Error) {
         if (error.message == 'Bad id') {
-          throw new InvalidIdException(id, provider);
+          throw new InvalidIdException(songId, provider);
         } else {
           throw new ServerError();
         }

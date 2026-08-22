@@ -64,7 +64,7 @@ export function PlayListItem({ song, index, isPlaying }: { song: Song, index: nu
           </Text>
           <View style={styles.subInfo}>
             <Text style={styles.duration}>  {formattedTime}</Text>
-            <Text style={[styles.source, { color }]}>· {song.source.substring(0, 1)}</Text>
+            <Text style={[styles.source, { color }]}>· {song.provider.substring(0, 1)}</Text>
           </View>
         </View>
       </View>
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    overflow: 'hidden', // Vital para que el fondo animado no se salga de los bordes redondeados
+    overflow: 'hidden', 
     position: 'relative',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },

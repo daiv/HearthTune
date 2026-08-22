@@ -72,3 +72,11 @@ export function createValidationCredentials(expiresAt: Date = expiresIn(2, 'days
 }
 export const atLeast = (minRole: Role) => (role: Role) => PERMISSION[role] >= PERMISSION[minRole];
 export const isExactly = (targetRole: Role) => (role: Role) => targetRole === role;
+
+export const sanitize = (rawQuery: string): string => {
+  const sanitizedQuery = rawQuery
+    .replace(/[^\w\s\u00C0-\u017F!$&\-\.\+_]/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return sanitizedQuery;
+}

@@ -5,7 +5,7 @@
     description: String
     played: Int
     local: Boolean
-    source: String
+    provider: String
     url: String
   }
 
@@ -23,8 +23,10 @@
   }
   type Query {
     search (query: String!, limit:Int):[Song]
-    getRelated(id:String, numberOfSongs:Int):[Song]
-    getSignedUrl(songId:String!, provider:String!): SignedUrl!
+    searchLocally(query:String!): [Song]
+    searchDeep(query:String!, limit:Int):[Song]
+    getRelated(id:ID!, numberOfSongs:Int):[Song]
+    getSignedUrl(songId:ID!, provider:String!): SignedUrl!
   }
 
   type Mutation {

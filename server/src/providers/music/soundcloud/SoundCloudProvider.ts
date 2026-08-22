@@ -4,7 +4,7 @@ import { Readable } from "node:stream";
 import { Song } from "@/common/types";
 
 export class SoundCloudProvider implements ISongsProvider {
-  readonly SOURCE = "Soundcloud";
+  readonly PROVIDER = "Soundcloud";
   readonly FILE_EXTENSION = "mp3"
 
   userAgents = [
@@ -64,7 +64,7 @@ export class SoundCloudProvider implements ISongsProvider {
       description: rawSong.description || '',
       duration: Math.floor(Number(rawSong.duration)) || 0,
       title: rawSong.title || '',
-      source: this.SOURCE,
+      provider: this.PROVIDER,
       url: rawSong.webpage_url
     };
     console.log('rawsong', rawSong);

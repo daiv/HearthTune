@@ -19,7 +19,7 @@ const server = new ApolloServer<resolverContext>({
   formatError: (formattedError, error) => {
 
     // if (process.env.NODE_ENV === 'production')
-      delete formattedError.extensions?.stacktrace;
+    delete formattedError.extensions?.stacktrace;
     return formattedError;
   }
 });
@@ -45,7 +45,7 @@ export async function initGraphqlMiddleware(
       const isOperationLoginOrRefresh =
         operationName === 'Login' ||
         operationName === 'Refresh';
-
+      console.log('operationName is ', operationName);
       if (token && !isOperationLoginOrRefresh) {
         try {
           const payload = jwt.verify(token, process.env.ACCESS_TOKEN_KEY!) as AccessPayload;

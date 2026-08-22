@@ -7,7 +7,7 @@ import { YoutubeRawSong } from "./youtube.types";
 
 
 export class YoutubeProvider implements ISongsProvider {
-  readonly SOURCE = "Youtube";
+  readonly PROVIDER = "Youtube";
   readonly FILE_EXTENSION = "m4a";
 
   userAgents = [
@@ -63,23 +63,13 @@ export class YoutubeProvider implements ISongsProvider {
   }
 
   private rawToSong = (rawSong: YoutubeRawSong): Song => {
-    // console.log('raw', rawSong);
-    // console.log('continuing...');
     const song: Song = {
       id: rawSong.id || '',
       description: rawSong.description || '',
       duration: Number(rawSong.duration) || 0,
       title: rawSong.title || '',
-      source: this.SOURCE
+      provider: this.PROVIDER
     };
-    // console.log('id', rawSong.id);
-    // console.log('description', rawSong.description);
-    // console.log('duration', rawSong.duration);
-    // console.log('title', rawSong.title);
-    // console.log('source', this.SOURCE);
-
-    // console.log('song created');
-
     return song;
   }
 

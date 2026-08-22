@@ -47,12 +47,12 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    color: '#2f3640', // Color del texto al escribir (oscuro y legible)
+    color: '#2f3640', 
     fontSize: 16,
     height: '100%',
   },
   eyeButton: {
-    marginLeft: 8, // Separa el icono del ojo del borde del input
+    marginLeft: 8, 
     justifyContent: 'center',
     alignItems: 'center',
   },

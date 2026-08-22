@@ -1,26 +1,53 @@
-import { useState } from "react";
-import { StyleSheet, ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useMemo, useState } from "react";
+import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useGraphQl } from "@/hooks/";
-import { SEARCH_SONGS } from "@/graphql/queries";
+import { SEARCH_LOCALLY, SEARCH_SONGS } from "@/graphql/queries";
 import { Song } from '@/common/types'
 import { SearchItem } from "./SearchItem";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { styles } from "./styles";
 
 const renderFunction = ({ item }: { item: Song }) => <SearchItem key={item.instanceId} song={item} />
+const mergeSongs = (local: Song[], remote: Song[]): Song[] => {
+  const mergedMap = new Map<string, Song>(local.map(s => [s.id, s]));
+  remote.forEach(song => {
+    if (mergedMap.has(song.id)) {
+      const localSong = mergedMap.get(song.id);
+      mergedMap.set(song.id, {
+        ...localSong,
+        ...song,
+      });
+    } else mergedMap.set(song.id, { ...song });
+  });
+  return Array.from(mergedMap.values());
+}
 
 export function SearchBar() {
   const [input, setInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const { data, isLoading } = useGraphQl<{ search: Song[] }, { query: string, limit?: number }>(
+  const { data: localData, isLoading } = useGraphQl<{ searchLocally: Song[] }, { query: string, limit?: number }>(
+    SEARCH_LOCALLY,
+    { query: searchQuery },
+    { enabled: searchQuery.length > 3 }
+  );
+  const { data: remoteData } = useGraphQl<{ search: Song[] }, { query: string, limit?: number }>(
     SEARCH_SONGS,
     { query: searchQuery },
     { enabled: searchQuery.length > 3 }
-  )
-  const songs = [... new Map(data?.search?.map(s => [s.id, s]) || []).values()];
+  );
+
+  const songs = useMemo(() => {
+    const localSongs = localData?.searchLocally.map(s => ({ ...s, local: true, })) || [];
+    const remoteSongs = remoteData?.search || [];
+    return mergeSongs(localSongs, remoteSongs);
+  }, [localData, remoteData]);
+
   const handleClick = () => {
     setSearchQuery(input);
     setInput('');
   }
+
+  const showNoResults = !isLoading && songs.length === 0;
   return (
     <View style={styles.container}>
       <View style={styles.searchBarPanel}>
@@ -41,6 +68,7 @@ export function SearchBar() {
           <Text style={styles.searchButtonText}>Search</Text>
         </TouchableOpacity>
       </View>
+
       {isLoading &&
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#0d9488" />
@@ -48,7 +76,7 @@ export function SearchBar() {
         </View>
       }
 
-      {songs ?
+      {songs && songs.length > 0 ?
         <View style={{ flex: 1 }}>
           <Text style={styles.resultsCount}>Found {songs.length} results</Text>
           <FlatList<Song>
@@ -62,7 +90,7 @@ export function SearchBar() {
           />
         </View>
         :
-        !isLoading && (
+        showNoResults && (
           <View style={styles.centerContainer}>
             <FontAwesome name="music" size={40} color="#cbd5e1" style={{ marginBottom: 8 }} />
             <Text style={styles.noDataText}>Search for your favorite tracks</Text>
@@ -74,84 +102,3 @@ export function SearchBar() {
     </View>
   )
 }
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#f8fafc', // Fondo general ligeramente gris para que resalten las tarjetas
-  },
-  searchBarPanel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
-  },
-  inputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    paddingHorizontal: 12,
-    height: 48,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#1e293b',
-    height: '100%',
-  },
-  searchButton: {
-    backgroundColor: '#0d9488', // Tu verde corporativo
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  searchButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  loadingText: {
-    marginTop: 8,
-    color: '#64748b',
-    fontSize: 14,
-  },
-  resultsCount: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748b',
-    marginBottom: 12,
-    marginLeft: 4,
-  },
-  noDataText: {
-    color: '#64748b',
-    fontSize: 15,
-  },
-  listContainer: {
-    paddingBottom: 100, // Evita que la barra inferior tape el último resultado
-  },
-});
