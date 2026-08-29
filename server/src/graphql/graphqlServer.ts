@@ -46,14 +46,15 @@ export async function initGraphqlMiddleware(
         operationName === 'Login' ||
         operationName === 'Refresh';
       console.log('operationName is ', operationName);
+
       if (token && !isOperationLoginOrRefresh) {
-        try {
-          const payload = jwt.verify(token, process.env.ACCESS_TOKEN_KEY!) as AccessPayload;
-          user = await userService.getUserById(payload.userId);
-        } catch (error) {
-          console.warn("Auth failed:", error instanceof Error ? error.message : "invalid Token");
-          handleGraphQlError(new InvalidCredentialsException());
+        const payload = authService.isAccessTokenValid(token);
+        if (!payload) {
+          console.warn("Auth failed:", "invalid Token");
+          return handleGraphQlError(new InvalidCredentialsException());
         }
+
+        user = await userService.getUserById(payload.userId);
       }
       return (
         {

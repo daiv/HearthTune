@@ -1,12 +1,13 @@
 import { IAuthService } from "@/interfaces/IAuthService";
-import { AccessPayload, Role, Session } from "@/types/types";
+import { AccessPayload, Role, Session, SignedUrlValidationParams } from "@/types/types";
 import { UserRepository } from "@/repositories";
-import { AccountNotActiveException, InvalidCredentialsException, InvalidTokenException, MissingUserRoleException, ServerError, TrialExpiredException, } from "@/errors/ServerError";
+import { AccountNotActiveException, BadRequestException, InvalidCredentialsException, InvalidTokenException, MissingUserRoleException, ServerError, TrialExpiredException, } from "@/errors/ServerError";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { expiresIn, hashData, isTrialExpired } from "@/helpers";
 import { SessionService } from "./SessionService";
 import { AuthPayload, SignedUrl } from "@/common/types";
+import { randomUUID } from "node:crypto";
 
 export class AuthService implements IAuthService {
 
@@ -66,7 +67,15 @@ export class AuthService implements IAuthService {
 
     return { accessToken, refreshToken };
   }
-
+  isAccessTokenValid(token: string): AccessPayload | null {
+    if (!token) return null;
+    try {
+      const payload = jwt.verify(token, process.env.ACCESS_TOKEN_KEY!) as AccessPayload;
+      return payload;
+    } catch (error) {
+      return null;
+    }
+  }
   async refreshTokens(jti: string): Promise<AuthPayload> {
     console.warn('jti sent by client', jti);
     const currentSession = await this.sessionService.getSessionByJti(jti);
@@ -88,17 +97,49 @@ export class AuthService implements IAuthService {
 
     return this.createTokenPair(newSession.userId, newSession.JTI, newSession.role);
   }
-  async getSignedUrl(songId: string, provider: string, userId: string): Promise<SignedUrl> {
 
-    const expiresAt = expiresIn(30, "minutes").toISOString();
+  createSignedUrl(songId: string, provider: string, userId: string, expiration?: number): SignedUrl {
+
+    const expiresAt = expiration || expiresIn(30, "minutes").getTime();
     const dataToSign = `${songId}:${provider}:${userId}:${expiresAt}`;
     const signature = hashData(dataToSign);
     const baseUrl = process.env.SERVER_URL;
 
     const signedUrl = `${baseUrl}/song/play?songId=${songId}&provider=${provider
       }&userId=${userId}&expiresAt=${expiresAt}&sign=${signature}`;
-    return {
-      signedUrl
-    };
+
+    return { signedUrl };
+  }
+
+  isSignedUrlValid(songId: string, provider: string, userId: string, expiresAt: string, sign: string): boolean {
+    const numericExpiresAt = Number(expiresAt);
+    if (isNaN(numericExpiresAt)) throw new BadRequestException();
+    if (Date.now() > numericExpiresAt) return false;
+
+    const dataToSign = `${songId}:${provider}:${userId}:${expiresAt}`;
+    const expectedSignature = hashData(dataToSign);
+    console.log('valid = ', expectedSignature === sign);
+    return expectedSignature === sign;
+  }
+
+  createSignedAndroidAppDownloadUrl(userId: string, expiration?: number): SignedUrl {
+    const expiresAt = expiration || expiresIn(30, "minutes").getTime();
+    const jti = randomUUID();
+    const dataToSign = `${userId}:${jti}:${expiresAt}`;
+    const signature = hashData(dataToSign);
+    const baseUrl = process.env.SERVER_URL;
+
+    const signedUrl = `${baseUrl}/app-download?userId=${userId}&jti=${jti}&expiresAt=${expiresAt}&sign=${signature}`;
+    return { signedUrl }
+  }
+
+  isDownloadUrlValid(userId: string, jti: string, expiresAt: string, sign: string): boolean {
+    const numericExpiresAt = Number(expiresAt);
+    if (isNaN(numericExpiresAt)) throw new BadRequestException();
+    if (Date.now() > numericExpiresAt) return false;
+
+    const dataToSign = `${userId}:${jti}:${expiresAt}`;
+    const expectedSignature = hashData(dataToSign);
+    return expectedSignature === sign;
   }
 }

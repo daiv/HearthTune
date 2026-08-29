@@ -14,7 +14,7 @@ export const authResolvers = {
         console.log('songId', songId);
         console.log('provider', provider);
         console.log('userId', id);
-        const signedUrl: SignedUrl = await context.services.auth.getSignedUrl(songId, provider, id);
+        const signedUrl: SignedUrl = await context.services.auth.createSignedUrl(songId, provider, id);
         return signedUrl;
       }
     )

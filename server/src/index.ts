@@ -14,6 +14,9 @@ import { AuthController } from '@/controllers/AuthController';
 import { PORT } from './constants';
 import { MailingService } from './services/MailingService';
 import { NodeMailer } from './providers/email/Nodemailer';
+import { ResourcesController } from './controllers/ResourcesController';
+import { ResourcesService } from './services/ResourcesService';
+import { MockEmailProvider } from './mocks/MockEmailProvider';
 
 const app = express();
 
@@ -40,12 +43,21 @@ const app = express();
     const sessionRepository = new SessionRepository();
     const sessionService = new SessionService(sessionRepository);
     const authService = new AuthService(userRepository, sessionService);
-    const mailService = new MailingService(new NodeMailer());
+    const mailService = new MailingService(new MockEmailProvider());
     const activationService = new ActivationService(userRepository, mailService);
-    const authController = new AuthController(activationService, userService);
+    const resourcesService = new ResourcesService();
+    const authController = new AuthController(activationService, userService, authService);
+    const resourcesController = new ResourcesController(resourcesService);
 
     app.use(express.json());
-    app.use(createRouter(songService, activationService, authController));
+    app.use(
+      createRouter(
+        activationService,
+        authService,
+        songService,
+        authController,
+        resourcesController
+      ));
 
     await userService.createUsersFromEnv();
     await activationService.sendActivationLinkToWhiteListedUsers();

@@ -2,10 +2,16 @@ import { InvalidTokenException, UserNotFoundException } from "@/errors/ServerErr
 import { IActivationService } from "@/interfaces/IActivationService";
 import { IAuthController } from "@/interfaces/IAuthController";
 import { IUserService } from "@/interfaces/IUserService";
+import { AuthService } from "@/services";
+import { ResourcesService } from "@/services/ResourcesService";
 import { Request, Response } from 'express';
 
 export class AuthController implements IAuthController {
-  constructor(private activationService: IActivationService, private userService: IUserService) { }
+  constructor(
+    private activationService: IActivationService,
+    private userService: IUserService,
+    private authService: AuthService,
+  ) { }
 
   validate = async (req: Request, res: Response) => {
     const { token } = req.params;
@@ -42,7 +48,10 @@ export class AuthController implements IAuthController {
     await this.userService.setUserPassword(user.id, password);
     const success = await this.activationService.enableUserAccount(user.id);
 
-    if (success) res.render('welcome');
+    if (success) {
+      const { signedUrl } = this.authService.createSignedAndroidAppDownloadUrl(user.id);
+      res.render('welcome', { downloadUrl: signedUrl });
+    }
     else console.error('Unable to activate your account');
 
   }

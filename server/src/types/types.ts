@@ -109,3 +109,10 @@ export type SearchQueryPayload = {
 export type ProtectOptions = {
   sanitizeQuery?: boolean
 }
+export type SignedUrlValidationParams = {
+  songId: string;
+  provider: string;
+  userId: string;
+  expiresAt: string;
+  sign: string;
+}

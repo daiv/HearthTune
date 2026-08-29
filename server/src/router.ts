@@ -1,16 +1,26 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { SongController } from '@/controllers/SongController';
 import { checkValidationToken } from './middleware/checkValidationToken';
-import { SongService } from './services';
+import { AuthService, SongService } from './services';
 import { AuthController } from './controllers/AuthController';
 import { ActivationService } from './services/ActivationService';
-import { streamGuard } from './middleware/streamGuard';
+import { createStreamGuard } from './middleware/streamGuard';
+import { createAppDownloadGuard } from './middleware/AppDownloadGuard';
+import { ResourcesController } from './controllers/ResourcesController';
 
-export function createRouter(songService: SongService, activationService: ActivationService, authController: AuthController) {
+export function createRouter
+  (
+    activationService: ActivationService,
+    authService: AuthService,
+    songService: SongService,
+    authController: AuthController,
+    resourcesController: ResourcesController,
+  ) {
+
   const router = express.Router();
   const songController = new SongController(songService);
 
-  router.get('/song/play/', streamGuard, songController.playSong);
+  router.get('/song/play/', createStreamGuard(authService), songController.playSong);
 
   router.get('/validation/:token', checkValidationToken(activationService), authController.validate);
 
@@ -20,5 +30,13 @@ export function createRouter(songService: SongService, activationService: Activa
 
   router.get('/allow-new-link/:token', authController.allowNewLink);
 
+  router.get('/app-download', createAppDownloadGuard(authService), resourcesController.downloadAndroidApp);
+
   return router;
+
+  /*
+  download app
+  reset password
+  */
+
 }

@@ -78,3 +78,8 @@ export class MissingFieldsException extends ServerError {
     super(message, 400);
   }
 }
+export class BadRequestException extends ServerError {
+  constructor(message: string = 'Invalid fields') {
+    super(message, 400);
+  }
+}

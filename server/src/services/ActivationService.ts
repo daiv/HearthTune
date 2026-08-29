@@ -118,4 +118,5 @@ export class ActivationService implements IActivationService {
   async removeCredentials(userId: string): Promise<boolean> {
     return await this.userRepository.removeCredentials(userId);
   }
+  
 }

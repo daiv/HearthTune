@@ -11,5 +11,4 @@ export interface IActivationService {
   enableUserAccount: (userId: string) => Promise<boolean>;
   requestNewLinkToAdmin: (token: string) => Promise<boolean>;
   updateStateByExpiredToken: (token: string) => Promise<boolean>;
-
 }

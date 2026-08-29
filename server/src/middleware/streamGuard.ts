@@ -1,30 +1,19 @@
 import { InvalidTokenException, MissingFieldsException } from "@/errors/ServerError";
-import { hashData } from "@/helpers";
+import { AuthService } from "@/services";
 import { Request, Response, NextFunction } from "express"
-export const streamGuard = (req: Request, res: Response, next: NextFunction) => {
 
-  const { userId, songId, provider, expiresAt, sign } = req.query;
-  if (!songId ||
-    !provider ||
-    !userId ||
-    !expiresAt ||
-    !sign
-    ||
-    typeof songId !== 'string' ||
-    typeof provider !== 'string' ||
-    typeof userId !== 'string' ||
-    typeof expiresAt !== 'string' ||
-    typeof sign !== 'string'
+export const createStreamGuard = (authService: AuthService) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const { userId, songId, provider, expiresAt, sign } = req.query as { userId: string, songId: string, provider: string, expiresAt: string, sign: string };
+    if (!songId ||
+      !provider ||
+      !userId ||
+      !expiresAt ||
+      !sign
+    ) throw new MissingFieldsException();
 
-  ) throw new MissingFieldsException();
+    if (!authService.isSignedUrlValid(songId, provider, userId, expiresAt, sign)) throw new InvalidTokenException();
 
-
-  if (Date.now() > Number(expiresAt)) throw new InvalidTokenException();
-  const dataToSign = `${songId}:${provider}:${userId}:${expiresAt}`;
-  const expectedSignature = hashData(dataToSign);
-
-  if (expectedSignature !== sign) throw new InvalidTokenException();
-
-  next();
-
+    next();
+  }
 }

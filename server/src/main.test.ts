@@ -11,10 +11,11 @@ import { describe, it, expect, afterAll, beforeAll, jest, beforeEach, afterEach 
 import { CreateUserDto, Role, Session, User } from "./types/types";
 import { UserRepository, SongRepository, SessionRepository } from "@/repositories/";
 import { UserModel, SessionModel } from "@/models/";
-import { createValidationCredentials, hashData, sanitize } from "./helpers";
+import { createValidationCredentials, expiresIn, hashData, sanitize } from "./helpers";
 import { ServerError } from "./errors/ServerError";
 import { MailingService } from "./services/MailingService";
-import { MockNodeMailer } from "./mocks/MockNodemailer";
+import { MockEmailProvider } from "./mocks/MockEmailProvider";
+import { before } from "node:test";
 
 describe('TDD tests', () => {
   beforeAll(async () => {
@@ -191,7 +192,7 @@ describe('TDD tests', () => {
       const vars = { searchString: '3LA8hq9plTY' };
       const response = await request.post(GRAPH)
         .send({ query: relatedQuery, variables: vars });
-      console.log('response is ', response.body); 
+      console.log('response is ', response.body);
       const { getRelated: songs } = response.body.data;
       expect(songs[0]).toHaveProperty("id");
       expect(songs[0]).toHaveProperty("title");
@@ -199,7 +200,7 @@ describe('TDD tests', () => {
 
     });
     describe('Auth Tests', () => {
-      const mailService = new MailingService(new MockNodeMailer());
+      const mailService = new MailingService(new MockEmailProvider());
       const activationService = new ActivationService(userRepository, mailService);
       describe('Login tests', () => {
         let userToCreate: CreateUserDto;
@@ -402,7 +403,7 @@ describe('TDD tests', () => {
         await UserModel.deleteMany({});
         userRepo = new UserRepository();
         userService = new UserService(userRepo);
-        mailingService = new MailingService(new MockNodeMailer());
+        mailingService = new MailingService(new MockEmailProvider());
         activationService = new ActivationService(userRepo, mailingService);
         sessionRepo = new SessionRepository();
         sessionService = new SessionService(sessionRepo);
@@ -640,6 +641,7 @@ describe('TDD tests', () => {
       });
 
     });
+
     describe('Session Service', () => {
       let repo: SessionRepository, service: SessionService;
 
@@ -705,6 +707,99 @@ describe('TDD tests', () => {
         expect(session.JTI).toBe(hashData('e'));
       })
     });
+    describe('Signed urls', () => {
+      describe('Streaming', () => {
 
+        let authService: AuthService;
+        let userRepo: UserRepository;
+        let sessionService: SessionService;
+        let sessionRepo: SessionRepository;
+        const [songId, provider, userId] = ['1234', '1234', '1234'];
+        beforeAll(() => {
+          userRepo = new UserRepository();
+          sessionRepo = new SessionRepository();
+          sessionService = new SessionService(sessionRepo);
+          authService = new AuthService(userRepo, sessionService);
+        });
+        type Params = {
+          songId: string,
+          provider: string,
+          userId: string,
+          expiresAt: string,
+          sign: string,
+        }
+        const getParams = (url: string): Params => {
+          const pairs = url.split('?')[1].split('&');
+          const params: Record<string, string> = {};
+          pairs.forEach(pair => {
+            const [key, value] = pair.split('=');
+            if (key && value) params[key] = value;
+          });
+          return params as Params;
+        }
+        it('Should create and validate signed urls', async () => {
+          const signedUrl = authService.createSignedUrl(songId, provider, userId);
+
+          const { signedUrl: url } = signedUrl;
+          const params = getParams(url);
+          expect(signedUrl).not.toBeFalsy();
+          expect(authService.isSignedUrlValid(params.songId, params.provider, params.userId, params.expiresAt, params.sign)).toBe(true);
+
+        });
+        it('Should detect when url has expired', async () => {
+          const signedUrl = authService.createSignedUrl(songId, provider, userId, Date.now() + 1000);
+          const { signedUrl: url } = signedUrl;
+          const params = getParams(url);
+          expect(authService.isSignedUrlValid(params.songId, params.provider, params.userId, params.expiresAt, params.sign)).toBe(true);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          expect(authService.isSignedUrlValid(params.songId, params.provider, params.userId, params.expiresAt, params.sign)).toBe(false);
+        });
+
+      });
+    });
+    describe('App Download', () => {
+      const userId = 'mockUser';
+      let authService: AuthService;
+      let userRepository: UserRepository;
+      let sessionService: SessionService;
+      let sessionRepo: SessionRepository;
+      beforeAll(() => {
+        userRepository = new UserRepository();
+        sessionRepo = new SessionRepository();
+        sessionService = new SessionService(sessionRepo);
+        authService = new AuthService(userRepository, sessionService);
+      });
+      type Params = {
+        userId: string,
+        jti: string,
+        expiresAt: string,
+        sign: string
+      }
+      const getParams = (url: string): Params => {
+        const pairs = url.split('?')[1].split('&');
+        const params: Record<string, string> = {};
+        pairs.forEach(pair => {
+          const [key, value] = pair.split('=');
+          if (key && value) params[key] = value;
+        });
+        return params as Params;
+      }
+      it('Should create and validate signed download urls', () => {
+        const { signedUrl } = authService.createSignedAndroidAppDownloadUrl(userId);
+        console.log('downloadurl', signedUrl);
+        const params = getParams(signedUrl);
+        expect(signedUrl).toBeTruthy();
+        expect(authService.isDownloadUrlValid(params.userId, params.jti, params.expiresAt, params.sign)).toBe(true);
+      });
+
+      it('Should detect when download url has expired', async () => {
+        const { signedUrl } = authService.createSignedAndroidAppDownloadUrl(userId, Date.now() + 1000);
+        expect(signedUrl).toBeTruthy();
+        const params = getParams(signedUrl);
+        expect(authService.isDownloadUrlValid(params.userId, params.jti, params.expiresAt, params.sign)).toBe(true);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        expect(authService.isDownloadUrlValid(params.userId, params.jti, params.expiresAt, params.sign)).toBe(false);
+      });
+    });
   });
 });
