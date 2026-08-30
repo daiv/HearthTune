@@ -47,7 +47,7 @@ const app = express();
     const activationService = new ActivationService(userRepository, mailService);
     const resourcesService = new ResourcesService();
     const authController = new AuthController(activationService, userService, authService);
-    const resourcesController = new ResourcesController(resourcesService);
+    const resourcesController = new ResourcesController(resourcesService, authService);
 
     app.use(express.json());
     app.use(

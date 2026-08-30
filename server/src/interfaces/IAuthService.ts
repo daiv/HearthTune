@@ -3,6 +3,7 @@ import { AccessPayload, Role, Session, SignedUrlValidationParams, } from "@/type
 
 export interface IAuthService {
   checkUserPassword: (userId: string, plainPassword: string) => Promise<boolean>;
+  checkEmailPassword: (email: string, plainPassword: string) => Promise<boolean>;
   login: (email: string, password: string, deviceId: string, deviceInfo?: string) => Promise<AuthPayload>;
   logout: (jti: string) => Promise<boolean>;
   createSession: (id: string, role: Role, deviceId: string, deviceInfo?: string) => Promise<Session>;

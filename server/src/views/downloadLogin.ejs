@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen relative">
+
+  <div id="toast"
+    class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 transform transition-all duration-300 ease-in-out bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 <%= (locals.errors && (locals.errors.general || locals.errors.email)) ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0' %>">
+    <span id="toast-message">
+      <%= (locals.errors && (locals.errors.general || locals.errors.email)) ? (locals.errors.general ||
+        locals.errors.email) : '' %>
+    </span>
+    <button type="button" onclick="hideToast()" class="text-gray-200 hover:text-white font-bold">&times;</button>
+  </div>
+
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
+    <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center">Download App</h2>
+
+    <form action="/apk/login" method="POST" class="space-y-4">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Email</label>
+        <input type="text" id="email" name="email" autofocus
+          value="<%= (typeof email !== 'undefined' && email) ? email : '' %>"
+          class="mt-1 w-full p-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <% if (errors && errors.email) { %>
+          <p class="text-red-500 text-lg mt-1">
+            <%= errors.email %>
+          </p>
+          <% } %>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Password</label>
+        <div class="relative mt-1">
+          <input type="password" id="password" name="password"
+            class="w-full p-2 pr-10 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <% if (errors && errors.password) { %>
+            <p class="text-red-500 text-lg mt-1">
+              <%= errors.password %>
+            </p>
+            <% } %>
+              <button type="button" onclick="togglePassword('password', event)" tabindex="-1"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 focus:outline-none">
+                <i data-lucide="eye" class="icon-eye w-5 h-5"></i>
+                <i data-lucide="eye-off" class="icon-eye-off hidden w-5 h-5"></i>
+              </button>
+        </div>
+      </div>
+
+      <button type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition-colors duration-200">
+        Download APK
+      </button>
+
+    </form>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    lucide.createIcons();
+
+    function togglePassword(inputId, event) {
+      event.preventDefault();
+      const input = document.getElementById(inputId);
+      const button = event.currentTarget;
+
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+
+      const eyeIcon = button.querySelector('.icon-eye');
+      const eyeOffIcon = button.querySelector('.icon-eye-off');
+
+      eyeIcon.classList.toggle('hidden');
+      eyeOffIcon.classList.toggle('hidden');
+    }
+
+    function hideToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+      toast.classList.add('translate-y-20', 'opacity-0');
+    }
+
+    const hasError = "<%= (locals.errors && (locals.errors.general || locals.errors.email)) ? 'true' : 'false' %>";
+
+    if (hasError === 'true') {
+      setTimeout(() => {
+        hideToast();
+      }, 4000);
+    }
+  </script>
+</body>
+
+</html>

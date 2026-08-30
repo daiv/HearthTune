@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import { SongController } from '@/controllers/SongController';
 import { checkValidationToken } from './middleware/checkValidationToken';
 import { AuthService, SongService } from './services';
@@ -30,13 +30,13 @@ export function createRouter
 
   router.get('/allow-new-link/:token', authController.allowNewLink);
 
+
   router.get('/app-download', createAppDownloadGuard(authService), resourcesController.downloadAndroidApp);
 
-  return router;
+  router.get('/apk/login', resourcesController.renderDownloadLogin);
 
-  /*
-  download app
-  reset password
-  */
+  router.post('/apk/login', resourcesController.downloadAndroidAppWithCredentials);
+
+  return router;
 
 }

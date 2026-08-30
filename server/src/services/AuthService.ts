@@ -13,6 +13,13 @@ export class AuthService implements IAuthService {
 
   constructor(private userRepository: UserRepository, private sessionService: SessionService) { }
 
+  async checkEmailPassword(email: string, password: string): Promise<boolean> {
+
+    const userId = await this.userRepository.getUserByEmail(email);
+    if (!userId) return false;
+
+    return await this.checkUserPassword(userId.id, password);
+  }
   async checkUserPassword(userId: string, plainPassword: string): Promise<boolean> {
     const password = await this.userRepository.getUserPassword(userId);
     if (!password) return false;

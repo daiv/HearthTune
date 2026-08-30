@@ -80,3 +80,14 @@ export const sanitize = (rawQuery: string): string => {
     .trim();
   return sanitizedQuery;
 }
+export const checkEmail = (email: string): string => {
+  if (!email) return 'Email can not be empty';
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
+  if (!emailRegex.test(email)) {
+    return 'Invalid email format';
+  }
+
+  return '';
+};
