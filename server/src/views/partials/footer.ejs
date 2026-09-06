@@ -1,0 +1,36 @@
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    lucide.createIcons();
+
+    function togglePassword(inputId, event) {
+      event.preventDefault();
+      const input = document.getElementById(inputId);
+      const button = event.currentTarget;
+
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+
+      const eyeIcon = button.querySelector('.icon-eye');
+      const eyeOffIcon = button.querySelector('.icon-eye-off');
+
+      eyeIcon.classList.toggle('hidden');
+      eyeOffIcon.classList.toggle('hidden');
+    }
+
+    function hideToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+      toast.classList.add('translate-y-20', 'opacity-0');
+    }
+
+    const hasError = "<%= (locals.errors && (locals.errors.general || locals.errors.email)) ? 'true' : 'false' %>";
+
+    if (hasError === 'true') {
+      setTimeout(() => {
+        hideToast();
+      }, 4000);
+    }
+  </script>
+</body>
+
+</html>

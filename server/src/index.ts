@@ -17,6 +17,7 @@ import { NodeMailer } from './providers/email/Nodemailer';
 import { ResourcesController } from './controllers/ResourcesController';
 import { ResourcesService } from './services/ResourcesService';
 import { MockEmailProvider } from './mocks/MockEmailProvider';
+import { SsrController } from './controllers';
 
 const app = express();
 
@@ -48,7 +49,7 @@ const app = express();
     const resourcesService = new ResourcesService();
     const authController = new AuthController(activationService, userService, authService);
     const resourcesController = new ResourcesController(resourcesService, authService);
-
+    const ssrController = new SsrController(authService, resourcesService);
     app.use(express.json());
     app.use(
       createRouter(
@@ -56,7 +57,8 @@ const app = express();
         authService,
         songService,
         authController,
-        resourcesController
+        resourcesController,
+        ssrController
       ));
 
     await userService.createUsersFromEnv();
@@ -71,6 +73,7 @@ const app = express();
   } catch (error: unknown) {
     if (error instanceof Error)
       console.error('Unable to start server', error.message);
+    console.error(error);
     process.exit(1);
   }
 })();

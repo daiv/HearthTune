@@ -1,8 +1,9 @@
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
-import { Credential, Role, TimeUnit } from './types/types';
-import { MailOptions } from 'nodemailer/lib/json-transport';
+import { Credential, LoginProps, Role, TimeUnit, ViewPath, ViewPropsMap } from './types/types';
 import { PERMISSION } from './constants';
+import { Response, Request } from 'express';
+import { ServerError } from './errors/ServerError';
+import { AuthService } from './services';
 
 export function checkEnvFile() {
   console.log('Checking env file...');
@@ -70,6 +71,7 @@ export function createValidationCredentials(expiresAt: Date = expiresIn(2, 'days
   }
   return credentials;
 }
+
 export const atLeast = (minRole: Role) => (role: Role) => PERMISSION[role] >= PERMISSION[minRole];
 export const isExactly = (targetRole: Role) => (role: Role) => targetRole === role;
 
@@ -84,10 +86,31 @@ export const checkEmail = (email: string): string => {
   if (!email) return 'Email can not be empty';
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  
+
   if (!emailRegex.test(email)) {
     return 'Invalid email format';
   }
 
   return '';
 };
+export const checkLoginErrors = (email: string, password: string): { fieldsAreOk: boolean, emailError: string, passwordError: string } => {
+  const emailError = checkEmail(email);
+  const passwordError = !password ? 'Password can not be empty' : '';
+  const fieldsAreOk = (!emailError && !passwordError);
+  return { fieldsAreOk, emailError, passwordError };
+}
+
+
+export const render = <K extends ViewPath>(
+  res: Response,
+  view: K,
+  data: ViewPropsMap[K],
+): void => {
+  res.render(view, data, (err, html) => {
+    if (err) {
+      console.error('render error', err);
+      throw new ServerError(err.message);
+    }
+    res.send(html);
+  });
+}

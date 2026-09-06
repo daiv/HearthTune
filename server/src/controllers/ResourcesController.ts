@@ -1,7 +1,8 @@
-import { checkEmail } from "@/helpers";
+import { checkEmail, checkLoginErrors, render } from "@/helpers";
 import { IResourcesController } from "@/interfaces/IResourcesController";
 import { AuthService } from "@/services";
 import { ResourcesService } from "@/services/ResourcesService";
+import { LoginProps } from "@/types/types";
 import { Request, Response } from 'express';
 
 export class ResourcesController implements IResourcesController {
@@ -39,5 +40,38 @@ export class ResourcesController implements IResourcesController {
         email
       });
     }
+  }
+
+  renderDashBoard = (req: Request, res: Response) => {
+    render(res, 'authenticate', { title: 'Sign in', buttonText: 'Login' });
+
+  }
+  dashBoard = async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+    const { fieldsAreOk, emailError, passwordError } = checkLoginErrors(email, password);
+    const options: LoginProps = {
+      email,
+      title: 'Sign in',
+      buttonText: 'Login',
+      errors: {
+        email: emailError,
+        password: passwordError,
+        general: undefined
+      }
+    }
+    if (!fieldsAreOk) return render(res, 'authenticate', options);
+
+    const validCredentials = await this.authService.checkEmailPassword(email, password);
+    if (!validCredentials) return render(res, 'authenticate',
+      {
+        ...options,
+        errors: {
+          ...options.errors,
+          general: 'Invalid credentials'
+        }
+      });
+
+    return res.download(this.resourcesService.getAndroidAppDownloadPath());
+
   }
 }

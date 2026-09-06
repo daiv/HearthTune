@@ -1,0 +1,12 @@
+<% const errorMessage = locals.errors?.general; %>
+<div id="toast"
+  class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 transform transition-all duration-300 ease-in-out bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 <%= errorMessage ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0' %>">
+  <span id="toast-message"><%= errorMessage%></span>
+  <button type="button" onclick="hideToast()" class="text-gray-200 hover:text-white font-bold">&times;</button>
+</div>
+
+<% if (errorMessage) { %>
+<script>
+  setTimeout(() => { hideToast(); }, 4000);
+</script>
+<% } %>

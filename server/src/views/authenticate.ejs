@@ -1,0 +1,42 @@
+<%- include('partials/header') %>
+  <%- include('partials/toast') %>
+
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
+      <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center">Download App</h2>
+
+      <form action="<%= action %>" method="POST" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Email</label>
+          <input type="text" id="email" name="email" autofocus
+            value="<%= (typeof email !== 'undefined' && email) ? email : '' %>"
+            class="mt-1 w-full p-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <% if (locals.errors && errors.email) { %>
+            <p class="text-red-500 text-sm mt-1">
+              <%= errors.email %>
+            </p>
+            <% } %>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Password</label>
+          <div class="relative mt-1">
+            <input type="password" id="password" name="password"
+              class="w-full p-2 pr-10 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button type="button" onclick="togglePassword('password', event)" tabindex="-1"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 focus:outline-none">
+              <i data-lucide="eye" class="icon-eye w-5 h-5"></i>
+              <i data-lucide="eye-off" class="icon-eye-off hidden w-5 h-5"></i>
+            </button>
+          </div>
+          <% if (locals.errors && errors.password) { %>
+            <p class="text-red-500 text-sm mt-1">
+              <%= errors.password %>
+            </p>
+            <% } %>
+        </div>
+
+        <%- include('partials/submitButton',{text:buttonText ||'Ok'}) %>
+
+      </form>
+    </div>
+    <%- include('partials/footer') %>

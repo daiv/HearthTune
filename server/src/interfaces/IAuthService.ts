@@ -1,5 +1,5 @@
 import { AuthPayload, SignedUrl } from "@/common/types";
-import { AccessPayload, Role, Session, SignedUrlValidationParams, } from "@/types/types";
+import { AccessPayload, Role, Session, SignedUrlValidationParams, SsrLoginResponse, } from "@/types/types";
 
 export interface IAuthService {
   checkUserPassword: (userId: string, plainPassword: string) => Promise<boolean>;
@@ -12,6 +12,4 @@ export interface IAuthService {
   refreshTokens: (jti: string) => Promise<AuthPayload>;
   createSignedUrl: (songId: string, provider: string, userId: string, expiration?: number) => SignedUrl;
   isSignedUrlValid: (songId: string, provider: string, userId: string, expiresAt: string, sign: string,) => boolean;
-  createSignedAndroidAppDownloadUrl: (userId: string) => SignedUrl;
-  isDownloadUrlValid: (userId: string, jti: string, expiresAt: string, sign: string) => boolean;
 }

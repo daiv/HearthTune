@@ -1,4 +1,5 @@
 import { InvalidTokenException, UserNotFoundException } from "@/errors/ServerError";
+import { checkEmail } from "@/helpers";
 import { IActivationService } from "@/interfaces/IActivationService";
 import { IAuthController } from "@/interfaces/IAuthController";
 import { IUserService } from "@/interfaces/IUserService";
@@ -78,4 +79,33 @@ export class AuthController implements IAuthController {
     }
 
   }
+  renderSsrLogin = async (req: Request, res: Response): Promise<void> => {
+    const { email } = req.params;
+    res.render('downloadLogin', { errors: {}, email });
+  }
+
+  ssrLogin = async (req: Request, res: Response): Promise<void> => {
+    const { email, password } = req.body;
+    const emailError = checkEmail(email);
+    const passwordError = !password ? 'Password can not be empty' : '';
+    try {
+      const isValid = await this.authService.checkEmailPassword(email, password);
+      const general = emailError || passwordError ? 'Check fields' : 'Invalid credentials';
+      if (!isValid) {
+        return res.render('downloadLogin', { errors: { general, email: emailError, password: passwordError }, email });
+      }
+
+
+    } catch (error) {
+      console.error(error);
+      return res.render('downloadLogin', {
+        errors: { email: 'Server error. Please try again later.' },
+        email
+      });
+    }
+  }
+
 }
+
+
+

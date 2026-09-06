@@ -116,3 +116,62 @@ export type SignedUrlValidationParams = {
   expiresAt: string;
   sign: string;
 }
+export type SsrLoginResponse =
+  {
+    success: true
+  } |
+  {
+    success: false,
+    errors: {
+      general: string,
+      email: string,
+      password: string,
+    }
+  }
+
+export type EjsOptions = {
+  fields: {};
+  errors?: {};
+  action: string;
+  events?: {
+    onSuccess?: () => void;
+    onError?: () => void;
+  };
+}
+export type EjsView = |
+  'authenticate' |
+  'createAccount' |
+  'dashboard' |
+  'downloadLogin' |
+  'errors' |
+  'linkRequested' |
+  'success' |
+  'welcome';
+
+export interface BaseProps {
+  title: string
+}
+export interface LoginProps extends BaseProps {
+  buttonText: string;
+  errors?: {
+    email?: string;
+    password?: string;
+    general?: string;
+  };
+  email?: string;
+  action: string;
+}
+export interface action {
+  name: string;
+  url: string;
+}
+export interface DashboardProps extends BaseProps {
+  actions: action[];
+}
+export type ViewPropsMap = {
+  'authenticate': LoginProps
+  'dashboard': DashboardProps
+}
+export type ViewPath = keyof ViewPropsMap;
+
+

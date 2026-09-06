@@ -1,14 +1,15 @@
 import { IAuthService } from "@/interfaces/IAuthService";
-import { AccessPayload, Role, Session, SignedUrlValidationParams } from "@/types/types";
+import { AccessPayload, Role, Session, SignedUrlValidationParams, SsrLoginResponse } from "@/types/types";
 import { UserRepository } from "@/repositories";
 import { AccountNotActiveException, BadRequestException, InvalidCredentialsException, InvalidTokenException, MissingUserRoleException, ServerError, TrialExpiredException, } from "@/errors/ServerError";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { expiresIn, hashData, isTrialExpired } from "@/helpers";
+import { checkEmail, expiresIn, hashData, isTrialExpired } from "@/helpers";
 import { SessionService } from "./SessionService";
 import { AuthPayload, SignedUrl } from "@/common/types";
 import { randomUUID } from "node:crypto";
-
+import { Request, Response } from 'express';
+import { deprecate } from "node:util";
 export class AuthService implements IAuthService {
 
   constructor(private userRepository: UserRepository, private sessionService: SessionService) { }
@@ -126,27 +127,6 @@ export class AuthService implements IAuthService {
     const dataToSign = `${songId}:${provider}:${userId}:${expiresAt}`;
     const expectedSignature = hashData(dataToSign);
     console.log('valid = ', expectedSignature === sign);
-    return expectedSignature === sign;
-  }
-
-  createSignedAndroidAppDownloadUrl(userId: string, expiration?: number): SignedUrl {
-    const expiresAt = expiration || expiresIn(30, "minutes").getTime();
-    const jti = randomUUID();
-    const dataToSign = `${userId}:${jti}:${expiresAt}`;
-    const signature = hashData(dataToSign);
-    const baseUrl = process.env.SERVER_URL;
-
-    const signedUrl = `${baseUrl}/app-download?userId=${userId}&jti=${jti}&expiresAt=${expiresAt}&sign=${signature}`;
-    return { signedUrl }
-  }
-
-  isDownloadUrlValid(userId: string, jti: string, expiresAt: string, sign: string): boolean {
-    const numericExpiresAt = Number(expiresAt);
-    if (isNaN(numericExpiresAt)) throw new BadRequestException();
-    if (Date.now() > numericExpiresAt) return false;
-
-    const dataToSign = `${userId}:${jti}:${expiresAt}`;
-    const expectedSignature = hashData(dataToSign);
     return expectedSignature === sign;
   }
 }
