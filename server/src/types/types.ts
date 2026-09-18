@@ -36,6 +36,7 @@ export type Credential = {
 export type ResetPasswordCredential = Credential & { createdAt: Date, active: boolean };
 export type User = {
   id: string;
+  internalTag: string;
   nick?: string;
   email: string;
   password?: string;
@@ -58,9 +59,9 @@ type MongoUserExtraFields =
 export type MongoUser = User & MongoUserExtraFields;
 export type CreateUserDto = {
   email: string;
-  role?: Role;
+  role: Role;
+  internalTag: string;
   password?: string;
-  nick?: string;
 }
 export type Role = 'superAdmin' | 'admin' | 'user' | 'basic' | 'test';
 export type RolePermission = Record<Role, number>;
@@ -181,6 +182,7 @@ export interface SetNewPasswordProps extends Omit<LoginProps, 'errors'> {
 }
 export interface CreateAccountErrors extends LoginErrors {
   matchPassword: string;
+  nick: string;
 }
 export interface CreateAccountProps extends Omit<SetNewPasswordProps, 'errors'> {
   errors?: CreateAccountErrors

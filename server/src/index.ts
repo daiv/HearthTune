@@ -41,7 +41,7 @@ const app = express();
     const sessionService = new SessionService(sessionRepository);
     const authService = new AuthService(userRepository, sessionService);
     const mailService = new MailingService(new MockEmailProvider());
-    const activationService = new ActivationService(userRepository, mailService);
+    const activationService = new ActivationService(userRepository, mailService, authService);
     const resourcesService = new ResourcesService();
     const resourcesController = new ResourcesController(resourcesService, authService);
 

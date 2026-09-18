@@ -11,14 +11,14 @@ export class UserService implements IUserService {
 
   async createUser(data: CreateUserDto): Promise<User> {
     if (!data.email) throw new Error('bad user format');
-    const { password, email, nick, role = 'basic' } = data;
+    const { password, email, internalTag, role = 'basic' } = data;
     const hashedPassword = password ? await bcrypt.hash(password, 12) : undefined;
     const emailHash = hashData(email);
 
     const user: User & { emailHash: string } = {
       email,
       emailHash,
-      nick,
+      internalTag,
       password: hashedPassword,
       status: "whiteListed",
       role,
@@ -37,20 +37,28 @@ export class UserService implements IUserService {
     const savedUser = await this.userRepository.save(user);
     return savedUser;
   }
+  async setUserNick(userId: string, plainNick: string): Promise<User | null> {
+    const user = await this.userRepository.getUserById(userId);
+    if (!user) throw new UserNotFoundException();
+    user.nick = plainNick;
+    const savedUser = await this.userRepository.save(user);
+    return savedUser;
+  }
   async createUsersFromEnv() {
     const envEntries = process.env.USERS?.split(';') || [];
-    if (envEntries.length % 2 !== 0) throw new Error('bad env.users format');
+    if (envEntries.length % 3 !== 0) throw new Error('bad env.users format');
 
     console.log('entries', envEntries);
     const envUsers = [];
 
-    for (let i = 0; i < envEntries.length; i += 2) {
+    for (let i = 0; i < envEntries.length; i += 3) {
       const email = envEntries[i];
       const role: Role = envEntries[i + 1] as Role;
-
+      const internalTag: string = envEntries[i + 2];
       const user: CreateUserDto = {
         email,
         role,
+        internalTag,
       };
       envUsers.push(user);
     }

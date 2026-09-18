@@ -127,14 +127,15 @@ export class SsrController implements ISsrController {
   };
 
   createAccount = async (req: Request, res: Response): Promise<void> => {
-    const { token, password, matchPassword } = req.body
+    const { token, password, matchPassword, nick } = req.body
     const passwordError = checkPassword(password);
     const matchError = matchPassword === password ? '' : 'Password do not match';
+    const nickError = nick === '' ? 'Nick can not be empty' : '';
     const user = await this.services.activationService.getUserByToken(token);
-    if (!passwordError) {
+    if (!passwordError && !nickError) {
       if (!user) throw new InvalidTokenException();
-      await this.services.userService.setUserPassword(user.id, password);
-      const success = await this.services.activationService.enableUserAccount(user.id);
+
+      const success = await this.services.activationService.enableUserAccount(user.id, password, nick);
       if (!success) render(res, 'msg', {
         message: 'Unable to activate your account. Try again later',
         title: 'Errors'
@@ -161,6 +162,7 @@ export class SsrController implements ISsrController {
       errors: {
         password: passwordError,
         matchPassword: matchError,
+        nick: nickError
       }
     });
   };

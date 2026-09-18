@@ -20,7 +20,10 @@ const userSchema = new mongoose.Schema<MongoUser>({
     index: true,
     required: true,
   },
-
+  internalTag: {
+    type: String,
+    required: true
+  },
   nick: {
     type: String,
     required: false,

@@ -202,7 +202,11 @@ describe('TDD tests', () => {
     });
     describe('Auth Tests', () => {
       const mailService = new MailingService(new MockEmailProvider());
-      const activationService = new ActivationService(userRepository, mailService);
+      const userRepo = new UserRepository();
+      const sessionRepo = new SessionRepository();
+      const sessionService = new SessionService(sessionRepo);
+      const authService = new AuthService(userRepo, sessionService);
+      const activationService = new ActivationService(userRepository, mailService, authService);
       describe('Login tests', () => {
         let userToCreate: CreateUserDto;
         let createdUser: User;
@@ -210,7 +214,9 @@ describe('TDD tests', () => {
           userToCreate = {
             email: 'mock@mockmail.com',
             password: '1234',
-            role: 'basic'
+            role: 'basic',
+            internalTag: 'mock'
+
           }
           createdUser = await userService.createUser(userToCreate);
         });
@@ -237,7 +243,7 @@ describe('TDD tests', () => {
         });
 
         it('Should return tokens when credentials are ok', async () => {
-          await activationService.enableUserAccount(createdUser.id);
+          await activationService.enableUserAccount(createdUser.id, '1234', 'nick');
           const vars = {
             email: userToCreate.email, pass: userToCreate.password,
             deviceId: uniqueDevId.pop(), deviceInfo: 'Android'
@@ -257,10 +263,13 @@ describe('TDD tests', () => {
           const userDTO: CreateUserDto = {
             email: 'active@email.com',
             password: '1234',
+            internalTag: 'mock',
+            role: 'basic',
           }
           activeUser = await userService.createUser(userDTO);
           activeUser.password = userDTO.password;
-          await activationService.enableUserAccount(activeUser.id);
+          if (!activeUser || !activeUser.password) throw new Error();
+          await activationService.enableUserAccount(activeUser.id, activeUser.password, 'nick');
         });
 
         it('Should not refresh tokens if session does not exist', async () => {
@@ -356,7 +365,8 @@ describe('TDD tests', () => {
       nick: 'testuser',
       password: '1234',
       role: 'basic',
-      status: "active"
+      status: "active",
+      internalTag: 'intTag'
     };
     describe('User repository tests', () => {
       beforeAll(async () => {
@@ -439,47 +449,47 @@ describe('TDD tests', () => {
       let sessionService: SessionService;
       let mailingService: MailingService;
       const uniqueEmails: string[] = []
-      for (let i = 0; i < 10; i++) uniqueEmails.push(i + "@email.com");
+      for (let i = 0; i < 50; i++) uniqueEmails.push(i + "@email.com");
 
       beforeAll(async () => {
         await UserModel.deleteMany({});
         userRepo = new UserRepository();
         userService = new UserService(userRepo);
         mailingService = new MailingService(new MockEmailProvider());
-        activationService = new ActivationService(userRepo, mailingService);
         sessionRepo = new SessionRepository();
         sessionService = new SessionService(sessionRepo);
         authService = new AuthService(userRepo, sessionService);
+        activationService = new ActivationService(userRepo, mailingService, authService);
       });
 
       it('Should create users', async () => {
-        const createdUser = await userService.createUser({ email: uniqueEmails.pop()!, password: 'password', nick: 'nick' });
+        const createdUser = await userService.createUser({ email: uniqueEmails.pop()!, password: 'password', internalTag: 'intTag', role: 'basic' });
         expect(createdUser).toBeTruthy();
       });
 
       it('Should hash the email', async () => {
         const email = 'emailTobeHashed';
-        const createdUser = await userService.createUser({ email, password: 'password', nick: 'nick' });
-        const rawCreatedUser = await UserModel.findOne({ nick: 'nick' }).lean();
+        const createdUser = await userService.createUser({ email, password: 'password', internalTag: 'intTag', role: 'basic' });
+        const rawCreatedUser = await UserModel.findOne({ internalTag: 'intTag' }).lean();
         expect(createdUser.email).not.toBe(rawCreatedUser?.email);
       });
 
       it('Should encrypt email field', async () => {
-        const { email, password, nick } = mockUser;
-        const createdUser = await userService.createUser({ email, password, nick });
+        const { email, password, internalTag } = mockUser;
+        const createdUser = await userService.createUser({ email, password, internalTag, role: 'basic' });
         expect(password).not.toBe(createdUser.password);
       });
 
       it('Should find users by emailHash', async () => {
-        const [email, password, nick] = [uniqueEmails.pop()!, 'pwdd', 'daiv'];
-        const createdUser = await userService.createUser({ email, password, nick });
+        const [email, password, internalTag,] = [uniqueEmails.pop()!, 'pwdd', 'daiv'];
+        const createdUser = await userService.createUser({ email, password, internalTag, role: 'basic' });
         const userFromHash = await userService.getUserByEmail(email);
         expect(userFromHash).toEqual(createdUser);
       });
 
       it('Should find users by id', async () => {
         const email = uniqueEmails.pop();
-        const createdUser = await userService.createUser({ email: email!, password: '12345' });
+        const createdUser = await userService.createUser({ email: email!, password: '12345', internalTag: 'intTag', role: 'basic' });
         const userFound = await userService.getUserById(createdUser.id);
         expect(createdUser.id).toEqual(userFound.id);
       });
@@ -487,15 +497,15 @@ describe('TDD tests', () => {
       it('Should create user encrypting password and hashing email', async () => {
         await UserModel.deleteMany({});
         // const [nick, email, password] = ['nick', 'email@email.com', 'password'];
-        const { nick, email, password } = mockUser;
-        const newUser: User = await userService.createUser({ email, password, nick });
-        const rawCreatedUser = await UserModel.findOne({ nick }).lean();
+        const { internalTag, email, password, role } = mockUser;
+        const newUser: User = await userService.createUser({ email, password, internalTag, role });
+        const rawCreatedUser = await UserModel.findOne({ internalTag }).lean();
         expect(rawCreatedUser).toBeTruthy();
         expect(rawCreatedUser?.email).toBeTruthy();
         expect(rawCreatedUser?.email).not.toBe(email);
         expect(rawCreatedUser?.password).toBeTruthy();
         expect(rawCreatedUser?.password).not.toBe(password);
-        expect(newUser.nick).toBe(nick);
+        expect(newUser.internalTag).toBe(internalTag);
       });
 
       it('Should produce the same hash from the same string', () => {
@@ -507,9 +517,9 @@ describe('TDD tests', () => {
       it('Should override user data when using save', async () => {
         const email = uniqueEmails.pop()!;
         const password = 'initialPassword';
-        const nick = 'originalNick';
+        const internalTag = 'originalTag';
 
-        const createdUser = await userService.createUser({ email, password, nick });
+        const createdUser = await userService.createUser({ email, password, internalTag, role: 'basic' });
         expect(createdUser.status).toBe('whiteListed');
 
         const updatedData: User = {
@@ -532,10 +542,11 @@ describe('TDD tests', () => {
         expect(userInDb.id).toBe(createdUser.id);
       });
 
-      it('Should create user from only email and role', async () => {
+      it('Should create user from only email, role and internalTag', async () => {
         const email = uniqueEmails.pop()!;
         const role: Role = "user";
-        const user = await userService.createUser({ email, role });
+        const internalTag = 'intTag';
+        const user = await userService.createUser({ email, role, internalTag });
         expect(user.id).toBeTruthy();
         expect(user.email).toBeTruthy();
         expect(user.role).toBeTruthy();
@@ -545,7 +556,7 @@ describe('TDD tests', () => {
 
 
       it('Should validate validationToken lifecycle', async () => {
-        const user = await userService.createUser({ email: uniqueEmails.pop()! });
+        const user = await userService.createUser({ email: uniqueEmails.pop()!, internalTag: 'intTag', role: 'basic' });
         const credentials = createValidationCredentials();
 
         expect(await activationService.removeCredentials(user.id)).toBe(false);
@@ -575,7 +586,7 @@ describe('TDD tests', () => {
       });
 
       it('Should save password and check password lifecycle', async () => {
-        const user = await userService.createUser({ email: uniqueEmails.pop()! });
+        const user = await userService.createUser({ email: uniqueEmails.pop()!, role: 'basic', internalTag: 'intTag' });
         expect(user.password).toBeFalsy();
         const userPassword = 'iLoveUnicorns';
         expect(await authService.checkUserPassword(user.id, userPassword)).toBe(false);
@@ -586,17 +597,16 @@ describe('TDD tests', () => {
       });
 
       it('Should enable user Account if everything is ok', async () => {
-        const userToEnable = await userService.createUser({ email: uniqueEmails.pop()! });
+        const userToEnable = await userService.createUser({ email: uniqueEmails.pop()!, role: 'basic', internalTag: 'intTag' });
         expect(userToEnable.activatedAt).toBeFalsy();
         const password = '12345isTheBestPassword';
-        await userService.setUserPassword(userToEnable.id, password);
-        await activationService.enableUserAccount(userToEnable.id);
+        await activationService.enableUserAccount(userToEnable.id, password, 'mockNick');
         const user = await userService.getUserById(userToEnable.id);
         expect(user.activatedAt).toBeTruthy();
       });
 
       it('Should create and save userCredentials', async () => {
-        const user = await userService.createUser({ email: uniqueEmails.pop()! });
+        const user = await userService.createUser({ email: uniqueEmails.pop()!, role: 'basic', internalTag: 'intTag' });
         expect(user).not.toHaveProperty('credentials');
         const preparedUser = activationService.prepareUserCredentials(user);
         expect(preparedUser).toHaveProperty('credentials');
@@ -623,6 +633,7 @@ describe('TDD tests', () => {
           role: "basic",
           id: '123333333',
           status: 'active',
+          internalTag: 'intTag',
           resetPassword: resetCredential
         }
         const updatedUser = await userRepo.save(newUser);
@@ -634,6 +645,23 @@ describe('TDD tests', () => {
         if (!finalUser || !finalUser.resetPassword) throw new Error();
         expect(finalUser.resetPassword.active).toBe(false);
 
+      });
+      it('Should save user nick', async () => {
+        const newUser: User = {
+          email: uniqueEmails.pop()!,
+          role: 'basic',
+          id: '32323',
+          status: 'active',
+          internalTag: 'mock',
+        }
+        await userRepo.save(newUser);
+        const user = await userService.getUserByEmail(newUser.email);
+        if (!user) throw new Error();
+        expect(user.nick).toBeFalsy();
+        const newNick = 'Timotea';
+        const updatedUser = await userService.setUserNick(user.id, newNick);
+        if (!updatedUser) throw Error();
+        expect(updatedUser.nick).toBe(newNick);
       });
     });
   });
@@ -831,7 +859,8 @@ describe('TDD tests', () => {
           email: 'down@down',
           id: 'trickyId',
           role: 'basic',
-          status: 'active'
+          status: 'active',
+          internalTag: 'intTag'
         }
         beforeAll(async () => {
           userRepo = new UserRepository();

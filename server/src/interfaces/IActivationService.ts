@@ -8,7 +8,7 @@ export interface IActivationService {
   isValidationTokenLegit: (token: string) => Promise<IsTokenLegitResponse>;
   getUserByToken: (token: string) => Promise<User | null>;
   removeCredentials: (userId: string) => Promise<boolean>;
-  enableUserAccount: (userId: string) => Promise<boolean>;
+  enableUserAccount: (userId: string, password: string, nick: string) => Promise<boolean>;
   requestNewLinkToAdmin: (token: string) => Promise<boolean>;
   updateStateByExpiredToken: (token: string) => Promise<boolean>;
 }

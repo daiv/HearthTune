@@ -15,6 +15,7 @@ export interface IAuthService {
   generateResetPasswordUrl: (email: string) => Promise<string | null>;
   isResetPasswordTokenValid: (token: string) => Promise<boolean>;
   invalidateResetPasswordToken: (token: string) => Promise<boolean>;
+  encryptPassword: (plainPassword: string) => Promise<string>;
 
   createDownloadUrl: (userId: string) => string;
   isDownloadUrlValid: (userId: string, jti: string, expiresAt: string, sign: string) => boolean;

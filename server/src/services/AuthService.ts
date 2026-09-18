@@ -25,7 +25,11 @@ export class AuthService implements IAuthService {
     if (!password) return false;
     return await bcrypt.compare(plainPassword, password)
   }
+  async encryptPassword(plainPassword: string): Promise<string> {
+    const password = await bcrypt.hash(plainPassword, 12);
+    return password;
 
+  }
   async login(email: string, password: string, deviceId: string, deviceInfo: string = 'Unknown device'): Promise<AuthPayload> {
 
     const user = await this.userRepository.getUserByEmail(email);

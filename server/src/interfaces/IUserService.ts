@@ -8,4 +8,5 @@ export interface IUserService {
   getUserByEmail: (email: string) => Promise<User>;
   getUserIdByResetPasswordToken: (token: string) => Promise<string | null>;
   setUserPassword: (userId: string, plainPassword: string) => Promise<User | null>;
+  setUserNick: (userId: string, plainNick: string) => Promise<User | null>;
 }

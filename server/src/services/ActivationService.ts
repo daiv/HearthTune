@@ -5,27 +5,32 @@ import { IMailingService } from "@/interfaces/IMailingService";
 import { UserModel } from "@/models";
 import { UserRepository } from "@/repositories";
 import { Credential, IsTokenLegitResponse, User } from "@/types/types";
+import bcrypt from 'bcrypt';
+import { AuthService } from "./AuthService";
 
 export class ActivationService implements IActivationService {
   constructor(
     private userRepository: UserRepository,
-    private mailService: IMailingService) { }
+    private mailService: IMailingService,
+    private authService: AuthService) { }
 
   async sendActivationLink(to: string, token: string): Promise<boolean> {
     const activationUrl = `${process.env.SERVER_URL}/create-account/${token}`;
     const mailSuccess = await this.mailService.sendEmail(to, activationUrl);
     return mailSuccess;
   }
-  async enableUserAccount(userId: string): Promise<boolean> {
+  async enableUserAccount(userId: string, plainPassword: string, nick: string): Promise<boolean> {
 
     const user = await UserModel.findById({ _id: userId });
     if (!user) throw new UserNotFoundException();
-    if (!user.password) throw new Error('password is not set');
+    const encryptedPwd = await this.authService.encryptPassword(plainPassword);
 
     if (user.credentials) user.credentials = undefined;
 
     user.status = "active";
+    user.password = encryptedPwd;
     user.activatedAt = new Date();
+    user.nick = nick;
     await user.save();
     return true;
   }
