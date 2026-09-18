@@ -93,6 +93,17 @@ export const checkEmail = (email: string): string => {
 
   return '';
 };
+export const checkPassword = (password: string): string => {
+  const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).+$/;
+  let errorText = '';
+  if (password.length < 10) {
+    errorText = 'Password must be at least 10 characters long.';
+  }
+  else if (!passwordRegex.test(password)) {
+    errorText = 'Password must include at least one uppercase letter, one number, and one special symbol.';
+  }
+  return errorText;
+}
 export const checkLoginErrors = (email: string, password: string): { fieldsAreOk: boolean, emailError: string, passwordError: string } => {
   const emailError = checkEmail(email);
   const passwordError = !password ? 'Password can not be empty' : '';

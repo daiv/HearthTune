@@ -45,7 +45,12 @@ const userSchema = new mongoose.Schema<MongoUser>({
     type: Date,
     required: false,
   },
-
+  resetPassword: {
+    token: { type: String, required: false },
+    expiresAt: { type: Date, required: false },
+    createdAt: Date,
+    active: { type: Boolean, default: true },
+  },
   credentials: {
     token: { type: String, required: false },
     expiresAt: { type: Date, required: false }
@@ -56,14 +61,6 @@ const userSchema = new mongoose.Schema<MongoUser>({
     _id: false,
     toJSON: {
       virtuals: true,
-      transform: (_, ret: Partial<MongoUser>) => {
-        delete ret._id;
-        delete ret.__v;
-        delete ret.__enc_email;
-        delete ret.password;
-        delete ret.credentials;
-        return ret;
-      }
     },
     toObject: { virtuals: true }
   }

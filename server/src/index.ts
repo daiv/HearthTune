@@ -4,20 +4,16 @@ import { createRouter } from '@/router';
 import { checkEnvFile } from '@/helpers';
 import { initDatabase } from '@/models/model';
 import { initGraphqlMiddleware } from './graphql/graphqlServer';
-import { YoutubeProvider } from '@/providers'
-import { AuthService, SongService, UserService, SessionService, ActivationService } from '@/services';
+import { YoutubeProvider, NodeMailer } from '@/providers';
+import { ResourcesService, MailingService, AuthService, SongService, UserService, SessionService, ActivationService, } from '@/services';
 import { errorHandler } from '@/middleware/errorHandler';
 import { ISongsProvider } from '@/interfaces';
 import path from 'node:path';
 import { SongRepository, UserRepository, SessionRepository } from '@/repositories';
-import { AuthController } from '@/controllers/AuthController';
 import { PORT } from './constants';
-import { MailingService } from './services/MailingService';
-import { NodeMailer } from './providers/email/Nodemailer';
-import { ResourcesController } from './controllers/ResourcesController';
-import { ResourcesService } from './services/ResourcesService';
+import { SsrController, ResourcesController } from '@/controllers';
 import { MockEmailProvider } from './mocks/MockEmailProvider';
-import { SsrController } from './controllers';
+import { SsrConstructorProps } from './types/types';
 
 const app = express();
 
@@ -47,18 +43,26 @@ const app = express();
     const mailService = new MailingService(new MockEmailProvider());
     const activationService = new ActivationService(userRepository, mailService);
     const resourcesService = new ResourcesService();
-    const authController = new AuthController(activationService, userService, authService);
     const resourcesController = new ResourcesController(resourcesService, authService);
-    const ssrController = new SsrController(authService, resourcesService);
+
+    const ssrProps: SsrConstructorProps = {
+      authService,
+      mailService,
+      resourcesService,
+      sessionService,
+      userService,
+      activationService
+    }
+    const ssrController = new SsrController(ssrProps);
+
     app.use(express.json());
     app.use(
       createRouter(
         activationService,
         authService,
         songService,
-        authController,
         resourcesController,
-        ssrController
+        ssrController,
       ));
 
     await userService.createUsersFromEnv();

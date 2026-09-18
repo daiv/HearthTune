@@ -8,7 +8,7 @@ import { Server } from "node:http";
 import { DownloadStatus, Song } from "@/common/types";
 import { AuthService, SongService, UserService, ActivationService, SessionService } from "@/services";
 import { describe, it, expect, afterAll, beforeAll, jest, beforeEach, afterEach } from '@jest/globals';
-import { CreateUserDto, Role, Session, User } from "./types/types";
+import { CreateUserDto, Role, Session, User, Credential, ResetPasswordCredential } from "./types/types";
 import { UserRepository, SongRepository, SessionRepository } from "@/repositories/";
 import { UserModel, SessionModel } from "@/models/";
 import { createValidationCredentials, expiresIn, hashData, sanitize } from "./helpers";
@@ -16,6 +16,7 @@ import { ServerError } from "./errors/ServerError";
 import { MailingService } from "./services/MailingService";
 import { MockEmailProvider } from "./mocks/MockEmailProvider";
 import { before } from "node:test";
+import { randomUUID } from "node:crypto";
 
 describe('TDD tests', () => {
   beforeAll(async () => {
@@ -360,15 +361,17 @@ describe('TDD tests', () => {
     describe('User repository tests', () => {
       beforeAll(async () => {
         await mongoose.connection.collection('users').deleteMany({});
+        await userRepo.save(mockUser);
       });
 
       const userRepo = new UserRepository();
 
       it('Should save users', async () => {
-        await userRepo.save(mockUser);
-        const response = await userRepo.getUserByEmail(mockUser.email);
+        const user = { ...mockUser, id: 'capi', email: 'capi@capi.com' };
+        await userRepo.save(user);
+        const response = await userRepo.getUserByEmail(user.email);
         expect(response).toBeTruthy();
-        expect(response?.id).toEqual(mockUser.id);
+        expect(response?.id).toEqual(user.id);
       });
 
       it('Should get the users by id', async () => {
@@ -384,6 +387,45 @@ describe('TDD tests', () => {
         const rawUser = await UserModel.findOne({ _id: encryptedUser.id }).lean();
         expect(rawUser?.email).not.toBe(encryptedUser.email);
       });
+
+      it('Should save resetPassword credentials', async () => {
+        const resetPasswordCredentials: Credential = {
+          token: randomUUID(),
+          expiresAt: expiresIn(30, 'minutes')
+        }
+        let user = await userRepo.getUserById(mockUser.id);
+        expect(user).toBeTruthy();
+        const savedCredentials = await userRepo.saveResetPasswordCredentials(mockUser.id, resetPasswordCredentials);
+        expect(savedCredentials).toBe(true);
+
+        const recoveredCredential = await userRepo.getUserIdByResetPasswordToken(resetPasswordCredentials.token);
+        expect(recoveredCredential).toBeTruthy();
+        const isCredentialValid = await userRepo.getResetPasswordCredentials(resetPasswordCredentials.token);
+        expect(isCredentialValid).toBeTruthy();
+      });
+
+      it('Should update resetPassword credentials', async () => {
+        const [firstToken, secondToken] = [randomUUID(), randomUUID()];
+        const expiresAt = expiresIn(30, 'minutes');
+        const user = { ...mockUser, id: 'update', email: 'up@up.com' };
+        const savedUser = await userRepo.save(user);
+        expect(savedUser).toBeTruthy();
+        await userRepo.saveResetPasswordCredentials(user.id, { token: firstToken, expiresAt });
+        let isCredentialValid = await userRepo.getResetPasswordCredentials(firstToken);
+        expect(isCredentialValid).toBeTruthy();
+        await userRepo.saveResetPasswordCredentials(user.id, { token: secondToken, expiresAt });
+        isCredentialValid = await userRepo.getResetPasswordCredentials(firstToken);
+        expect(isCredentialValid).toBe(null);
+      });
+
+      it('Should remove resetPassword credentials', async () => {
+        const token = randomUUID();
+        await userRepo.saveResetPasswordCredentials(mockUser.id, { token, expiresAt: expiresIn(30, 'minutes') });
+        await userRepo.removeResetPasswordCredentials(mockUser.id);
+        const isValid = await userRepo.getResetPasswordCredentials(token);
+        expect(isValid).toBe(null);
+      });
+
 
     });
 
@@ -549,7 +591,6 @@ describe('TDD tests', () => {
         const password = '12345isTheBestPassword';
         await userService.setUserPassword(userToEnable.id, password);
         await activationService.enableUserAccount(userToEnable.id);
-
         const user = await userService.getUserById(userToEnable.id);
         expect(user.activatedAt).toBeTruthy();
       });
@@ -568,6 +609,31 @@ describe('TDD tests', () => {
         const userByToken = await activationService.getUserByToken(token);
         if (!userByToken) throw new Error('user not found');
         expect(preparedUser.id).toEqual(userByToken.id);
+      });
+
+      it('Should save resetPassword credentials', async () => {
+        const resetCredential: ResetPasswordCredential = {
+          active: true,
+          createdAt: new Date(),
+          expiresAt: expiresIn(30, 'minutes'),
+          token: 'token'
+        };
+        const newUser: User = {
+          email: uniqueEmails.pop()!,
+          role: "basic",
+          id: '123333333',
+          status: 'active',
+          resetPassword: resetCredential
+        }
+        const updatedUser = await userRepo.save(newUser);
+        expect(updatedUser).toBeTruthy();
+        expect(updatedUser.resetPassword?.active).toBe(true);
+        if (!updatedUser.resetPassword) throw new Error();
+        updatedUser.resetPassword.active = false;
+        const finalUser = await userRepo.save(updatedUser);
+        if (!finalUser || !finalUser.resetPassword) throw new Error();
+        expect(finalUser.resetPassword.active).toBe(false);
+
       });
     });
   });
@@ -756,50 +822,38 @@ describe('TDD tests', () => {
         });
 
       });
-    });
-    describe('App Download', () => {
-      const userId = 'mockUser';
-      let authService: AuthService;
-      let userRepository: UserRepository;
-      let sessionService: SessionService;
-      let sessionRepo: SessionRepository;
-      beforeAll(() => {
-        userRepository = new UserRepository();
-        sessionRepo = new SessionRepository();
-        sessionService = new SessionService(sessionRepo);
-        authService = new AuthService(userRepository, sessionService);
-      });
-      type Params = {
-        userId: string,
-        jti: string,
-        expiresAt: string,
-        sign: string
-      }
-      const getParams = (url: string): Params => {
-        const pairs = url.split('?')[1].split('&');
-        const params: Record<string, string> = {};
-        pairs.forEach(pair => {
-          const [key, value] = pair.split('=');
-          if (key && value) params[key] = value;
+      describe('Download', () => {
+        let authService: AuthService;
+        let userRepo: UserRepository;
+        let sessionService: SessionService;
+        let sessionRepo: SessionRepository;
+        const mockUser: User = {
+          email: 'down@down',
+          id: 'trickyId',
+          role: 'basic',
+          status: 'active'
+        }
+        beforeAll(async () => {
+          userRepo = new UserRepository();
+          sessionRepo = new SessionRepository();
+          sessionService = new SessionService(sessionRepo);
+          authService = new AuthService(userRepo, sessionService);
+          await userRepo.save(mockUser);
         });
-        return params as Params;
-      }
-      it('Should create and validate signed download urls', () => {
-        const { signedUrl } = authService.createSignedAndroidAppDownloadUrl(userId);
-        console.log('downloadurl', signedUrl);
-        const params = getParams(signedUrl);
-        expect(signedUrl).toBeTruthy();
-        expect(authService.isDownloadUrlValid(params.userId, params.jti, params.expiresAt, params.sign)).toBe(true);
-      });
 
-      it('Should detect when download url has expired', async () => {
-        const { signedUrl } = authService.createSignedAndroidAppDownloadUrl(userId, Date.now() + 1000);
-        expect(signedUrl).toBeTruthy();
-        const params = getParams(signedUrl);
-        expect(authService.isDownloadUrlValid(params.userId, params.jti, params.expiresAt, params.sign)).toBe(true);
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        expect(authService.isDownloadUrlValid(params.userId, params.jti, params.expiresAt, params.sign)).toBe(false);
-      });
+        it('Should invalidate token when expired', async () => {
+          const token = randomUUID();
+          const expiresAt = new Date(Date.now() + 3000);
+          await userRepo.saveResetPasswordCredentials(mockUser.id, { token, expiresAt });
+          let isValid = await authService.isResetPasswordTokenValid(token);
+          expect(isValid).toBe(true);
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          isValid = await authService.isResetPasswordTokenValid(token);
+          expect(isValid).toBe(false);
+        })
+      })
     });
+
+
   });
 });

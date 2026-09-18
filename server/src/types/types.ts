@@ -1,7 +1,9 @@
 import { Readable } from "node:stream";
 import { ISongService } from "../interfaces/ISongService";
-import { AuthService, UserService } from "@/services";
+import { ActivationService, AuthService, SessionService, UserService } from "@/services";
 import { Song } from "@/common/types";
+import { ResourcesService } from "@/services/ResourcesService";
+import { MailingService } from "@/services/MailingService";
 
 export type SongResponse = {
   type: "local",
@@ -31,6 +33,7 @@ export type Credential = {
   token: string;
   expiresAt: Date;
 }
+export type ResetPasswordCredential = Credential & { createdAt: Date, active: boolean };
 export type User = {
   id: string;
   nick?: string;
@@ -39,6 +42,7 @@ export type User = {
   status: UserStatus;
   role: Role;
   credentials?: Credential;
+  resetPassword?: ResetPasswordCredential;
   activatedAt?: Date;
   createdAt?: Date;
 }
@@ -129,49 +133,75 @@ export type SsrLoginResponse =
     }
   }
 
-export type EjsOptions = {
-  fields: {};
-  errors?: {};
-  action: string;
-  events?: {
-    onSuccess?: () => void;
-    onError?: () => void;
-  };
-}
-export type EjsView = |
-  'authenticate' |
-  'createAccount' |
-  'dashboard' |
-  'downloadLogin' |
-  'errors' |
-  'linkRequested' |
-  'success' |
-  'welcome';
-
 export interface BaseProps {
-  title: string
+  title: string;
+}
+export interface LoginErrors {
+  email?: string;
+  password?: string;
+  general?: string;
 }
 export interface LoginProps extends BaseProps {
   buttonText: string;
-  errors?: {
-    email?: string;
-    password?: string;
-    general?: string;
-  };
+  errors?: LoginErrors
   email?: string;
   action: string;
 }
-export interface action {
+export interface Action {
   name: string;
   url: string;
 }
+export interface ForgotPassword extends Omit<LoginProps, 'errors'> {
+  errors: Omit<LoginErrors, 'password'>
+}
+
 export interface DashboardProps extends BaseProps {
-  actions: action[];
+  actions: Action[];
+}
+export interface MsgProps extends BaseProps {
+  message: string;
+  header?: string
+  link?: {
+    to: string;
+    text: string;
+  },
+  form?: {
+    action: string;
+    text: string;
+    submitText: string;
+    token?: string;
+  }
+}
+export interface PasswordPairErrors extends Omit<LoginErrors, 'email'> {
+  matchPassword?: string;
+}
+export interface SetNewPasswordProps extends Omit<LoginProps, 'errors'> {
+  token?: string;
+  errors?: PasswordPairErrors
+}
+export interface CreateAccountErrors extends LoginErrors {
+  matchPassword: string;
+}
+export interface CreateAccountProps extends Omit<SetNewPasswordProps, 'errors'> {
+  errors?: CreateAccountErrors
 }
 export type ViewPropsMap = {
-  'authenticate': LoginProps
-  'dashboard': DashboardProps
+  'authenticate': LoginProps;
+  'createAccount': CreateAccountProps;
+  'dashboard': DashboardProps;
+  'forgotPassword': ForgotPassword;
+  'msg': MsgProps;
+  'setNewPassword': SetNewPasswordProps;
 }
 export type ViewPath = keyof ViewPropsMap;
+
+export type SsrConstructorProps = {
+  authService: AuthService,
+  resourcesService: ResourcesService,
+  mailService: MailingService,
+  userService: UserService,
+  sessionService: SessionService,
+  activationService: ActivationService
+}
 
 

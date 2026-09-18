@@ -74,7 +74,10 @@ export class UserService implements IUserService {
     if (!user) throw new Error('User not found');
     return user;
   }
-
+  async getUserIdByResetPasswordToken(token: string): Promise<string | null> {
+    const user = await this.userRepository.getUserIdByResetPasswordToken(token);
+    return user;
+  }
   async getWhiteListedUsers(): Promise<User[] | null> {
     const whiteListedUsers = await this.userRepository.getUserByStatus('whiteListed');
     return whiteListedUsers;

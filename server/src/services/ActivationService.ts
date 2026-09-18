@@ -12,7 +12,8 @@ export class ActivationService implements IActivationService {
     private mailService: IMailingService) { }
 
   async sendActivationLink(to: string, token: string): Promise<boolean> {
-    const mailSuccess = await this.mailService.sendActivationEmail(to, token);
+    const activationUrl = `${process.env.SERVER_URL}/create-account/${token}`;
+    const mailSuccess = await this.mailService.sendEmail(to, activationUrl);
     return mailSuccess;
   }
   async enableUserAccount(userId: string): Promise<boolean> {
@@ -21,19 +22,17 @@ export class ActivationService implements IActivationService {
     if (!user) throw new UserNotFoundException();
     if (!user.password) throw new Error('password is not set');
 
-    if (user.credentials) {
-      const removedCredentials = await this.userRepository.removeCredentials(userId);
-    }
+    if (user.credentials) user.credentials = undefined;
+
     user.status = "active";
     user.activatedAt = new Date();
-    return !!(await this.userRepository.save(user));
+    await user.save();
+    return true;
   }
 
   prepareUserCredentials(user: User): User & { emailSent: boolean } {
     const credentials: Credential = createValidationCredentials();
-    console.log('user:', user.email);
-    const activationUrl = `${process.env.SERVER_URL}/validation/${credentials?.token}`;
-    console.log('activationLink', activationUrl);
+    const activationUrl = `${process.env.SERVER_URL}/create-account/${credentials?.token}`;
     return { ...user, credentials, emailSent: false };
   }
 
@@ -118,5 +117,5 @@ export class ActivationService implements IActivationService {
   async removeCredentials(userId: string): Promise<boolean> {
     return await this.userRepository.removeCredentials(userId);
   }
-  
+
 }

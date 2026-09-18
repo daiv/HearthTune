@@ -1,15 +1,13 @@
 import { IAuthService } from "@/interfaces/IAuthService";
-import { AccessPayload, Role, Session, SignedUrlValidationParams, SsrLoginResponse } from "@/types/types";
+import { AccessPayload, Role, Session, Credential, ResetPasswordCredential, } from "@/types/types";
 import { UserRepository } from "@/repositories";
 import { AccountNotActiveException, BadRequestException, InvalidCredentialsException, InvalidTokenException, MissingUserRoleException, ServerError, TrialExpiredException, } from "@/errors/ServerError";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { checkEmail, expiresIn, hashData, isTrialExpired } from "@/helpers";
+import { expiresIn, hashData, isTrialExpired } from "@/helpers";
 import { SessionService } from "./SessionService";
 import { AuthPayload, SignedUrl } from "@/common/types";
 import { randomUUID } from "node:crypto";
-import { Request, Response } from 'express';
-import { deprecate } from "node:util";
 export class AuthService implements IAuthService {
 
   constructor(private userRepository: UserRepository, private sessionService: SessionService) { }
@@ -21,6 +19,7 @@ export class AuthService implements IAuthService {
 
     return await this.checkUserPassword(userId.id, password);
   }
+
   async checkUserPassword(userId: string, plainPassword: string): Promise<boolean> {
     const password = await this.userRepository.getUserPassword(userId);
     if (!password) return false;
@@ -85,7 +84,6 @@ export class AuthService implements IAuthService {
     }
   }
   async refreshTokens(jti: string): Promise<AuthPayload> {
-    console.warn('jti sent by client', jti);
     const currentSession = await this.sessionService.getSessionByJti(jti);
     if (!currentSession) throw new InvalidTokenException();
 
@@ -126,7 +124,65 @@ export class AuthService implements IAuthService {
 
     const dataToSign = `${songId}:${provider}:${userId}:${expiresAt}`;
     const expectedSignature = hashData(dataToSign);
-    console.log('valid = ', expectedSignature === sign);
     return expectedSignature === sign;
   }
+  async generateResetPasswordUrl(email: string): Promise<string | null> {
+    const user = await this.userRepository.getUserByEmail(email);
+    if (!user
+      || user.status !== 'active'
+    ) return null;
+    const minsElapsed = await this.userRepository.getMinutesSinceLastResetPassword(user.id);
+    if (minsElapsed === null
+      || minsElapsed < 30
+    ) return null;
+    const token = randomUUID();
+    const resetPasswordCredential: Credential = {
+      token,
+      expiresAt: expiresIn(30, 'minutes'),
+    };
+    const success = await this.userRepository.saveResetPasswordCredentials(user.id, resetPasswordCredential);
+    const url = `${process.env.SERVER_URL}/set-new-password/${token}`;
+    return url;
+
+  }
+
+  async isResetPasswordTokenValid(token: string): Promise<boolean> {
+    const credential: ResetPasswordCredential | null = await this.userRepository.getResetPasswordCredentials(token);
+    if (!credential || !credential.active) return false;
+
+    const { token: storedHash, expiresAt } = credential;
+    const numericStoredExpires = Number(expiresAt);
+    if (isNaN(numericStoredExpires) ||
+      Date.now() >= numericStoredExpires) {
+      return false;
+    }
+
+    return storedHash === hashData(token);
+  }
+  async invalidateResetPasswordToken(userId: string): Promise<boolean> {
+    const user = await this.userRepository.getUserById(userId);
+    if (!user || !user.resetPassword) return false;
+    user.resetPassword.active = false;
+    await this.userRepository.save(user);
+    return true;
+  };
+  createDownloadUrl(userId: string): string {
+    const expiresAt = expiresIn(30, "minutes").getTime();
+
+    const jti = randomUUID();
+    const dataToSign = `${userId}:${jti}:${expiresAt}`;
+    const signature = hashData(dataToSign);
+    const baseUrl = process.env.SERVER_URL;
+    const signedUrl = `${baseUrl}/apk-download-signed?userId=${userId}&jti=${jti}&expiresAt=${expiresAt}&sign=${signature}`;
+    return signedUrl;
+  };
+  isDownloadUrlValid(userId: string, jti: string, expiresAt: string, sign: string): boolean {
+    const numericExpiresAt = Number(expiresAt);
+    if (isNaN(numericExpiresAt)) throw new BadRequestException();
+    if (Date.now() > numericExpiresAt) return false;
+
+    const dataToSign = `${userId}:${jti}:${expiresAt}`;
+    const expectedSignature = hashData(dataToSign);
+    return expectedSignature === sign;
+  };
 }

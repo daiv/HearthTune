@@ -12,4 +12,10 @@ export interface IAuthService {
   refreshTokens: (jti: string) => Promise<AuthPayload>;
   createSignedUrl: (songId: string, provider: string, userId: string, expiration?: number) => SignedUrl;
   isSignedUrlValid: (songId: string, provider: string, userId: string, expiresAt: string, sign: string,) => boolean;
+  generateResetPasswordUrl: (email: string) => Promise<string | null>;
+  isResetPasswordTokenValid: (token: string) => Promise<boolean>;
+  invalidateResetPasswordToken: (token: string) => Promise<boolean>;
+
+  createDownloadUrl: (userId: string) => string;
+  isDownloadUrlValid: (userId: string, jti: string, expiresAt: string, sign: string) => boolean;
 }
