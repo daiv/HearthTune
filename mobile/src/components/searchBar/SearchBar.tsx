@@ -25,12 +25,12 @@ const mergeSongs = (local: Song[], remote: Song[]): Song[] => {
 export function SearchBar() {
   const [input, setInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const { data: localData, isLoading } = useGraphQl<{ searchLocally: Song[] }, { query: string, limit?: number }>(
+  const { data: localData, isLoading: localLoading } = useGraphQl<{ searchLocally: Song[] }, { query: string, limit?: number }>(
     SEARCH_LOCALLY,
     { query: searchQuery },
     { enabled: searchQuery.length > 3 }
   );
-  const { data: remoteData } = useGraphQl<{ search: Song[] }, { query: string, limit?: number }>(
+  const { data: remoteData, isLoading: remoteLoading } = useGraphQl<{ search: Song[] }, { query: string, limit?: number }>(
     SEARCH_SONGS,
     { query: searchQuery },
     { enabled: searchQuery.length > 3 }
@@ -47,6 +47,7 @@ export function SearchBar() {
     setInput('');
   }
 
+  const isLoading = localLoading || remoteLoading;
   const showNoResults = !isLoading && songs.length === 0;
   return (
     <View style={styles.container}>
