@@ -53,7 +53,6 @@ export async function initGraphqlMiddleware(
           console.warn("Auth failed:", "invalid Token");
           return handleGraphQlError(new InvalidCredentialsException());
         }
-
         user = await userService.getUserById(payload.userId);
       }
       return (

@@ -35,6 +35,7 @@ export type AuthContextData = {
   isAuthenticated: boolean;
   isInitializing: boolean;
   tokens: AuthPayload | null;
+  nick: string | null
 }
 export type FieldType = 'email' | 'password' | 'text';
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useGraphQl } from "@/hooks/";
 import { SEARCH_LOCALLY, SEARCH_SONGS } from "@/graphql/queries";
@@ -6,6 +6,7 @@ import { Song } from '@/common/types'
 import { SearchItem } from "./SearchItem";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { styles } from "./styles";
+import { getNick } from "@/services/userService";
 
 const renderFunction = ({ item }: { item: Song }) => <SearchItem key={item.instanceId} song={item} />
 const mergeSongs = (local: Song[], remote: Song[]): Song[] => {

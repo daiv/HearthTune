@@ -3,6 +3,7 @@ import { AuthContext } from "@/contexts/AuthContext";
 import { gqlManager } from "@/graphql/GraphQLClientManager";
 import { loginService, logoutService, refreshService } from "@/services/authService";
 import { secureStorage } from "@/services/SecureStorage";
+import { getNick } from "@/services/userService";
 import { AuthContextData } from "@/types/types";
 import React, { useCallback, useEffect, useState } from "react";
 import uuid from 'react-native-uuid';
@@ -12,6 +13,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tokens, setTokens] = useState<AuthPayload | null>(null);
   const [deviceId, setDeviceId] = useState<string>();
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
+  const [nick, setNick] = useState<string | null>(null);
 
   const isAuthenticated = !!tokens;
   useEffect(function loadDeviceId() {
@@ -32,6 +34,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initDevice();
   }, []);
 
+  useEffect(function loadNick() {
+    if (nick) return;
+    if (!tokens) setNick(null)
+    else {
+      getNick()
+        .then(setNick)
+        .catch(err => console.error('error loading nick', err));
+    }
+  }, [tokens]);
 
   const handleSaveTokens = useCallback(async (tokens: AuthPayload | null): Promise<boolean> => {
     try {
@@ -95,10 +106,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
   }, [deviceId, handleSaveTokens]);
+
   const logout = useCallback(async (): Promise<boolean> => {
     if (!tokens) return false;
     const isLogoutSuccessful = await logoutService(tokens?.refreshToken);
     if (isLogoutSuccessful) {
+      setNick(null);
       handleSaveTokens(null);
       return true;
     }
@@ -109,7 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [tokens, handleSaveTokens, logoutService]);
 
   const contextValue: AuthContextData = {
-    login, tokens, isAuthenticated, isInitializing, logout
+    login, tokens, isAuthenticated, isInitializing, logout, nick,
   }
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
 

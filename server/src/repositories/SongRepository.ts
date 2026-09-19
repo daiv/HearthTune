@@ -3,7 +3,6 @@ import { ISongRepository } from "@/interfaces";
 import { SongModel } from "../models/songModel";
 import { DownloadStatus, Song } from "@/common/types";
 
-
 export class SongRepository implements ISongRepository {
 
   async save(song: Song) {

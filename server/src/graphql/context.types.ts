@@ -54,3 +54,6 @@ export interface SignUrlContext extends Omit<BaseContext, 'services'> {
     auth: Pick<IAuthService, 'createSignedUrl'>;
   }
 }
+export interface UserContext  {
+
+}

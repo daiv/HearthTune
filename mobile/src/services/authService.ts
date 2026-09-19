@@ -24,3 +24,4 @@ export const getSignedUrlService = async (songId: string, provider: string): Pro
   const data = await gqlManager.safeRequest<{ getSignedUrl: SignedUrl }>(GET_SIGNED_URL, { songId, provider });
   return data.getSignedUrl;
 }
+

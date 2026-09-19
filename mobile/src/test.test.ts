@@ -1,6 +1,5 @@
 import { describe, expect, it, } from '@jest/globals';
 import { loginService, refreshService } from './services/authService';
-import { searchSongsFromServer } from './services/musicService';
 import { gqlManager } from './graphql/GraphQLClientManager';
 
 describe('tests', () => {
@@ -23,8 +22,7 @@ describe('tests', () => {
         const clientTokens = gqlManager.getAuthTokens();
         expect(clientTokens).not.toBeNull();
         console.log('clientTokens are', clientTokens);
-        const realSearch = await searchSongsFromServer('fito');
-        console.log('search is', realSearch);
+
       } catch (error) {
         console.log('error was', error);
       }

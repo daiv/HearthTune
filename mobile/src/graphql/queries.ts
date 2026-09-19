@@ -25,21 +25,27 @@ query searchLocally($query:String!){
 }`;
 
 export const GET_RELATED_SONGS = gql`
-    query getRelated($id: ID!, $numberOfSongs: Int!) { 
-      getRelated(id: $id, numberOfSongs: $numberOfSongs) {    
-        id
-        title
-        duration
-        local
-        provider
-        url
-      }
+  query getRelated($id: ID!, $numberOfSongs: Int!) { 
+    getRelated(id: $id, numberOfSongs: $numberOfSongs) {    
+      id
+      title
+      duration
+      local
+      provider
+      url
     }
-`;
+  }`;
+
 export const GET_SIGNED_URL = gql`
 query getSignedUrl($songId:ID!, $provider:String!){
   getSignedUrl(songId:$songId, provider:$provider){
     signedUrl
   }
-}
-`
+}`
+
+export const GET_NICK = gql`
+query getNick{
+  getNick{
+    nick
+  }
+}`;

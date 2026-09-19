@@ -10,9 +10,7 @@ export function PlayList() {
   const activeTrack = useActiveTrack();
   const { queue, enqueueRelatedSong, resetQueue, shuffleQueue } = usePlayListContext();
 
-  const totalDuration = queue.map(song => song.duration);
-  const formattedTime = totalDuration ? formatTime(totalDuration.reduce((ac, val) => ac + val, 0)) : '0:00';
-
+  const formattedTime: string = formatTime(queue.reduce((acc, song) => acc + (song.duration || 0), 0));
   const renderFunction = ({ item, index }: { item: Song, index: number }) => {
     return <PlayListItem
       key={item.instanceId}
@@ -23,7 +21,7 @@ export function PlayList() {
   }
 
   return <View style={{ flex: 1 }}>
-    <Text>PlayList -{formattedTime}</Text>
+    <Text>Songs:{queue.length}, duration:{formattedTime}</Text>
     <PlayListControls
       showPanel={queue && queue.length > 0}
       enqueueRelatedSong={enqueueRelatedSong}

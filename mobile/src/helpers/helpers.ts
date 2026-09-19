@@ -29,10 +29,19 @@ export const trackToSong = (track: Track): Song => {
 }
 
 export const formatTime = (durationInSeconds: number): string => {
-  const minutes = Math.floor(durationInSeconds / 60);
+  const oneHourInSecs = 60 * 60;
+  const hours = Math.floor(durationInSeconds / oneHourInSecs);
+  const minutes = Math.floor((durationInSeconds % oneHourInSecs) / 60);
   const seconds = Math.floor(durationInSeconds % 60);
-  const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  return formattedTime;
+
+  const formattedMinutes = minutes.toString().padStart(2, '0');
+  const formattedSeconds = seconds.toString().padStart(2, '0');
+
+  if (hours > 0) {
+    return `${hours}:${formattedMinutes}:${formattedSeconds}`;
+  }
+
+  return `${minutes}:${formattedSeconds}`;
 }
 
 export const addInstanceId = (song: Song): Song => {
