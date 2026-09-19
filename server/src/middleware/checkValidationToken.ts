@@ -7,7 +7,6 @@ export const checkValidationToken = (activationService: ActivationService) => {
     const token = req.params.token || req.body.token;
     const validationResult = await activationService.isValidationTokenLegit(token);
 
-
     if (!validationResult.valid) {
       console.warn('token failed: ', validationResult.cause);
       if (validationResult.cause === 'token expired') {

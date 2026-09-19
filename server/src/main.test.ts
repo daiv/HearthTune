@@ -141,7 +141,7 @@ describe('TDD tests', () => {
       const graphql = await initGraphqlMiddleware(songService, userService, authService,
 
         async () => ({
-          user: { id: 'test-user', role: 'basic' } as User,
+          user: { id: 'test-user', role: 'recruiter',internalTag:'test-user', email:'test@test' } as User,
           services: {
             songs: songService,
             user: userService,
@@ -214,7 +214,7 @@ describe('TDD tests', () => {
           userToCreate = {
             email: 'mock@mockmail.com',
             password: '1234',
-            role: 'basic',
+            role: 'recruiter',
             internalTag: 'mock'
 
           }
@@ -264,7 +264,7 @@ describe('TDD tests', () => {
             email: 'active@email.com',
             password: '1234',
             internalTag: 'mock',
-            role: 'basic',
+            role: 'recruiter',
           }
           activeUser = await userService.createUser(userDTO);
           activeUser.password = userDTO.password;
@@ -364,7 +364,7 @@ describe('TDD tests', () => {
       id: 'mockId',
       nick: 'testuser',
       password: '1234',
-      role: 'basic',
+      role: 'recruiter',
       status: "active",
       internalTag: 'intTag'
     };
@@ -463,33 +463,33 @@ describe('TDD tests', () => {
       });
 
       it('Should create users', async () => {
-        const createdUser = await userService.createUser({ email: uniqueEmails.pop()!, password: 'password', internalTag: 'intTag', role: 'basic' });
+        const createdUser = await userService.createUser({ email: uniqueEmails.pop()!, password: 'password', internalTag: 'intTag', role: 'recruiter' });
         expect(createdUser).toBeTruthy();
       });
 
       it('Should hash the email', async () => {
         const email = 'emailTobeHashed';
-        const createdUser = await userService.createUser({ email, password: 'password', internalTag: 'intTag', role: 'basic' });
+        const createdUser = await userService.createUser({ email, password: 'password', internalTag: 'intTag', role: 'recruiter' });
         const rawCreatedUser = await UserModel.findOne({ internalTag: 'intTag' }).lean();
         expect(createdUser.email).not.toBe(rawCreatedUser?.email);
       });
 
       it('Should encrypt email field', async () => {
         const { email, password, internalTag } = mockUser;
-        const createdUser = await userService.createUser({ email, password, internalTag, role: 'basic' });
+        const createdUser = await userService.createUser({ email, password, internalTag, role: 'recruiter' });
         expect(password).not.toBe(createdUser.password);
       });
 
       it('Should find users by emailHash', async () => {
         const [email, password, internalTag,] = [uniqueEmails.pop()!, 'pwdd', 'daiv'];
-        const createdUser = await userService.createUser({ email, password, internalTag, role: 'basic' });
+        const createdUser = await userService.createUser({ email, password, internalTag, role: 'recruiter' });
         const userFromHash = await userService.getUserByEmail(email);
         expect(userFromHash).toEqual(createdUser);
       });
 
       it('Should find users by id', async () => {
         const email = uniqueEmails.pop();
-        const createdUser = await userService.createUser({ email: email!, password: '12345', internalTag: 'intTag', role: 'basic' });
+        const createdUser = await userService.createUser({ email: email!, password: '12345', internalTag: 'intTag', role: 'recruiter' });
         const userFound = await userService.getUserById(createdUser.id);
         expect(createdUser.id).toEqual(userFound.id);
       });
@@ -519,7 +519,7 @@ describe('TDD tests', () => {
         const password = 'initialPassword';
         const internalTag = 'originalTag';
 
-        const createdUser = await userService.createUser({ email, password, internalTag, role: 'basic' });
+        const createdUser = await userService.createUser({ email, password, internalTag, role: 'recruiter' });
         expect(createdUser.status).toBe('whiteListed');
 
         const updatedData: User = {
@@ -556,7 +556,7 @@ describe('TDD tests', () => {
 
 
       it('Should validate validationToken lifecycle', async () => {
-        const user = await userService.createUser({ email: uniqueEmails.pop()!, internalTag: 'intTag', role: 'basic' });
+        const user = await userService.createUser({ email: uniqueEmails.pop()!, internalTag: 'intTag', role: 'recruiter' });
         const credentials = createValidationCredentials();
 
         expect(await activationService.removeCredentials(user.id)).toBe(false);
@@ -586,7 +586,7 @@ describe('TDD tests', () => {
       });
 
       it('Should save password and check password lifecycle', async () => {
-        const user = await userService.createUser({ email: uniqueEmails.pop()!, role: 'basic', internalTag: 'intTag' });
+        const user = await userService.createUser({ email: uniqueEmails.pop()!, role: 'recruiter', internalTag: 'intTag' });
         expect(user.password).toBeFalsy();
         const userPassword = 'iLoveUnicorns';
         expect(await authService.checkUserPassword(user.id, userPassword)).toBe(false);
@@ -597,7 +597,7 @@ describe('TDD tests', () => {
       });
 
       it('Should enable user Account if everything is ok', async () => {
-        const userToEnable = await userService.createUser({ email: uniqueEmails.pop()!, role: 'basic', internalTag: 'intTag' });
+        const userToEnable = await userService.createUser({ email: uniqueEmails.pop()!, role: 'recruiter', internalTag: 'intTag' });
         expect(userToEnable.activatedAt).toBeFalsy();
         const password = '12345isTheBestPassword';
         await activationService.enableUserAccount(userToEnable.id, password, 'mockNick');
@@ -606,7 +606,7 @@ describe('TDD tests', () => {
       });
 
       it('Should create and save userCredentials', async () => {
-        const user = await userService.createUser({ email: uniqueEmails.pop()!, role: 'basic', internalTag: 'intTag' });
+        const user = await userService.createUser({ email: uniqueEmails.pop()!, role: 'recruiter', internalTag: 'intTag' });
         expect(user).not.toHaveProperty('credentials');
         const preparedUser = activationService.prepareUserCredentials(user);
         expect(preparedUser).toHaveProperty('credentials');
@@ -630,7 +630,7 @@ describe('TDD tests', () => {
         };
         const newUser: User = {
           email: uniqueEmails.pop()!,
-          role: "basic",
+          role: "recruiter",
           id: '123333333',
           status: 'active',
           internalTag: 'intTag',
@@ -649,7 +649,7 @@ describe('TDD tests', () => {
       it('Should save user nick', async () => {
         const newUser: User = {
           email: uniqueEmails.pop()!,
-          role: 'basic',
+          role: 'recruiter',
           id: '32323',
           status: 'active',
           internalTag: 'mock',
@@ -681,14 +681,14 @@ describe('TDD tests', () => {
       });
       const deviceInfo = 'deviceInfo';
       it('Should count sessions correctly for a specific user', async () => {
-        await repository.create({ userId: 'u1', JTI: 't1', deviceId: uniqueDevId.pop()!, deviceInfo, role: 'basic' });
-        await repository.create({ userId: 'u1', JTI: 't2', deviceId: uniqueDevId.pop()!, deviceInfo, role: 'basic' });
+        await repository.create({ userId: 'u1', JTI: 't1', deviceId: uniqueDevId.pop()!, deviceInfo, role: 'recruiter' });
+        await repository.create({ userId: 'u1', JTI: 't2', deviceId: uniqueDevId.pop()!, deviceInfo, role: 'recruiter' });
 
         const count = await repository.countByUserId('u1');
         expect(count).toBe(2);
       });
       it('Should find sessions by token', async () => {
-        const mockSession: Session = { userId: 'ut', JTI: 'token', deviceId: 'deviceId', deviceInfo: 'info', role: 'basic' };
+        const mockSession: Session = { userId: 'ut', JTI: 'token', deviceId: 'deviceId', deviceInfo: 'info', role: 'recruiter' };
         await repository.create(mockSession);
         const session = await repository.findByJti(mockSession.JTI);
         if (!session) throw new Error('session not found');
@@ -696,12 +696,12 @@ describe('TDD tests', () => {
       });
 
       it('Should find sessions by userId', async () => {
-        const mockSession: Session = { userId: 'favId', JTI: 'tokenhash', deviceId: uniqueDevId.pop()!, deviceInfo: 'android', role: 'basic' };
+        const mockSession: Session = { userId: 'favId', JTI: 'tokenhash', deviceId: uniqueDevId.pop()!, deviceInfo: 'android', role: 'recruiter' };
         await repository.create(mockSession);
         let session = await repository.findByUserId(mockSession.userId);
         expect(session.length).toBe(1);
         expect(session[0].JTI).toBe(hashData(mockSession.JTI));
-        const mock2: Session = { userId: 'favId', JTI: 'tok2', deviceId: uniqueDevId.pop()!, deviceInfo: 'notAndroid', role: 'basic' };
+        const mock2: Session = { userId: 'favId', JTI: 'tok2', deviceId: uniqueDevId.pop()!, deviceInfo: 'notAndroid', role: 'recruiter' };
         await repository.create(mock2);
         session = await repository.findByUserId(mock2.userId);
         expect(session.length).toBe(2);
@@ -709,7 +709,7 @@ describe('TDD tests', () => {
       });
 
       it('Should remove by tokenHash', async () => {
-        const mockSession: Session = { userId: 'idi', JTI: 'hashhh', deviceInfo: 'inffoo', role: 'basic', deviceId: 'deviceId' };
+        const mockSession: Session = { userId: 'idi', JTI: 'hashhh', deviceInfo: 'inffoo', role: 'recruiter', deviceId: 'deviceId' };
         const { userId: id } = mockSession;
         await repository.create(mockSession);
         let count = await repository.countByUserId(id);
@@ -721,10 +721,10 @@ describe('TDD tests', () => {
 
       it('Should remove the oldest session correctly using sort', async () => {
         const userId = 'u1';
-        const session1: Session = { userId, JTI: 'old', deviceId: uniqueDevId.pop()!, deviceInfo: 'd1', role: 'basic' };
+        const session1: Session = { userId, JTI: 'old', deviceId: uniqueDevId.pop()!, deviceInfo: 'd1', role: 'recruiter' };
         await repository.create(session1);
         await new Promise(r => setTimeout(r, 50));
-        const session2: Session = { userId, JTI: 'new', deviceId: uniqueDevId.pop()!, deviceInfo: 'd1', role: 'basic' };
+        const session2: Session = { userId, JTI: 'new', deviceId: uniqueDevId.pop()!, deviceInfo: 'd1', role: 'recruiter' };
         await repository.create(session2);
 
         await repository.removeOldest('u1');
@@ -745,14 +745,14 @@ describe('TDD tests', () => {
       });
       it('Should create sessions not exceding limits', async () => {
         const userId = 'mockId';
-        const session = await service.add(userId, '1', 'basic', crypto.randomUUID());
+        const session = await service.add(userId, '1', 'recruiter', crypto.randomUUID());
         if (!session) throw new ServerError();
         expect(session.deviceInfo).toBe('Unknown device');
         let activeSessions = await repo.countByUserId(userId);
         expect(activeSessions).toBe(1);
-        const session2 = await service.add(userId, '2', 'basic', crypto.randomUUID());
+        const session2 = await service.add(userId, '2', 'recruiter', crypto.randomUUID());
         activeSessions = await repo.countByUserId(userId);
-        //! basic can only have one open session 
+        //! recruiter can only have one open session 
         expect(activeSessions).toBe(1);
 
         const adminId = 'mockAdmin';
@@ -858,7 +858,7 @@ describe('TDD tests', () => {
         const mockUser: User = {
           email: 'down@down',
           id: 'trickyId',
-          role: 'basic',
+          role: 'recruiter',
           status: 'active',
           internalTag: 'intTag'
         }

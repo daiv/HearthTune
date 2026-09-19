@@ -11,7 +11,7 @@ export class UserService implements IUserService {
 
   async createUser(data: CreateUserDto): Promise<User> {
     if (!data.email) throw new Error('bad user format');
-    const { password, email, internalTag, role = 'basic' } = data;
+    const { password, email, internalTag, role = 'recruiter' } = data;
     const hashedPassword = password ? await bcrypt.hash(password, 12) : undefined;
     const emailHash = hashData(email);
 

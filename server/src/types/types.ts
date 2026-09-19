@@ -63,7 +63,7 @@ export type CreateUserDto = {
   internalTag: string;
   password?: string;
 }
-export type Role = 'superAdmin' | 'admin' | 'user' | 'basic' | 'test';
+export type Role = 'superAdmin' | 'admin' | 'user' | 'recruiter' | 'test';
 export type RolePermission = Record<Role, number>;
 export type TimeUnit = 'days' | 'hours' | 'minutes';
 

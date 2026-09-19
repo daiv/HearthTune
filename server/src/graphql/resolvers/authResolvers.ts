@@ -7,7 +7,7 @@ import { AuthPayload, SignedUrl } from "@/common/types";
 export const authResolvers = {
   Query: {
     getSignedUrl: protect(
-      atLeast('basic'),
+      atLeast('recruiter'),
       async (_parent: undefined, { songId, provider }: { songId: string, provider: string }, context: SignUrlContext)
         : Promise<SignedUrl> => {
         const { id } = context.user!;
@@ -49,7 +49,7 @@ export const authResolvers = {
     },
 
     logout: protect(
-      atLeast('basic'),
+      atLeast('recruiter'),
       async (_parent: undefined, { jti }: { jti: string }, context: LogoutContext)
         : Promise<boolean> => {
         const result = await context.services.auth.logout(jti);

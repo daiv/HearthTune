@@ -20,10 +20,12 @@ const userSchema = new mongoose.Schema<MongoUser>({
     index: true,
     required: true,
   },
+
   internalTag: {
     type: String,
     required: true
   },
+
   nick: {
     type: String,
     required: false,
@@ -44,16 +46,19 @@ const userSchema = new mongoose.Schema<MongoUser>({
     type: String,
     required: true,
   },
+
   activatedAt: {
     type: Date,
     required: false,
   },
+
   resetPassword: {
     token: { type: String, required: false },
     expiresAt: { type: Date, required: false },
     createdAt: Date,
     active: { type: Boolean, default: true },
   },
+  
   credentials: {
     token: { type: String, required: false },
     expiresAt: { type: Date, required: false }

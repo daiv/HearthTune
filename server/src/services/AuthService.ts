@@ -96,7 +96,7 @@ export class AuthService implements IAuthService {
 
     if (!user.activatedAt) throw new ServerError();
 
-    if (user.role === 'basic' && isTrialExpired(user.activatedAt)) throw new TrialExpiredException();
+    if (user.role === 'recruiter' && isTrialExpired(user.activatedAt)) throw new TrialExpiredException();
 
     const removeResult = await this.sessionService.remove(jti);
     if (removeResult.deletedCount === 0) throw new InvalidTokenException();

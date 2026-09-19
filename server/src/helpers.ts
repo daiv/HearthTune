@@ -34,7 +34,7 @@ export function hashData<T>(data: T, customHashingKey?: string): string {
 
 export function getMaxSessionsAllowed(role: Role): number {
   switch (role) {
-    case 'basic': return 1;
+    case 'recruiter': return 1;
     case 'superAdmin': return Infinity;
     case 'admin': return 3;
     default: return 2;
