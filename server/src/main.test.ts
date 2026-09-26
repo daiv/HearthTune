@@ -233,6 +233,30 @@ describe('TDD tests', () => {
       expect(after.nick).toBe(newNick);
 
     });
+    it('Should change password when oldPass is match', async () => {
+      const CHANGE_PASS_MUTATION = `
+        mutation ChangePassword($old:String!, $new:String!){
+         changePassword(oldPass:$old, newPass:$new)
+      }`;
+
+      const oldPass = 'secret';
+      const newPass = 'mostacho';
+      await userService.saveUser(loggedUser);
+      await userService.setUserPassword(loggedUser.id, oldPass);
+
+      const badPassMutation = await request.post(GRAPH)
+        .send({ query: CHANGE_PASS_MUTATION, variables: { old: oldPass + 'asdf', new: newPass } });
+      console.log('passmutation', badPassMutation.body);
+      expect(badPassMutation.body.data.changePassword).toBe(false);
+
+      const passMutation = await request.post(GRAPH)
+        .send({ query: CHANGE_PASS_MUTATION, variables: { old: oldPass, new: newPass } });
+      console.log('passmutation', passMutation.body);
+      expect(passMutation.body.data.changePassword).toBe(true);
+
+
+
+    });
 
     describe('Auth Tests', () => {
       const mailService = new MailingService(new MockEmailProvider());

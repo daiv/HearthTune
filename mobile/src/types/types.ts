@@ -35,8 +35,9 @@ export type AuthContextData = {
   isAuthenticated: boolean;
   isInitializing: boolean;
   tokens: AuthPayload | null;
-  nick: string | null
+  nick: string | null;
   changeNickname: (nick: string) => Promise<string | null>;
+  changePass: (oldPass: string, newPass: string) => Promise<boolean>;
 }
 export type FieldType = 'email' | 'password' | 'text';
 
@@ -61,6 +62,7 @@ export type ValidatedFields<T> = {
   ref: React.RefObject<TextInput | null>;
   type: FieldType;
   id: string;
+  placeHolder: string
 }
 export type LoginVariables = {
   email: string;
@@ -75,4 +77,7 @@ export type BaseModalProps = {
   children: ReactNode,
   visible: boolean,
   onRequestClose: (event?: NativeSyntheticEvent<any>) => void,
+}
+export type OptionsListProps = {
+  options: Option[],
 }

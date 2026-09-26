@@ -3,6 +3,7 @@ import { StyleSheet, Text, TextInput, View } from "react-native"
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { Button } from "./buttons/Button";
 import { InputProps } from "@/types/types";
+import { globalStyles } from "@/globalStyles";
 
 
 export const Input = forwardRef<TextInput, InputProps>((props, ref) => {
@@ -16,7 +17,7 @@ export const Input = forwardRef<TextInput, InputProps>((props, ref) => {
         <TextInput
           ref={ref}
           style={styles.textInput}
-          placeholderTextColor="#a4b0be"
+          placeholderTextColor={globalStyles.modalPlaceHolder.color}
           returnKeyType={nextRef ? 'next' : 'done'}
           onSubmitEditing={nextRef ? () => nextRef.current?.focus() : undefined}
           placeholder={placeHolder}
@@ -25,6 +26,7 @@ export const Input = forwardRef<TextInput, InputProps>((props, ref) => {
           keyboardType={type === 'email' ? 'email-address' : 'default'}
           autoCapitalize="none"
           autoCorrect={false}
+
 
         />
         {isPassword && <Button onPress={() => { setIsPwdHidden(visible => !visible) }}>
@@ -47,12 +49,12 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    color: '#2f3640', 
+    color: '#2f3640',
     fontSize: 16,
     height: '100%',
   },
   eyeButton: {
-    marginLeft: 8, 
+    marginLeft: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },

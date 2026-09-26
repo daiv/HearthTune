@@ -2,8 +2,9 @@ import { RolePermission } from "./types/types";
 
 export const PERMISSION: RolePermission = {
   test: 0,
-  recruiter: 1,
-  user: 2,
+  basic: 1,
+  recruiter: 2,
+  user: 3,
   admin: 5,
   superAdmin: 10,
 }

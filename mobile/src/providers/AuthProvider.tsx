@@ -1,7 +1,7 @@
 import { AuthPayload } from "@/common/types";
 import { AuthContext } from "@/contexts/AuthContext";
 import { gqlManager } from "@/graphql/GraphQLClientManager";
-import { loginService, logoutService, refreshService, getNickname, setNickname, secureStorage } from "@/services";
+import { loginService, logoutService, refreshService, getNickname, setNickname, secureStorage, setPassword } from "@/services";
 import { AuthContextData } from "@/types/types";
 import React, { useCallback, useEffect, useState } from "react";
 import uuid from 'react-native-uuid';
@@ -118,13 +118,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
   }, [tokens, handleSaveTokens, logoutService]);
+
   const changeNickname = useCallback(async (newNick: string): Promise<string | null> => {
     const updatedNick = await setNickname(newNick);
     setNick(updatedNick);
     return updatedNick;
   }, []);
+  const changePass = useCallback(async (oldPass: string, newPass: string): Promise<boolean> => {
+    const passwordChangeResult = await setPassword(oldPass, newPass);
+    return passwordChangeResult;
+  }, []);
   const contextValue: AuthContextData = {
-    login, tokens, isAuthenticated, isInitializing, logout, nick, changeNickname
+    login, tokens, isAuthenticated, isInitializing, logout, nick, changeNickname, changePass
   }
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
 

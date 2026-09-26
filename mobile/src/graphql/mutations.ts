@@ -26,5 +26,10 @@ mutation ChangeNick($nick:String!){
   changeNick(newNick:$nick){
     nick
   }
-}`
+}`;
+
+export const CHANGE_PASS_MUTATION = gql`
+  mutation ChangePassword($old:String!, $new:String!){
+    changePassword(oldPass:$old, newPass:$new)
+  }`;
 

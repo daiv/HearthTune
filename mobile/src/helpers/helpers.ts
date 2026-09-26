@@ -56,8 +56,6 @@ export const checkMainPwd = (pwd: string): string => {
   return pwd.length > 8 ? '' : 'password is too short';
 };
 
-export const checkMatchingPwd = (pass: string) => (pass2: string): string => pass === pass2 ? '' : 'passwords does not match';
-
 export const checkNick = (nick: string): string => nick && nick.length > 3 ? '' : 'nick is too short';
 
 export const getDeviceInfo = (): string => {

@@ -1,19 +1,5 @@
-import { Option } from "@/types/types";
+import { Option, OptionsListProps } from "@/types/types";
 import { View, FlatList, Text, StyleSheet, TouchableOpacity } from "react-native";
-
-
-const renderFunction = ({ item, index }: { item: Option, index: number }) => <TouchableOpacity
-  onPress={item.action}
->
-  <View
-    style={styles.row}>
-    <Text>{item.text}</Text>
-  </View>
-</TouchableOpacity>
-
-type OptionsListProps = {
-  options: Option[],
-}
 
 export function OptionsList({ options }: OptionsListProps
 ) {

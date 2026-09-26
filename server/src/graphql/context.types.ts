@@ -27,7 +27,7 @@ export interface MusicContext extends Omit<BaseContext, 'services'> {
 
 export interface UserContext extends Omit<BaseContext, 'services'> {
   services: {
-    user: IUserService;
+    user: Pick<IUserService, 'setUserNick' | 'setUserPassword'>;
     auth: Pick<IAuthService, 'checkUserPassword'>;
   }
 }
