@@ -23,7 +23,7 @@ mutation Logout($jti:String!){
 
 export const CHANGE_NICK_MUTATION = gql`
 mutation ChangeNick($nick:String!){
-  changeNick(query:$nick){
+  changeNick(newNick:$nick){
     nick
   }
 }`

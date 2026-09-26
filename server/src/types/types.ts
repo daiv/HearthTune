@@ -112,7 +112,7 @@ export type SearchQueryPayload = {
   limit?: number;
 }
 export type ProtectOptions = {
-  sanitizeQuery?: boolean
+  sanitizeFields?: string[];
 }
 export type SignedUrlValidationParams = {
   songId: string;

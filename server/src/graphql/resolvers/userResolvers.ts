@@ -13,15 +13,16 @@ export const userResolvers = {
     ),
   },
   Mutation: {
-    changeNick: protect<undefined, UserContext, { query: string }>(
+    changeNick: protect<undefined, UserContext, { newNick: string }>(
       atLeast('recruiter'),
-      async (_, { query }, context): Promise<{ nick: string } | null> => {
+      async (_, { newNick }, context): Promise<{ nick: string } | null> => {
         if (!context || !context.user || !context.user.id) return null;
-        const updatedUser = await context.services.user.setUserNick(context.user.id, query);
+        const updatedUser = await context.services.user.setUserNick(context.user.id, newNick);
         if (!updatedUser || !updatedUser.nick) return null;
-
         return { nick: updatedUser.nick }
-
+      }
+      , {
+        sanitizeFields: ['newNick']
       }
     )
   }

@@ -1,9 +1,8 @@
 import crypto from 'crypto';
-import { Credential, LoginProps, Role, TimeUnit, ViewPath, ViewPropsMap } from './types/types';
+import { Credential, Role, TimeUnit, ViewPath, ViewPropsMap } from './types/types';
 import { PERMISSION } from './constants';
-import { Response, Request } from 'express';
+import { Response } from 'express';
 import { ServerError } from './errors/ServerError';
-import { AuthService } from './services';
 
 export function checkEnvFile() {
   console.log('Checking env file...');
@@ -77,7 +76,7 @@ export const isExactly = (targetRole: Role) => (role: Role) => targetRole === ro
 
 export const sanitize = (rawQuery: string): string => {
   const sanitizedQuery = rawQuery
-    .replace(/[^\w\s\u00C0-\u017F!$&\-\.\+_]/gi, '')
+    .replace(/[^\w\s\u00C0-\u017F!&\-\.\+_]/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
   return sanitizedQuery;

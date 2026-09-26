@@ -40,5 +40,5 @@
     login(email:String!, password:String!, deviceId:String!, deviceInfo:String):AuthPayLoad
     logout(jti:String!):Boolean
     refreshTokens(token:String!): AuthPayLoad
-    changeNick(query:String!):User!
+    changeNick(newNick:String!):User!
   }

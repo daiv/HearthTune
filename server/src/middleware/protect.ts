@@ -16,12 +16,14 @@ export const protect = <TSource, TContext extends BaseContext, TArgs>(
     try {
       if (!context.user) throw new InvalidTokenException();
       if (!check(context.user.role)) throw new ForbiddenException();
-
-      if (options?.sanitizeQuery && args && typeof args === 'object') {
+      const fields = options?.sanitizeFields;
+      if (fields && args && typeof args === 'object') {
         const mutableArgs = args as Record<string, unknown>;
-        if ('query' in mutableArgs && typeof mutableArgs.query === 'string') {
-          mutableArgs.query = sanitize(mutableArgs.query);
-        }
+        fields.forEach(field => {
+          if (field in mutableArgs && typeof mutableArgs[field] === 'string') {
+            mutableArgs[field] = sanitize(mutableArgs[field]);
+          }
+        });
       }
       return await fn(parent, args, context, info);
     } catch (error: unknown) {

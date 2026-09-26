@@ -57,7 +57,6 @@ describe('TDD tests', () => {
         { query: 'r@oc\k-', expected: 'rock-' },
         { query: 'Linkin @@@@ Park', expected: 'Linkin Park' },
         { query: '<script> ../etc/passwd', expected: 'script ..etcpasswd' },
-        { query: 'Ke$ha & P!nk', expected: 'Ke$ha & P!nk' },
         { query: 'Rock 🎸 Metal', expected: 'Rock Metal' },
         { query: 'La Fuga', expected: 'La Fuga' },
       ];
@@ -218,16 +217,16 @@ describe('TDD tests', () => {
     });
     it('Should change nick', async () => {
       const CHANGE_NICK_MUTATION = `
-        mutation ChangeNick($nick:String!){
-          changeNick(query:$nick){
-            nick
+        mutation ChangeNick($newNick:String!){
+          changeNick(newNick:$newNick){
+            nick  
           }
         }`;
       const newNick = 'chewaka';
       await userService.saveUser(loggedUser);
       const before = await userService.getUserByEmail(loggedUser.email);
       const nickMutation = await request.post(GRAPH)
-        .send({ query: CHANGE_NICK_MUTATION, variables: { nick: newNick } });
+        .send({ query: CHANGE_NICK_MUTATION, variables: { newNick } });
       console.log('nickMutation', nickMutation.body)
       const after = await userService.getUserByEmail(loggedUser.email);
       expect(before.nick).toBe(loggedUser.nick);

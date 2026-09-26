@@ -10,13 +10,13 @@ export const songResolvers = {
         return await context.services.songs.search(query, limit || 50);
       }
       ,
-      { sanitizeQuery: true }
+      { sanitizeFields: ['query'] }
     ),
     searchLocally: protect<undefined, MusicContext, { query: string }>(
       atLeast('recruiter'),
       async (_, { query }, context) => await context.services.songs.searchLocally(query)
       ,
-      { sanitizeQuery: true }
+      { sanitizeFields: ['query'] }
     ),
 
     getRelated: protect<undefined, MusicContext, { id: string, numberOfSongs: number }>(
