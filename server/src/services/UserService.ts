@@ -37,6 +37,7 @@ export class UserService implements IUserService {
     const savedUser = await this.userRepository.save(user);
     return savedUser;
   }
+
   async setUserNick(userId: string, plainNick: string): Promise<User | null> {
     const user = await this.userRepository.getUserById(userId);
     if (!user) throw new UserNotFoundException();
@@ -44,6 +45,7 @@ export class UserService implements IUserService {
     const savedUser = await this.userRepository.save(user);
     return savedUser;
   }
+
   async createUsersFromEnv() {
     const envEntries = process.env.USERS?.split(';') || [];
     if (envEntries.length % 3 !== 0) throw new Error('bad env.users format');

@@ -6,7 +6,7 @@ import { Song } from '@/common/types'
 import { SearchItem } from "./SearchItem";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { styles } from "./styles";
-import { getNick } from "@/services/userService";
+import { getNickname } from "@/services/userService";
 
 const renderFunction = ({ item }: { item: Song }) => <SearchItem key={item.instanceId} song={item} />
 const mergeSongs = (local: Song[], remote: Song[]): Song[] => {

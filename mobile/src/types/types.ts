@@ -1,6 +1,6 @@
 import { AuthPayload, Song } from "@/common/types"
-import { Dispatch } from "react";
-import { TextInput } from "react-native";
+import { Dispatch, ReactNode } from "react";
+import { NativeSyntheticEvent, TextInput } from "react-native";
 
 export type Mode = 'Create account' | 'Log in';
 export type PlayListContextData = {
@@ -36,6 +36,7 @@ export type AuthContextData = {
   isInitializing: boolean;
   tokens: AuthPayload | null;
   nick: string | null
+  changeNickname: (nick: string) => Promise<string | null>;
 }
 export type FieldType = 'email' | 'password' | 'text';
 
@@ -65,4 +66,13 @@ export type LoginVariables = {
   email: string;
   password: string;
   deviceInfo?: string;
+}
+export type Option = {
+  text: string;
+  action: () => void;
+}
+export type BaseModalProps = {
+  children: ReactNode,
+  visible: boolean,
+  onRequestClose: (event?: NativeSyntheticEvent<any>) => void,
 }

@@ -1,6 +1,6 @@
 import { AuthPayload, SignedUrl } from "@/common/types"
 import { gqlManager } from "@/graphql/GraphQLClientManager";
-import { LOGIN_MUTATION, LOGOUT_MUTATION, REFRESH_MUTATION } from "@/graphql/mutations";
+import { CHANGE_NICK_MUTATION, LOGIN_MUTATION, LOGOUT_MUTATION, REFRESH_MUTATION } from "@/graphql/mutations";
 import { GET_SIGNED_URL } from "@/graphql/queries";
 import { getDeviceInfo } from "@/helpers/helpers"
 
@@ -24,4 +24,5 @@ export const getSignedUrlService = async (songId: string, provider: string): Pro
   const data = await gqlManager.safeRequest<{ getSignedUrl: SignedUrl }>(GET_SIGNED_URL, { songId, provider });
   return data.getSignedUrl;
 }
+
 

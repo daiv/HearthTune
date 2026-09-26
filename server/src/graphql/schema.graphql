@@ -33,11 +33,12 @@
     searchDeep(query:String!, limit:Int):[Song]
     getRelated(id:ID!, numberOfSongs:Int):[Song]
     getSignedUrl(songId:ID!, provider:String!): SignedUrl!
-    getNick:User
+    getNick:User!
   }
 
   type Mutation {
     login(email:String!, password:String!, deviceId:String!, deviceInfo:String):AuthPayLoad
     logout(jti:String!):Boolean
     refreshTokens(token:String!): AuthPayLoad
+    changeNick(query:String!):User!
   }

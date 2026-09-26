@@ -4,3 +4,4 @@ export * from './SkipButton';
 export * from './LikeButton';
 export * from './Button';
 export * from './AsyncButton';
+export * from './LogoutButton';

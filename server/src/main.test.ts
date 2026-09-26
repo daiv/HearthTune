@@ -105,6 +105,14 @@ describe('TDD tests', () => {
     const GRAPH = '/graphql';
     let httpServer: Server;
     const uniqueDevId: string[] = [];
+    const loggedUser: User = {
+      id: 'test-user',
+      role: 'recruiter',
+      internalTag: 'test-user',
+      email: 'test@test',
+      status: 'active',
+      nick: 'homer'
+    };
     for (let i = 0; i < 100; i++) uniqueDevId.push(`$devId-${i}`);
 
     const Query = {
@@ -140,18 +148,20 @@ describe('TDD tests', () => {
 
       const graphql = await initGraphqlMiddleware(songService, userService, authService,
 
-        async () => ({
-          user: { id: 'test-user', role: 'recruiter',internalTag:'test-user', email:'test@test' } as User,
-          services: {
-            songs: songService,
-            user: userService,
-            auth: authService
-          },
-          metadata: {
-            deviceInfo: 'Pixel-8 | Android 10',
-            appVersion: '1.0.0'
-          }
-        })
+        async () => (
+          {
+            user:
+              loggedUser,
+            services: {
+              songs: songService,
+              user: userService,
+              auth: authService
+            },
+            metadata: {
+              deviceInfo: 'Pixel-8 | Android 10',
+              appVersion: '1.0.0'
+            }
+          })
       );
       server.use(GRAPH, graphql);
       httpServer = server.listen();
@@ -164,15 +174,8 @@ describe('TDD tests', () => {
     })
 
     it('Should call the search function with the right args', async () => {
-      const searchQuery = `
-    query find($searchString:String!, $max: Int){
-    search(query:$searchString, limit:$max){
-    id,
-    title, 
-    description,
-    duration}
-    }`;
 
+      const searchQuery = Query.query.search;
       const spy = jest.spyOn(songService, 'search').mockResolvedValue([
         { id: '9Yp3lc3PsjA', title: 'Test Song', description: 'desc', duration: 100, provider: 'Youtube' }
       ]);
@@ -200,6 +203,38 @@ describe('TDD tests', () => {
       expect(songs).toHaveLength(10);
 
     });
+    it('Should get nick ', async () => {
+      const GET_NICK = `
+        query getNick{
+          getNick{
+            nick
+          }
+        }`;
+      const nickResponse = await request.post(GRAPH)
+        .send({ query: GET_NICK, variables: {} });
+      console.log('nick response is', nickResponse.body);
+      expect(nickResponse.body.data.getNick.nick).toBe(loggedUser.nick);
+
+    });
+    it('Should change nick', async () => {
+      const CHANGE_NICK_MUTATION = `
+        mutation ChangeNick($nick:String!){
+          changeNick(query:$nick){
+            nick
+          }
+        }`;
+      const newNick = 'chewaka';
+      await userService.saveUser(loggedUser);
+      const before = await userService.getUserByEmail(loggedUser.email);
+      const nickMutation = await request.post(GRAPH)
+        .send({ query: CHANGE_NICK_MUTATION, variables: { nick: newNick } });
+      console.log('nickMutation', nickMutation.body)
+      const after = await userService.getUserByEmail(loggedUser.email);
+      expect(before.nick).toBe(loggedUser.nick);
+      expect(after.nick).toBe(newNick);
+
+    });
+
     describe('Auth Tests', () => {
       const mailService = new MailingService(new MockEmailProvider());
       const userRepo = new UserRepository();

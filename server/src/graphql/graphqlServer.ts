@@ -18,7 +18,7 @@ const server = new ApolloServer<resolverContext>({
   resolvers,
   formatError: (formattedError, error) => {
 
-    // if (process.env.NODE_ENV === 'production')
+    if (process.env.NODE_ENV === 'production')
     delete formattedError.extensions?.stacktrace;
     return formattedError;
   }

@@ -1,9 +1,7 @@
 import { AuthPayload } from "@/common/types";
 import { AuthContext } from "@/contexts/AuthContext";
 import { gqlManager } from "@/graphql/GraphQLClientManager";
-import { loginService, logoutService, refreshService } from "@/services/authService";
-import { secureStorage } from "@/services/SecureStorage";
-import { getNick } from "@/services/userService";
+import { loginService, logoutService, refreshService, getNickname, setNickname, secureStorage } from "@/services";
 import { AuthContextData } from "@/types/types";
 import React, { useCallback, useEffect, useState } from "react";
 import uuid from 'react-native-uuid';
@@ -38,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (nick) return;
     if (!tokens) setNick(null)
     else {
-      getNick()
+      getNickname()
         .then(setNick)
         .catch(err => console.error('error loading nick', err));
     }
@@ -120,9 +118,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
   }, [tokens, handleSaveTokens, logoutService]);
-
+  const changeNickname = useCallback(async (newNick: string): Promise<string | null> => {
+    const updatedNick = await setNickname(newNick);
+    setNick(updatedNick);
+    return updatedNick;
+  }, []);
   const contextValue: AuthContextData = {
-    login, tokens, isAuthenticated, isInitializing, logout, nick,
+    login, tokens, isAuthenticated, isInitializing, logout, nick, changeNickname
   }
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
 

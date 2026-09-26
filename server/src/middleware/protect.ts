@@ -25,6 +25,7 @@ export const protect = <TSource, TContext extends BaseContext, TArgs>(
       }
       return await fn(parent, args, context, info);
     } catch (error: unknown) {
+      console.error('protect crash', error);
       handleGraphQlError(error);
       throw error;
     }

@@ -7,7 +7,7 @@ import { User } from "@/types/types";
 export interface ServiceContainer {
   auth: Partial<IAuthService>;
   songs: Partial<ISongService>;
-  users: Partial<IUserService>;
+  user: Partial<IUserService>;
 
 }
 export interface BaseContext {
@@ -27,7 +27,7 @@ export interface MusicContext extends Omit<BaseContext, 'services'> {
 
 export interface UserContext extends Omit<BaseContext, 'services'> {
   services: {
-    users: Pick<IUserService, 'getUserById'>;
+    user: IUserService;
     auth: Pick<IAuthService, 'checkUserPassword'>;
   }
 }
@@ -53,7 +53,4 @@ export interface SignUrlContext extends Omit<BaseContext, 'services'> {
   services: {
     auth: Pick<IAuthService, 'createSignedUrl'>;
   }
-}
-export interface UserContext  {
-
 }
