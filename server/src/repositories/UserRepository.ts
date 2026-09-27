@@ -7,26 +7,6 @@ import { HydratedDocument } from "mongoose";
 
 export class UserRepository implements IUserRepository {
 
-  
-  // async save(user: User): Promise<User> {
-  //   const userToSave = { ...user, emailHash: hashData(user.email) }
-  //   const existingId = (await this.getUserByEmail(user.email))?.id;
-
-  //   const idToQuery = existingId || user.id;
-
-  //   const savedUserDoc = await UserModel.findOneAndUpdate(
-  //     { _id: idToQuery },
-  //     { $set: userToSave },
-  //     {
-  //       upsert: true,
-  //       returnDocument: 'after'
-  //     }
-  //   );
-
-  //   if (!savedUserDoc) throw new Error('Unable to save user document');
-  //   return savedUserDoc.toJSON();
-
-  // }
   async save(user: User) {
     const userToSave = { ...user, emailHash: hashData(user.email) };
 
@@ -44,8 +24,6 @@ export class UserRepository implements IUserRepository {
 
     return savedUserDoc.toJSON();
   }
-
-
 
   async getAllUsers(): Promise<User[] | null> {
     const userDoc = await UserModel.find({});

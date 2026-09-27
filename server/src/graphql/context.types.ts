@@ -1,5 +1,6 @@
 import { ISongService } from "@/interfaces";
 import { IAuthService } from "@/interfaces/IAuthService";
+import { ILikeService } from "@/interfaces/ILikeService";
 import { IUserService } from "@/interfaces/IUserService";
 import { User } from "@/types/types";
 
@@ -29,6 +30,7 @@ export interface UserContext extends Omit<BaseContext, 'services'> {
   services: {
     user: Pick<IUserService, 'setUserNick' | 'setUserPassword'>;
     auth: Pick<IAuthService, 'checkUserPassword'>;
+    like: Pick<ILikeService, 'toggleLike' | 'isLiked' | 'getLikedSongsByUser'>
   }
 }
 

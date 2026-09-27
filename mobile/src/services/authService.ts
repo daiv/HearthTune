@@ -1,6 +1,6 @@
 import { AuthPayload, SignedUrl } from "@/common/types"
 import { gqlManager } from "@/graphql/GraphQLClientManager";
-import { CHANGE_NICK_MUTATION, LOGIN_MUTATION, LOGOUT_MUTATION, REFRESH_MUTATION } from "@/graphql/mutations";
+import { LOGIN_MUTATION, LOGOUT_MUTATION, REFRESH_MUTATION } from "@/graphql/mutations";
 import { GET_SIGNED_URL } from "@/graphql/queries";
 import { getDeviceInfo } from "@/helpers/helpers"
 

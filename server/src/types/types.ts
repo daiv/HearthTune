@@ -1,6 +1,6 @@
 import { Readable } from "node:stream";
 import { ISongService } from "../interfaces/ISongService";
-import { ActivationService, AuthService, SessionService, UserService } from "@/services";
+import { ActivationService, AuthService, LikeService, SessionService, UserService } from "@/services";
 import { Song } from "@/common/types";
 import { ResourcesService } from "@/services/ResourcesService";
 import { MailingService } from "@/services/MailingService";
@@ -22,6 +22,7 @@ export type resolverContext = {
     songs: ISongService;
     user: UserService;
     auth: AuthService;
+    like: LikeService;
   };
   metadata: {
     deviceInfo: string;

@@ -34,6 +34,8 @@
     getRelated(id:ID!, numberOfSongs:Int):[Song]
     getSignedUrl(songId:ID!, provider:String!): SignedUrl!
     getNick:User!
+    isLiked(songId:String!):Boolean!
+    getLikedSongsByUser:[Song!]!
   }
 
   type Mutation {
@@ -42,4 +44,5 @@
     refreshTokens(token:String!): AuthPayLoad
     changeNick(newNick:String!):User!
     changePassword(oldPass:String!, newPass:String!):Boolean!
+    toggleLikeSong(songId:String!):Boolean!
   }

@@ -5,7 +5,7 @@ import { checkEnvFile } from '@/helpers';
 import { initDatabase } from '@/models/model';
 import { initGraphqlMiddleware } from './graphql/graphqlServer';
 import { YoutubeProvider, NodeMailer } from '@/providers';
-import { ResourcesService, MailingService, AuthService, SongService, UserService, SessionService, ActivationService, } from '@/services';
+import { ResourcesService, MailingService, AuthService, SongService, UserService, SessionService, ActivationService, LikeService, } from '@/services';
 import { errorHandler } from '@/middleware/errorHandler';
 import { ISongsProvider } from '@/interfaces';
 import path from 'node:path';
@@ -14,6 +14,7 @@ import { PORT } from './constants';
 import { SsrController, ResourcesController } from '@/controllers';
 import { MockEmailProvider } from './mocks/MockEmailProvider';
 import { SsrConstructorProps } from './types/types';
+import { LikeRepository } from './repositories/LikeRepository';
 
 const app = express();
 
@@ -44,6 +45,8 @@ const app = express();
     const activationService = new ActivationService(userRepository, mailService, authService);
     const resourcesService = new ResourcesService();
     const resourcesController = new ResourcesController(resourcesService, authService);
+    const likeRepo = new LikeRepository();
+    const likeService = new LikeService(likeRepo);
 
     const ssrProps: SsrConstructorProps = {
       authService,
@@ -68,7 +71,7 @@ const app = express();
     await userService.createUsersFromEnv();
     await activationService.sendActivationLinkToWhiteListedUsers();
 
-    const graphql = await initGraphqlMiddleware(songService, userService, authService);
+    const graphql = await initGraphqlMiddleware(songService, userService, authService, likeService);
     app.use('/graphql', graphql);
 
     app.use(errorHandler);

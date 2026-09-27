@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 import { MockSongsProvider } from "./mocks/MockSongsProvider";
 import express from 'express';
 import { initGraphqlMiddleware } from "./graphql/graphqlServer";
@@ -6,17 +6,20 @@ import supertest from "supertest";
 import TestAgent from "supertest/lib/agent";
 import { Server } from "node:http";
 import { DownloadStatus, Song } from "@/common/types";
-import { AuthService, SongService, UserService, ActivationService, SessionService } from "@/services";
+import { AuthService, SongService, UserService, ActivationService, SessionService, LikeService } from "@/services";
 import { describe, it, expect, afterAll, beforeAll, jest, beforeEach, afterEach } from '@jest/globals';
 import { CreateUserDto, Role, Session, User, Credential, ResetPasswordCredential } from "./types/types";
 import { UserRepository, SongRepository, SessionRepository } from "@/repositories/";
-import { UserModel, SessionModel } from "@/models/";
+import { UserModel, SessionModel, SongModel } from "@/models/";
 import { createValidationCredentials, expiresIn, hashData, sanitize } from "./helpers";
 import { ServerError } from "./errors/ServerError";
 import { MailingService } from "./services/MailingService";
 import { MockEmailProvider } from "./mocks/MockEmailProvider";
 import { before } from "node:test";
 import { randomUUID } from "node:crypto";
+import { LikeRepository } from "./repositories/LikeRepository";
+import { ILikeRepository } from "./interfaces/ILikeRepository";
+import { LikeModel } from "./models/likeSongModel";
 
 describe('TDD tests', () => {
   beforeAll(async () => {
@@ -101,6 +104,8 @@ describe('TDD tests', () => {
     const sessionRepository = new SessionRepository();
     const sessionService = new SessionService(sessionRepository);
     const authService = new AuthService(userRepository, sessionService);
+    const likeRepo = new LikeRepository();
+    const likeService = new LikeService(likeRepo);
     const GRAPH = '/graphql';
     let httpServer: Server;
     const uniqueDevId: string[] = [];
@@ -145,7 +150,7 @@ describe('TDD tests', () => {
       let server = express();
       server.use(express.json());
 
-      const graphql = await initGraphqlMiddleware(songService, userService, authService,
+      const graphql = await initGraphqlMiddleware(songService, userService, authService, likeService,
 
         async () => (
           {
@@ -154,7 +159,8 @@ describe('TDD tests', () => {
             services: {
               songs: songService,
               user: userService,
-              auth: authService
+              auth: authService,
+              like: likeService
             },
             metadata: {
               deviceInfo: 'Pixel-8 | Android 10',
@@ -166,6 +172,9 @@ describe('TDD tests', () => {
       httpServer = server.listen();
       request = supertest(httpServer);
     });
+    beforeEach(async () => {
+      await LikeModel.deleteMany({});
+    })
     afterAll(async () => {
       await new Promise<void>(resolve => {
         httpServer.close(() => { resolve() });
@@ -253,10 +262,75 @@ describe('TDD tests', () => {
         .send({ query: CHANGE_PASS_MUTATION, variables: { old: oldPass, new: newPass } });
       console.log('passmutation', passMutation.body);
       expect(passMutation.body.data.changePassword).toBe(true);
+    });
+
+    it('Should toggle liked songs', async () => {
+      const TOGGLE_MUTATION = `
+        mutation Toggle($songId:String!){
+          toggleLikeSong(songId:$songId)
+      }`;
+      const songId = new mongoose.Types.ObjectId();
+      let toggleMutation = await request.post(GRAPH)
+        .send({ query: TOGGLE_MUTATION, variables: { songId } });
+      expect(toggleMutation.body.data.toggleLikeSong).toBe(true);
+
+      toggleMutation = await request.post(GRAPH)
+        .send({ query: TOGGLE_MUTATION, variables: { songId } });
+      expect(toggleMutation.body.data.toggleLikeSong).toBe(false);
+    });
+
+    it('Should get liked songs', async () => {
+      const TOGGLE_MUTATION = `
+        mutation Toggle($songId:String!){
+          toggleLikeSong(songId:$songId)
+      }`;
+      const mockSong: Song = {
+        id: 'mockSongId',
+        description: 'a mock song',
+        duration: 10,
+        provider: 'Unknown',
+        title: 'mock song',
+
+      }
+      await SongModel.create(mockSong);
+      let toggleMutation = await request.post(GRAPH)
+        .send({ query: TOGGLE_MUTATION, variables: { songId: mockSong.id } });
+      expect(toggleMutation.body.data.toggleLikeSong).toBe(true);
+
+      const LIKED_LIST = `
+      query getLiked{
+        getLikedSongsByUser{
+          id
+        }
+      }`;
+      const listResponse = await request.post(GRAPH)
+        .send({ query: LIKED_LIST });
+      expect(listResponse.body.data.getLikedSongsByUser.length).toBe(1);
+    });
+
+    it('Should check if liked', async () => {
+      const TOGGLE_MUTATION = `
+        mutation Toggle($songId:String!){
+          toggleLikeSong(songId:$songId)
+      }`;
+      const songId = new mongoose.Types.ObjectId().toString();
+      let toggleMutation = await request.post(GRAPH)
+        .send({ query: TOGGLE_MUTATION, variables: { songId } });
+      expect(toggleMutation.body.data.toggleLikeSong).toBe(true);
 
 
+      const IS_LIKED = `
+        query isSongLiked($songId:String!){
+          isLiked(songId:$songId)
+        }`;
+
+      const isLiked = await request.post(GRAPH)
+        .send({ query: IS_LIKED, variables: { songId } });
+      console.log('isLiked', isLiked.body.data);
+      expect(isLiked.body.data.isLiked).toBe(true);
 
     });
+
 
     describe('Auth Tests', () => {
       const mailService = new MailingService(new MockEmailProvider());
@@ -859,6 +933,59 @@ describe('TDD tests', () => {
         expect(session.JTI).toBe(hashData('e'));
       })
     });
+    describe('Like tests', () => {
+      describe('Like repo', () => {
+        const likeUser: User = {
+          email: 'like',
+          id: 'likeuser',
+          internalTag: 'like',
+          role: 'basic',
+          status: 'active',
+        }
+
+        let likeRepo: ILikeRepository;
+        beforeAll(async () => {
+          likeRepo = new LikeRepository();
+          const userService = new UserService(new UserRepository());
+          await userService.createUser(likeUser);
+        });
+        beforeEach(async () => {
+          await LikeModel.deleteMany({});
+        })
+        it('Should get empty array when no songs liked', async () => {
+          const likedSongs = await likeRepo.getLikedSongsByUser(likeUser.id);
+          expect(likedSongs).toEqual([]);
+        });
+
+        it('Should update songs when liked', async () => {
+          const mockSong: Song = {
+            id: 'mockSongid',
+            description: 'mockSong',
+            duration: 10,
+            provider: 'Unknown',
+            title: 'mockrock',
+          }
+          await SongModel.create(mockSong);
+          let result = await likeRepo.toggleLike(likeUser.id, mockSong.id);
+          expect(result).toBe(true);
+          let isLiked = await likeRepo.isLiked(likeUser.id, mockSong.id);
+          expect(isLiked).toBe(true);
+          let likedSongs = await likeRepo.getLikedSongsByUser(likeUser.id);
+          expect(likedSongs.length).toBe(1);
+
+          result = await likeRepo.toggleLike(likeUser.id, mockSong.id);
+          expect(result).toBe(false);
+          likedSongs = await likeRepo.getLikedSongsByUser(likeUser.id);
+          expect(likedSongs.length).toBe(0);
+
+          isLiked = await likeRepo.isLiked(likeUser.id, mockSong.id);
+          expect(isLiked).toBe(false);
+
+        });
+
+
+      })
+    })
     describe('Signed urls', () => {
       describe('Streaming', () => {
 

@@ -9,6 +9,7 @@ import { AuthService, UserService } from "@/services";
 import { resolvers } from './resolvers';
 import { InvalidCredentialsException } from '@/errors/ServerError';
 import { handleGraphQlError } from '@/middleware/handleGraphQLError';
+import { LikeService } from '@/services/LikeService';
 
 const schemaPath = join(process.cwd(), "src/graphql/schema.graphql");
 const typeDefs = readFileSync(schemaPath, "utf-8");
@@ -19,7 +20,7 @@ const server = new ApolloServer<resolverContext>({
   formatError: (formattedError, error) => {
 
     if (process.env.NODE_ENV === 'production')
-    delete formattedError.extensions?.stacktrace;
+      delete formattedError.extensions?.stacktrace;
     return formattedError;
   }
 });
@@ -28,6 +29,7 @@ export async function initGraphqlMiddleware(
   songService: ISongService,
   userService: UserService,
   authService: AuthService,
+  likeService: LikeService,
   customContext?: (args: ExpressContextFunctionArgument) => Promise<resolverContext>
 ) {
   await server.start();
@@ -59,7 +61,7 @@ export async function initGraphqlMiddleware(
         {
           user,
           services: {
-            songs: songService, user: userService, auth: authService,
+            songs: songService, user: userService, auth: authService, like: likeService
           },
           metadata,
         }

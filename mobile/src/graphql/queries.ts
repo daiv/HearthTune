@@ -49,3 +49,19 @@ query getNick{
     nick
   }
 }`;
+export const IS_LIKED = gql`
+  query isSongLiked($songId:String!){
+    isLiked(songId:$songId)
+  }`;
+  
+export const LIKED_LIST = gql`
+  query getLiked{
+    getLikedSongsByUser{
+      id
+      title
+      duration
+      local
+      provider
+      url
+    }
+  }`;

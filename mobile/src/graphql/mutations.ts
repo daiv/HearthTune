@@ -33,3 +33,7 @@ export const CHANGE_PASS_MUTATION = gql`
     changePassword(oldPass:$old, newPass:$new)
   }`;
 
+export const TOGGLE_MUTATION = gql`
+  mutation Toggle($songId:String!){
+    toggleLikeSong(songId:$songId)
+  }`;
