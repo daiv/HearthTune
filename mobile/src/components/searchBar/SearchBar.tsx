@@ -46,13 +46,17 @@ export function SearchBar() {
   );
 
   const songs = useMemo(() => {
-    if (favMode) return favData?.getLikedSongsByUser.map(s => ({ ...s, local: true })) || [];
+    if (favMode) return favData?.
+      getLikedSongsByUser
+      .map(s => ({ ...s, local: true }))
+      .filter(s => s.title.toLowerCase().includes(input.toLowerCase()))
+      || [];
 
     const localSongs = localData?.searchLocally.map(s => ({ ...s, local: true, })) || [];
     const remoteSongs = remoteData?.search || [];
 
     return mergeSongs(localSongs, remoteSongs);
-  }, [localData, remoteData, favMode, favData]);
+  }, [localData, remoteData, favMode, favData, input]);
 
   const handleClick = () => {
     if (favMode) return;
