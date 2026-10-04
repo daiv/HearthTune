@@ -1,24 +1,23 @@
 import { Song } from "@/common/types";
 import { addInstanceId, songToTrack, trackToSong } from "@/helpers/helpers";
-import { getRelatedSongsFromServer } from "@/services/musicService";
+import { getRelatedSongsFromServer, getSignedUrlService } from "@/services";
 import TrackPlayer, { Event, Track, useTrackPlayerEvents } from "react-native-track-player";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PlayListContextData } from "@/types/types";
-import { getSignedUrlService } from "@/services/authService";
 import { useQueryClient } from "@tanstack/react-query";
 
 export const usePlayerManager = () => {
   const [queue, setQueue] = useState<Song[]>([]);
-
   const queueRef = useRef<Song[]>([]);
   const relatedCandidatesRef = useRef<Song[]>([]);
-  const isLastSongRef = useRef(false);
-  const isCurrentTrackBeyondMiddlePointRef = useRef(false);
-  const isSongAdditionTrigeredRef = useRef(false);
-  const isSyncingRef = useRef(false);
-  const songIndexRef = useRef(0);
-  const pauseAutoQueueRef = useRef(false);
-  const isShufflingRef = useRef(false);
+  const isLastSongRef = useRef<boolean>(false);
+  const isCurrentTrackBeyondMiddlePointRef = useRef<boolean>(false);
+  const isSongAdditionTrigeredRef = useRef<boolean>(false);
+  const isSyncingRef = useRef<boolean>(false);
+  const songIndexRef = useRef<number>(0);
+  const pauseAutoQueueRef = useRef<boolean>(false);
+  const isShufflingRef = useRef<boolean>(false);
+  const isSongUpdatedToLocal = useRef<boolean>(false);
 
   const queryClient = useQueryClient();
 
@@ -43,10 +42,22 @@ export const usePlayerManager = () => {
     } finally {
       isSyncingRef.current = false;
     }
-
   }, []);
 
   useEffect(() => { syncQueue() }, []);
+
+  const setCurrentSongToLocal = (): void => {
+    isSongUpdatedToLocal.current = true;
+
+    queueRef.current[songIndexRef.current].local = true;
+
+    setQueue(prevQueue => {
+      const newQueue = [...prevQueue];
+      if (newQueue[songIndexRef.current])
+        newQueue[songIndexRef.current] = { ...newQueue[songIndexRef.current], local: true }
+      return newQueue;
+    });
+  }
 
   useTrackPlayerEvents(
     [
@@ -55,6 +66,7 @@ export const usePlayerManager = () => {
     ], async event => {
       const { position, duration } = event;
       await manageAutoQueue(position, duration);
+      if (!isSongUpdatedToLocal.current && isCurrentTrackBeyondMiddlePointRef.current) setCurrentSongToLocal();
     }
   );
 
@@ -86,14 +98,14 @@ export const usePlayerManager = () => {
       if (!isLastSongRef.current) await signTrackAtPosition(activeIndex + 1);
     });
 
-
-  const manageAutoQueue = async (position: number, duration: number) => {
+  const manageAutoQueue = async (position: number, duration: number): Promise<void> => {
     if (pauseAutoQueueRef.current || !isLastSongRef.current || !position || duration <= 0) return;
 
     isCurrentTrackBeyondMiddlePointRef.current = (duration / 2) < position;
 
     if (isCurrentTrackBeyondMiddlePointRef.current && !isSongAdditionTrigeredRef.current) {
       isSongAdditionTrigeredRef.current = true;
+
       try {
         await enqueueRelatedSong();
       } catch (error) {
@@ -103,7 +115,7 @@ export const usePlayerManager = () => {
     }
   }
 
-  const signTrackAtPosition = async (position: number) => {
+  const signTrackAtPosition = async (position: number): Promise<void> => {
     if (position >= queueRef.current.length) return;
 
     const signedSong: Song = await updateSongWithSignedUrl(queueRef.current[position]);
@@ -127,7 +139,7 @@ export const usePlayerManager = () => {
     };
   };
 
-  const enqueue = useCallback(async (song: Song, addedManually: boolean = true) => {
+  const enqueue = useCallback(async (song: Song, addedManually: boolean = true): Promise<void> => {
     if (addedManually) relatedCandidatesRef.current = [];
     const songWithInstance = addInstanceId(song);
     console.log('added song', songWithInstance);
@@ -145,7 +157,7 @@ export const usePlayerManager = () => {
     }
   }, []);
 
-  const loadPlayList = useCallback(async (songs: Song[]) => {
+  const loadPlayList = useCallback(async (songs: Song[]): Promise<void> => {
     await TrackPlayer.reset();
     await TrackPlayer.add(songs.map(songToTrack));
     const newQueue = [...songs];
@@ -154,18 +166,18 @@ export const usePlayerManager = () => {
     setQueue(newQueue);
   }, [queueRef]);
 
-  const resetQueue = useCallback(async () => {
+  const resetQueue = useCallback(async (): Promise<void> => {
     await TrackPlayer.reset();
     queueRef.current = [];
     songIndexRef.current = 0;
     setQueue([]);
   }, []);
 
-  const pauseAutoQueue = useCallback((enabled: boolean) => {
+  const pauseAutoQueue = useCallback((enabled: boolean): void => {
     pauseAutoQueueRef.current = enabled;
   }, []);
 
-  const enqueueRelatedSong = useCallback(async (isRetry = false) => {
+  const enqueueRelatedSong = useCallback(async (isRetry = false): Promise<void> => {
     const currentSong = queueRef.current[songIndexRef.current];
     if (!currentSong) return;
 
@@ -203,7 +215,7 @@ export const usePlayerManager = () => {
     }
   }, [enqueue]);
 
-  const skipToByInstanceId = useCallback(async (instanceId: string) => {
+  const skipToByInstanceId = useCallback(async (instanceId: string): Promise<void> => {
     if (!instanceId) {
       console.log('bad instance Id');
       syncQueue();
@@ -223,7 +235,7 @@ export const usePlayerManager = () => {
     }
   }, [syncQueue]);
 
-  const dequeue = useCallback(async (instanceId: string) => {
+  const dequeue = useCallback(async (instanceId: string): Promise<void> => {
     const indexToRemove = queueRef.current.findIndex(s => s.instanceId === instanceId);
     if (indexToRemove === -1) return;
     try {
@@ -239,7 +251,7 @@ export const usePlayerManager = () => {
     }
   }, []);
 
-  const shuffleQueue = useCallback(async () => {
+  const shuffleQueue = useCallback(async (): Promise<void> => {
     if (isShufflingRef.current) return;
     isShufflingRef.current = true;
     const newQueue = [...queueRef.current];
@@ -265,7 +277,7 @@ export const usePlayerManager = () => {
     return queueRef.current[songIndexRef.current].local || false;
   };
 
-  const skipSong = useCallback(async (to: 'Prev' | 'Next') => {
+  const skipSong = useCallback(async (to: 'Prev' | 'Next'): Promise<void> => {
     const length = queueRef.current.length;
     const currentIndex = songIndexRef.current;
     if (length === 0 ||
@@ -287,6 +299,7 @@ export const usePlayerManager = () => {
     }
 
   }, []);
+
   const contextValue: PlayListContextData = useMemo(() => ({
     queue,
     enqueue,
