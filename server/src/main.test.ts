@@ -8,8 +8,8 @@ import { Server } from "node:http";
 import { DownloadStatus, Song } from "@/common/types";
 import { AuthService, SongService, UserService, ActivationService, SessionService, LikeService } from "@/services";
 import { describe, it, expect, afterAll, beforeAll, jest, beforeEach, afterEach } from '@jest/globals';
-import { CreateUserDto, Role, Session, User, Credential, ResetPasswordCredential } from "./types/types";
-import { UserRepository, SongRepository, SessionRepository } from "@/repositories/";
+import { CreateUserDto, Role, Session, User, Credential, ResetPasswordCredential, PlayList } from "./types/types";
+import { UserRepository, SongRepository, SessionRepository, PlayListRepository } from "@/repositories/";
 import { UserModel, SessionModel, SongModel } from "@/models/";
 import { createValidationCredentials, expiresIn, hashData, sanitize } from "./helpers";
 import { ServerError } from "./errors/ServerError";
@@ -487,6 +487,58 @@ describe('TDD tests', () => {
       const response = await repo.getSongDetails(song.id);
       expect(response).toBeTruthy();
       response && expect(response.played).toEqual(1);
+    });
+
+  });
+  describe('Playlist Repository Tests', () => {
+    const playListRepo = new PlayListRepository();
+    const mockSongs: Song[] = [
+      {
+        description: 'song a',
+        id: 'a',
+        duration: 1,
+        provider: 'Unknown',
+        title: 'song a',
+      },
+      {
+        description: 'song b',
+        id: 'b',
+        duration: 1,
+        provider: 'Unknown',
+        title: 'song b',
+      },
+    ];
+
+    it('Should add playlists', async () => {
+      const badList: PlayList = {
+        id: 'a',
+        songs: mockSongs,
+        title: 'fav playlist',
+        userId: 'test-user'
+      }
+      let isSaveSuccessful = await playListRepo.saveList(badList);
+      expect(isSaveSuccessful).toBe(null);
+      const { id, ...list } = badList;
+      isSaveSuccessful = await playListRepo.saveList(list);
+      console.log('save', isSaveSuccessful);
+      expect(isSaveSuccessful).not.toBeNull();
+
+    });
+
+    it('Should delete playlists', async () => {
+      const songs = mockSongs.map((s: Song, i: number) => ({ ...s, id: ('a' + i) }));
+      const list: PlayList = {
+        songs,
+        title: 'delete playlist',
+        userId: 'test-user',
+      }
+      const savedList = await playListRepo.saveList(list);
+      if (!savedList) throw new Error();
+
+      const listId: string = savedList._id?.toString() || '';
+      const deletion = await playListRepo.removeList(listId, list.userId);
+      expect(deletion).toBe(true);
+
     });
 
   });

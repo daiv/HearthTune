@@ -7,7 +7,7 @@ export class LikeRepository implements ILikeRepository {
   async toggleLike(userId: string, songId: string): Promise<boolean> {
     const existingLike = await LikeModel.findOne({ userId, songId });
     if (existingLike) {
-      await LikeModel.deleteOne({ userId });
+      await LikeModel.deleteOne({ userId, songId });
       return false;
     } else {
       await LikeModel.create({ userId, songId });

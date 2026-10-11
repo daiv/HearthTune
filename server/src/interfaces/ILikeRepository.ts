@@ -1,5 +1,4 @@
 import { Song } from "@/common/types";
-import mongoose from "mongoose";
 
 export interface ILikeRepository {
   toggleLike(userId: string, songId: string): Promise<boolean>;

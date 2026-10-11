@@ -4,6 +4,7 @@ import { ActivationService, AuthService, LikeService, SessionService, UserServic
 import { Song } from "@/common/types";
 import { ResourcesService } from "@/services/ResourcesService";
 import { MailingService } from "@/services/MailingService";
+import mongoose from "mongoose";
 
 export type SongResponse = {
   type: "local",
@@ -78,7 +79,7 @@ export type UserStatus =
 
 export type UserCredential = {
   id?: string;
-  credentials?: Credential
+  credentials?: Credential;
 }
 export type IsTokenLegitResponse = UserCredential & { valid: true, } | { valid: false, cause: 'invalid token' | 'token expired' };
 export type MailOptions = {
@@ -99,7 +100,7 @@ export type Session = {
   userId: string;
   JTI: string;
   role: Role;
-  deviceId: string,
+  deviceId: string;
   deviceInfo?: string;
 }
 
@@ -124,14 +125,14 @@ export type SignedUrlValidationParams = {
 }
 export type SsrLoginResponse =
   {
-    success: true
+    success: true;
   } |
   {
-    success: false,
+    success: false;
     errors: {
-      general: string,
-      email: string,
-      password: string,
+      general: string;
+      email: string;
+      password: string;
     }
   }
 
@@ -162,7 +163,7 @@ export interface DashboardProps extends BaseProps {
 }
 export interface MsgProps extends BaseProps {
   message: string;
-  header?: string
+  header?: string;
   link?: {
     to: string;
     text: string;
@@ -179,14 +180,14 @@ export interface PasswordPairErrors extends Omit<LoginErrors, 'email'> {
 }
 export interface SetNewPasswordProps extends Omit<LoginProps, 'errors'> {
   token?: string;
-  errors?: PasswordPairErrors
+  errors?: PasswordPairErrors;
 }
 export interface CreateAccountErrors extends LoginErrors {
   matchPassword: string;
   nick: string;
 }
 export interface CreateAccountProps extends Omit<SetNewPasswordProps, 'errors'> {
-  errors?: CreateAccountErrors
+  errors?: CreateAccountErrors;
 }
 export type ViewPropsMap = {
   'authenticate': LoginProps;
@@ -199,12 +200,21 @@ export type ViewPropsMap = {
 export type ViewPath = keyof ViewPropsMap;
 
 export type SsrConstructorProps = {
-  authService: AuthService,
-  resourcesService: ResourcesService,
-  mailService: MailingService,
-  userService: UserService,
-  sessionService: SessionService,
-  activationService: ActivationService
+  authService: AuthService;
+  resourcesService: ResourcesService;
+  mailService: MailingService;
+  userService: UserService;
+  sessionService: SessionService;
+  activationService: ActivationService;
 }
-
+export type PlayList = {
+  id?: string;
+  userId: string;
+  songs: Song[];
+  title: string;
+}
+export interface MongoPlayList extends Omit<PlayList, 'songs'> {
+  _id?: string | mongoose.ObjectId;
+  songs: string[];
+}
 
