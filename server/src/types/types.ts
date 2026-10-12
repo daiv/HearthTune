@@ -207,14 +207,11 @@ export type SsrConstructorProps = {
   sessionService: SessionService;
   activationService: ActivationService;
 }
-export type PlayList = {
+export type Playlist = {
   id?: string;
   userId: string;
-  songs: Song[];
   title: string;
-}
-export interface MongoPlayList extends Omit<PlayList, 'songs'> {
-  _id?: string | mongoose.ObjectId;
   songs: string[];
 }
+
 

@@ -6,3 +6,4 @@ export * from './SessionService';
 export * from './SongService';
 export * from './UserService';
 export * from './LikeService';
+export * from './PlaylistService';

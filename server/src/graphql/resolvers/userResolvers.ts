@@ -9,7 +9,6 @@ export const userResolvers = {
     getNick: protect<undefined, UserContext, {}>(
       atLeast('basic'),
       (_, { }, context) => {
-        console.log('getNick reached');
         return { nick: context.user?.nick }
       }
     ),
@@ -26,10 +25,7 @@ export const userResolvers = {
       atLeast('basic'),
       async (_, { }, context): Promise<Song[]> => {
         if (!context || !context.user || !context.user.id) throw new ServerError();
-
-        console.log('user asking is', context.user.id);
         const liked = await context.services.like.getLikedSongsByUser(context.user.id);
-        console.log('liked is', liked);
         return liked;
       }
     )

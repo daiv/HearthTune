@@ -1,7 +1,7 @@
-import { MongoPlayList, PlayList } from "@/types/types";
+import { Playlist } from "@/types/types";
 import mongoose, { model } from "mongoose";
 
-const playListSchema = new mongoose.Schema<MongoPlayList>({
+const playListSchema = new mongoose.Schema<Omit<Playlist, 'id'>>({
   userId: {
     type: String,
     required: true,
@@ -17,4 +17,4 @@ const playListSchema = new mongoose.Schema<MongoPlayList>({
   }
 });
 
-export const PlayListModel = model<MongoPlayList>('PlayList', playListSchema);
+export const PlayListModel = model<Playlist>('PlayList', playListSchema);

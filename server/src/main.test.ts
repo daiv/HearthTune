@@ -1,4 +1,4 @@
-import mongoose, { ObjectId } from "mongoose";
+import mongoose from "mongoose";
 import { MockSongsProvider } from "./mocks/MockSongsProvider";
 import express from 'express';
 import { initGraphqlMiddleware } from "./graphql/graphqlServer";
@@ -6,20 +6,17 @@ import supertest from "supertest";
 import TestAgent from "supertest/lib/agent";
 import { Server } from "node:http";
 import { DownloadStatus, Song } from "@/common/types";
-import { AuthService, SongService, UserService, ActivationService, SessionService, LikeService } from "@/services";
+import { PlaylistService, MailingService, AuthService, SongService, UserService, ActivationService, SessionService, LikeService } from "@/services";
 import { describe, it, expect, afterAll, beforeAll, jest, beforeEach, afterEach } from '@jest/globals';
-import { CreateUserDto, Role, Session, User, Credential, ResetPasswordCredential, PlayList } from "./types/types";
-import { UserRepository, SongRepository, SessionRepository, PlayListRepository } from "@/repositories/";
-import { UserModel, SessionModel, SongModel } from "@/models/";
+import { Playlist, CreateUserDto, Role, Session, User, Credential, ResetPasswordCredential } from "./types/types";
+import { LikeRepository, UserRepository, SongRepository, SessionRepository, PlayListRepository } from "@/repositories/";
+import { LikeModel, UserModel, SessionModel, SongModel } from "@/models/";
 import { createValidationCredentials, expiresIn, hashData, sanitize } from "./helpers";
-import { ServerError } from "./errors/ServerError";
-import { MailingService } from "./services/MailingService";
+import { ForbiddenException, PlaylistLimitReachedException, ServerError } from "./errors/ServerError";
 import { MockEmailProvider } from "./mocks/MockEmailProvider";
-import { before } from "node:test";
 import { randomUUID } from "node:crypto";
-import { LikeRepository } from "./repositories/LikeRepository";
 import { ILikeRepository } from "./interfaces/ILikeRepository";
-import { LikeModel } from "./models/likeSongModel";
+import { MAX_PLAYLISTS, } from "./constants";
 
 describe('TDD tests', () => {
   beforeAll(async () => {
@@ -204,7 +201,6 @@ describe('TDD tests', () => {
       const vars = { searchString: '3LA8hq9plTY' };
       const response = await request.post(GRAPH)
         .send({ query: relatedQuery, variables: vars });
-      console.log('response is ', response.body);
       const { getRelated: songs } = response.body.data;
       expect(songs[0]).toHaveProperty("id");
       expect(songs[0]).toHaveProperty("title");
@@ -220,7 +216,6 @@ describe('TDD tests', () => {
         }`;
       const nickResponse = await request.post(GRAPH)
         .send({ query: GET_NICK, variables: {} });
-      console.log('nick response is', nickResponse.body);
       expect(nickResponse.body.data.getNick.nick).toBe(loggedUser.nick);
 
     });
@@ -234,9 +229,8 @@ describe('TDD tests', () => {
       const newNick = 'chewaka';
       await userService.saveUser(loggedUser);
       const before = await userService.getUserByEmail(loggedUser.email);
-      const nickMutation = await request.post(GRAPH)
+      await request.post(GRAPH)
         .send({ query: CHANGE_NICK_MUTATION, variables: { newNick } });
-      console.log('nickMutation', nickMutation.body)
       const after = await userService.getUserByEmail(loggedUser.email);
       expect(before.nick).toBe(loggedUser.nick);
       expect(after.nick).toBe(newNick);
@@ -255,12 +249,10 @@ describe('TDD tests', () => {
 
       const badPassMutation = await request.post(GRAPH)
         .send({ query: CHANGE_PASS_MUTATION, variables: { old: oldPass + 'asdf', new: newPass } });
-      console.log('passmutation', badPassMutation.body);
       expect(badPassMutation.body.data.changePassword).toBe(false);
 
       const passMutation = await request.post(GRAPH)
         .send({ query: CHANGE_PASS_MUTATION, variables: { old: oldPass, new: newPass } });
-      console.log('passmutation', passMutation.body);
       expect(passMutation.body.data.changePassword).toBe(true);
     });
 
@@ -326,7 +318,6 @@ describe('TDD tests', () => {
 
       const isLiked = await request.post(GRAPH)
         .send({ query: IS_LIKED, variables: { songId } });
-      console.log('isLiked', isLiked.body.data);
       expect(isLiked.body.data.isLiked).toBe(true);
 
     });
@@ -445,7 +436,7 @@ describe('TDD tests', () => {
 
   describe('Song Repository Tests', () => {
     const now = new Date();
-    const song: Song = {
+    const mockSong: Song = {
       id: '12345678901',
       title: 'mocktitle',
       description: '',
@@ -461,73 +452,97 @@ describe('TDD tests', () => {
     });
 
     it('Should check if song is already stored', async () => {
-      await repo.delete(song.id);
-      expect(await repo.exists(song.id)).toBe(false);
+      await repo.delete(mockSong.id);
+      expect(await repo.exists(mockSong.id)).toBe(false);
     });
 
     it('Should save the song to db', async () => {
-      await repo.save(song);
-      expect(await repo.exists(song.id)).toBe(true);
+      await repo.save(mockSong);
+      expect(await repo.exists(mockSong.id)).toBe(true);
     });
 
     it('Should get the song details', async () => {
-      const response: Song | null = await repo.getSongDetails(song.id);
+      const response: Song | null = await repo.getSongDetails(mockSong.id);
       expect(response).toBeTruthy();
-      expect(response).toMatchObject(song);
+      expect(response).toMatchObject(mockSong);
       if (response) {
-        (Object.keys(song) as Array<keyof Song>).forEach(key => {
-          expect(song[key]).toEqual(response[key]);
+        (Object.keys(mockSong) as Array<keyof Song>).forEach(key => {
+          expect(mockSong[key]).toEqual(response[key]);
         });
         expect(response.played).toEqual(0);
       }
     });
 
     it('Should increase played times when needed', async () => {
-      await repo.addOneMorePlayed(song.id);
-      const response = await repo.getSongDetails(song.id);
+      await repo.addOneMorePlayed(mockSong.id);
+      const response = await repo.getSongDetails(mockSong.id);
       expect(response).toBeTruthy();
       response && expect(response.played).toEqual(1);
     });
 
+    it('Should get multiple songs by id', async () => {
+      const songsToSave = [{ ...mockSong, id: '1234' }, { ...mockSong, id: '4321' }, { ...mockSong, id: '4444' }];
+      const songIds = songsToSave.map(s => s.id);
+      await Promise.all(songsToSave.map(async (song) => repo.save(song)));
+
+      const foundSongs = await repo.getSongsByIds(songIds.slice(0, songIds.length - 1));
+      expect(foundSongs.length).toEqual(songsToSave.length - 1);
+      const returnedIds = foundSongs.map(s => s.id);
+      expect(returnedIds).toContain(songsToSave[0].id);
+      expect(returnedIds).toContain(songsToSave[1].id);
+    });
   });
+
   describe('Playlist Repository Tests', () => {
     const playListRepo = new PlayListRepository();
-    const mockSongs: Song[] = [
-      {
-        description: 'song a',
-        id: 'a',
-        duration: 1,
-        provider: 'Unknown',
-        title: 'song a',
-      },
-      {
-        description: 'song b',
-        id: 'b',
-        duration: 1,
-        provider: 'Unknown',
-        title: 'song b',
-      },
-    ];
+    const mockSongIds: string[] = ['a', 'b'];
 
     it('Should add playlists', async () => {
-      const badList: PlayList = {
+      const badList: Playlist = {
         id: 'a',
-        songs: mockSongs,
+        songs: mockSongIds,
         title: 'fav playlist',
         userId: 'test-user'
       }
       let isSaveSuccessful = await playListRepo.saveList(badList);
       expect(isSaveSuccessful).toBe(null);
-      const { id, ...list } = badList;
+      const { id: badId, ...list } = badList;
       isSaveSuccessful = await playListRepo.saveList(list);
-      console.log('save', isSaveSuccessful);
       expect(isSaveSuccessful).not.toBeNull();
+      const id = isSaveSuccessful?.id?.toString();
+      if (!id) throw new Error();
+      const savedList = await playListRepo.getListById(id);
+      expect(savedList).not.toBeNull();
+    });
 
+    it('Should update playLists', async () => {
+      const playList: Playlist = {
+        songs: mockSongIds,
+        title: 'updating playlist',
+        userId: 'test-user'
+      }
+
+      const newSong: Song = {
+        description: 'last trending song',
+        duration: 10,
+        id: 'ijrfefei8jf',
+        provider: 'Unknown',
+        title: 'title',
+      }
+      const outdatedPlaylist = await playListRepo.saveList(playList);
+      expect(!outdatedPlaylist?.songs.includes(newSong.id));
+      if (!outdatedPlaylist?.id) throw new Error();
+      const listToUpdate: Playlist = {
+        ...playList,
+        id: outdatedPlaylist?.id.toString() || ''
+      };
+      const updatedPlayList = await playListRepo.saveList(listToUpdate);
+      expect(updatedPlayList?.songs.includes(newSong.id));
     });
 
     it('Should delete playlists', async () => {
-      const songs = mockSongs.map((s: Song, i: number) => ({ ...s, id: ('a' + i) }));
-      const list: PlayList = {
+      const songs = mockSongIds;
+      const list: Playlist = {
         songs,
         title: 'delete playlist',
         userId: 'test-user',
@@ -535,591 +550,658 @@ describe('TDD tests', () => {
       const savedList = await playListRepo.saveList(list);
       if (!savedList) throw new Error();
 
-      const listId: string = savedList._id?.toString() || '';
+      const listId: string = savedList.id?.toString() || '';
       const deletion = await playListRepo.removeList(listId, list.userId);
       expect(deletion).toBe(true);
 
     });
 
-  });
-  describe('User tests', () => {
-    const mockUser: User = {
-      email: 'a@a.com',
-      id: 'mockId',
-      nick: 'testuser',
-      password: '1234',
-      role: 'recruiter',
-      status: "active",
-      internalTag: 'intTag'
-    };
-    describe('User repository tests', () => {
-      beforeAll(async () => {
-        await mongoose.connection.collection('users').deleteMany({});
-        await userRepo.save(mockUser);
+    describe('Playlist service', () => {
+      let playlistService: PlaylistService;
+      let playlistRepo: PlayListRepository;
+      const userId = 'test-userId-integration';
+      const role: Role = 'basic';
+      const mockPlayList: Playlist = {
+        songs: ['a'],
+        title: 'mock playlist',
+        userId
+      }
+
+      beforeEach(async () => {
+        playlistRepo = new PlayListRepository();
+        playlistService = new PlaylistService(playlistRepo);
+        await mongoose.connection.collection('playlists').deleteMany({});
       });
 
-      const userRepo = new UserRepository();
-
-      it('Should save users', async () => {
-        const user = { ...mockUser, id: 'capi', email: 'capi@capi.com' };
-        await userRepo.save(user);
-        const response = await userRepo.getUserByEmail(user.email);
-        expect(response).toBeTruthy();
-        expect(response?.id).toEqual(user.id);
-      });
-
-      it('Should get the users by id', async () => {
-        const idUser = { ...mockUser, email: 'id@id.com', id: 'idid', emailHash: '3322' };
-        await userRepo.save(idUser);
-        const response = await userRepo.getUserById(idUser.id);
-        expect(idUser.id).toEqual(response?.id);
-      });
-
-      it('Should verify real email hashing', async () => {
-        const encryptedUser = { ...mockUser };
-        await userRepo.save(encryptedUser);
-        const rawUser = await UserModel.findOne({ _id: encryptedUser.id }).lean();
-        expect(rawUser?.email).not.toBe(encryptedUser.email);
-      });
-
-      it('Should save resetPassword credentials', async () => {
-        const resetPasswordCredentials: Credential = {
-          token: randomUUID(),
-          expiresAt: expiresIn(30, 'minutes')
+      it('Should save playlists withing the role limits', async () => {
+        const MAX = MAX_PLAYLISTS[role];
+        console.log('max', MAX);
+        for (let i = 0; i < MAX; i++) {
+          const list: Playlist = { ...mockPlayList, title: `Playlist number ${i}` };
+          const result = await playlistService.savePlaylist(list, userId, role);
+          expect(result).toBeTruthy();
         }
-        let user = await userRepo.getUserById(mockUser.id);
-        expect(user).toBeTruthy();
-        const savedCredentials = await userRepo.saveResetPasswordCredentials(mockUser.id, resetPasswordCredentials);
-        expect(savedCredentials).toBe(true);
+        const exceedingList: Playlist = { ...mockPlayList, title: 'Exceeding playlist' };
+        await expect(
+          playlistService.savePlaylist(exceedingList, userId, role)
+        ).rejects.toThrow(PlaylistLimitReachedException);
 
-        const recoveredCredential = await userRepo.getUserIdByResetPasswordToken(resetPasswordCredentials.token);
-        expect(recoveredCredential).toBeTruthy();
-        const isCredentialValid = await userRepo.getResetPasswordCredentials(resetPasswordCredentials.token);
-        expect(isCredentialValid).toBeTruthy();
+        const userLists = await playlistRepo.getLists(userId);
+        expect(userLists.length).toBe(MAX);
       });
 
-      it('Should update resetPassword credentials', async () => {
-        const [firstToken, secondToken] = [randomUUID(), randomUUID()];
-        const expiresAt = expiresIn(30, 'minutes');
-        const user = { ...mockUser, id: 'update', email: 'up@up.com' };
-        const savedUser = await userRepo.save(user);
-        expect(savedUser).toBeTruthy();
-        await userRepo.saveResetPasswordCredentials(user.id, { token: firstToken, expiresAt });
-        let isCredentialValid = await userRepo.getResetPasswordCredentials(firstToken);
-        expect(isCredentialValid).toBeTruthy();
-        await userRepo.saveResetPasswordCredentials(user.id, { token: secondToken, expiresAt });
-        isCredentialValid = await userRepo.getResetPasswordCredentials(firstToken);
-        expect(isCredentialValid).toBe(null);
+      it('Should delete only owned playlists', async () => {
+        const userA = 'a';
+        const userB = 'b';
+        const savedPlaylist = await playlistService.savePlaylist({ ...mockPlayList, userId: userA }, userA, role);
+        console.log('saved is ', savedPlaylist);
+        if (!savedPlaylist || !savedPlaylist.id) throw new Error('Unable to save playlist');
+
+        const deleteByWrongUser = await playlistService.removePlaylist(savedPlaylist.id, userB);
+        expect(deleteByWrongUser).toBe(false);
+        const stillExists = await playlistService.getPlaylistById(savedPlaylist.id, userA);
+        expect(stillExists).not.toBeNull();
+        const deleteByOwner = await playlistService.removePlaylist(savedPlaylist.id, userA);
+        expect(deleteByOwner).toBe(true);
       });
 
-      it('Should remove resetPassword credentials', async () => {
-        const token = randomUUID();
-        await userRepo.saveResetPasswordCredentials(mockUser.id, { token, expiresAt: expiresIn(30, 'minutes') });
-        await userRepo.removeResetPasswordCredentials(mockUser.id);
-        const isValid = await userRepo.getResetPasswordCredentials(token);
-        expect(isValid).toBe(null);
+      it('Should throw forbidden exception when updating another user playlist', async () => {
+        const userA = 'user-a';
+        const userB = 'user-b';
+        const playlist: Playlist = {
+          title: 'Playlist userA',
+          songs: ['song1'],
+          userId: userA,
+        }
+        const savedPlaylist = await playlistService.savePlaylist(playlist, userA, role);
+        if (!savedPlaylist || !savedPlaylist.id) throw new Error('Unable to save playlist');
+
+        const tamperedPlaylist: Playlist = {
+          ...savedPlaylist, title: 'hacked title'
+        }
+        await expect(playlistService.savePlaylist(tamperedPlaylist, userB, role)).rejects.toThrow(ForbiddenException);
       });
-
-
     });
 
-    describe('User service test', () => {
-
-      let userRepo: UserRepository;
-      let userService: UserService;
-      let activationService: ActivationService;
-      let authService: AuthService;
-      let sessionRepo: SessionRepository;
-      let sessionService: SessionService;
-      let mailingService: MailingService;
-      const uniqueEmails: string[] = []
-      for (let i = 0; i < 50; i++) uniqueEmails.push(i + "@email.com");
-
-      beforeAll(async () => {
-        await UserModel.deleteMany({});
-        userRepo = new UserRepository();
-        userService = new UserService(userRepo);
-        mailingService = new MailingService(new MockEmailProvider());
-        sessionRepo = new SessionRepository();
-        sessionService = new SessionService(sessionRepo);
-        authService = new AuthService(userRepo, sessionService);
-        activationService = new ActivationService(userRepo, mailingService, authService);
-      });
-
-      it('Should create users', async () => {
-        const createdUser = await userService.createUser({ email: uniqueEmails.pop()!, password: 'password', internalTag: 'intTag', role: 'recruiter' });
-        expect(createdUser).toBeTruthy();
-      });
-
-      it('Should hash the email', async () => {
-        const email = 'emailTobeHashed';
-        const createdUser = await userService.createUser({ email, password: 'password', internalTag: 'intTag', role: 'recruiter' });
-        const rawCreatedUser = await UserModel.findOne({ internalTag: 'intTag' }).lean();
-        expect(createdUser.email).not.toBe(rawCreatedUser?.email);
-      });
-
-      it('Should encrypt email field', async () => {
-        const { email, password, internalTag } = mockUser;
-        const createdUser = await userService.createUser({ email, password, internalTag, role: 'recruiter' });
-        expect(password).not.toBe(createdUser.password);
-      });
-
-      it('Should find users by emailHash', async () => {
-        const [email, password, internalTag,] = [uniqueEmails.pop()!, 'pwdd', 'daiv'];
-        const createdUser = await userService.createUser({ email, password, internalTag, role: 'recruiter' });
-        const userFromHash = await userService.getUserByEmail(email);
-        expect(userFromHash).toEqual(createdUser);
-      });
-
-      it('Should find users by id', async () => {
-        const email = uniqueEmails.pop();
-        const createdUser = await userService.createUser({ email: email!, password: '12345', internalTag: 'intTag', role: 'recruiter' });
-        const userFound = await userService.getUserById(createdUser.id);
-        expect(createdUser.id).toEqual(userFound.id);
-      });
-
-      it('Should create user encrypting password and hashing email', async () => {
-        await UserModel.deleteMany({});
-        // const [nick, email, password] = ['nick', 'email@email.com', 'password'];
-        const { internalTag, email, password, role } = mockUser;
-        const newUser: User = await userService.createUser({ email, password, internalTag, role });
-        const rawCreatedUser = await UserModel.findOne({ internalTag }).lean();
-        expect(rawCreatedUser).toBeTruthy();
-        expect(rawCreatedUser?.email).toBeTruthy();
-        expect(rawCreatedUser?.email).not.toBe(email);
-        expect(rawCreatedUser?.password).toBeTruthy();
-        expect(rawCreatedUser?.password).not.toBe(password);
-        expect(newUser.internalTag).toBe(internalTag);
-      });
-
-      it('Should produce the same hash from the same string', () => {
-        const { email } = mockUser;
-        const mockEmailHash = hashData(email);
-        expect(mockEmailHash).toEqual(hashData(email));
-      });
-
-      it('Should override user data when using save', async () => {
-        const email = uniqueEmails.pop()!;
-        const password = 'initialPassword';
-        const internalTag = 'originalTag';
-
-        const createdUser = await userService.createUser({ email, password, internalTag, role: 'recruiter' });
-        expect(createdUser.status).toBe('whiteListed');
-
-        const updatedData: User = {
-          ...createdUser,
-          status: 'verification_pending',
-          role: 'admin'
-        };
-
-        const savedUser = await userRepo.save(updatedData);
-
-        expect(savedUser.id).toBe(createdUser.id);
-        expect(savedUser.status).toBe('verification_pending');
-        expect(savedUser.role).toBe('admin');
-
-        const userCount = await UserModel.countDocuments({ _id: savedUser.id });
-        expect(userCount).toBe(1);
-
-        const userInDb = await userRepo.getUserByEmail(email);
-        if (!userInDb) throw new ServerError();
-        expect(userInDb.id).toBe(createdUser.id);
-      });
-
-      it('Should create user from only email, role and internalTag', async () => {
-        const email = uniqueEmails.pop()!;
-        const role: Role = "user";
-        const internalTag = 'intTag';
-        const user = await userService.createUser({ email, role, internalTag });
-        expect(user.id).toBeTruthy();
-        expect(user.email).toBeTruthy();
-        expect(user.role).toBeTruthy();
-        expect(user.role).toEqual(role);
-        expect(user.status).toEqual('whiteListed');
-      });
-
-
-      it('Should validate validationToken lifecycle', async () => {
-        const user = await userService.createUser({ email: uniqueEmails.pop()!, internalTag: 'intTag', role: 'recruiter' });
-        const credentials = createValidationCredentials();
-
-        expect(await activationService.removeCredentials(user.id)).toBe(false);
-        // 1. Invalid token case
-        const invalidResult = await activationService.isValidationTokenLegit(credentials.token);
-        expect(invalidResult.valid).toBe(false);
-        expect((invalidResult as { cause: string }).cause).toBe('invalid token');
-
-        // 2. Valid token case
-        await userService.saveUser({ ...user, credentials });
-
-        const validResult = await activationService.isValidationTokenLegit(credentials.token);
-
-        expect(validResult.valid).toBe(true);
-        const success = validResult as { valid: true; credentials: typeof credentials };
-        expect(success.credentials).toEqual(credentials);
-
-        // 3. Expired token case
-        const expiredCredential = { ...credentials, expiresAt: new Date(Date.now() - 10) };
-        await userService.saveUser({ ...user, credentials: expiredCredential });
-
-        const expiredResult = await activationService.isValidationTokenLegit(expiredCredential.token);
-        expect(expiredResult.valid).toBe(false);
-        expect((expiredResult as { cause: string }).cause).toBe('token expired');
-
-        expect(await activationService.removeCredentials(user.id)).toBe(true);
-      });
-
-      it('Should save password and check password lifecycle', async () => {
-        const user = await userService.createUser({ email: uniqueEmails.pop()!, role: 'recruiter', internalTag: 'intTag' });
-        expect(user.password).toBeFalsy();
-        const userPassword = 'iLoveUnicorns';
-        expect(await authService.checkUserPassword(user.id, userPassword)).toBe(false);
-        await userService.setUserPassword(user.id, userPassword);
-        expect(await authService.checkUserPassword(user.id, 'notLovingUnicorns')).toBe(false);
-        expect(await authService.checkUserPassword(user.id, userPassword)).toBe(true);
-
-      });
-
-      it('Should enable user Account if everything is ok', async () => {
-        const userToEnable = await userService.createUser({ email: uniqueEmails.pop()!, role: 'recruiter', internalTag: 'intTag' });
-        expect(userToEnable.activatedAt).toBeFalsy();
-        const password = '12345isTheBestPassword';
-        await activationService.enableUserAccount(userToEnable.id, password, 'mockNick');
-        const user = await userService.getUserById(userToEnable.id);
-        expect(user.activatedAt).toBeTruthy();
-      });
-
-      it('Should create and save userCredentials', async () => {
-        const user = await userService.createUser({ email: uniqueEmails.pop()!, role: 'recruiter', internalTag: 'intTag' });
-        expect(user).not.toHaveProperty('credentials');
-        const preparedUser = activationService.prepareUserCredentials(user);
-        expect(preparedUser).toHaveProperty('credentials');
-        if (!preparedUser.credentials) throw new Error('credentials missing');
-        if (!preparedUser.credentials.token) throw new Error('token missing');
-
-        const { token } = preparedUser.credentials;
-        expect(await activationService.getUserByToken(token)).toBeFalsy();
-        await userService.saveUser(preparedUser);
-        const userByToken = await activationService.getUserByToken(token);
-        if (!userByToken) throw new Error('user not found');
-        expect(preparedUser.id).toEqual(userByToken.id);
-      });
-
-      it('Should save resetPassword credentials', async () => {
-        const resetCredential: ResetPasswordCredential = {
-          active: true,
-          createdAt: new Date(),
-          expiresAt: expiresIn(30, 'minutes'),
-          token: 'token'
-        };
-        const newUser: User = {
-          email: uniqueEmails.pop()!,
-          role: "recruiter",
-          id: '123333333',
-          status: 'active',
-          internalTag: 'intTag',
-          resetPassword: resetCredential
-        }
-        const updatedUser = await userRepo.save(newUser);
-        expect(updatedUser).toBeTruthy();
-        expect(updatedUser.resetPassword?.active).toBe(true);
-        if (!updatedUser.resetPassword) throw new Error();
-        updatedUser.resetPassword.active = false;
-        const finalUser = await userRepo.save(updatedUser);
-        if (!finalUser || !finalUser.resetPassword) throw new Error();
-        expect(finalUser.resetPassword.active).toBe(false);
-
-      });
-      it('Should save user nick', async () => {
-        const newUser: User = {
-          email: uniqueEmails.pop()!,
-          role: 'recruiter',
-          id: '32323',
-          status: 'active',
-          internalTag: 'mock',
-        }
-        await userRepo.save(newUser);
-        const user = await userService.getUserByEmail(newUser.email);
-        if (!user) throw new Error();
-        expect(user.nick).toBeFalsy();
-        const newNick = 'Timotea';
-        const updatedUser = await userService.setUserNick(user.id, newNick);
-        if (!updatedUser) throw Error();
-        expect(updatedUser.nick).toBe(newNick);
-      });
-    });
-  });
-
-  describe('Session tests', () => {
-
-    describe('Session Repository', () => {
-      const uniqueDevId: string[] = [];
-      for (let i = 100; i < 200; i++)uniqueDevId.push(`devId-${i}`);
-      let repository: SessionRepository;
-
-      beforeAll(() => {
-        repository = new SessionRepository();
-      });
-      afterEach(async () => {
-        await SessionModel.deleteMany({});
-      });
-      const deviceInfo = 'deviceInfo';
-      it('Should count sessions correctly for a specific user', async () => {
-        await repository.create({ userId: 'u1', JTI: 't1', deviceId: uniqueDevId.pop()!, deviceInfo, role: 'recruiter' });
-        await repository.create({ userId: 'u1', JTI: 't2', deviceId: uniqueDevId.pop()!, deviceInfo, role: 'recruiter' });
-
-        const count = await repository.countByUserId('u1');
-        expect(count).toBe(2);
-      });
-      it('Should find sessions by token', async () => {
-        const mockSession: Session = { userId: 'ut', JTI: 'token', deviceId: 'deviceId', deviceInfo: 'info', role: 'recruiter' };
-        await repository.create(mockSession);
-        const session = await repository.findByJti(mockSession.JTI);
-        if (!session) throw new Error('session not found');
-        expect(session.userId).toBe(mockSession.userId);
-      });
-
-      it('Should find sessions by userId', async () => {
-        const mockSession: Session = { userId: 'favId', JTI: 'tokenhash', deviceId: uniqueDevId.pop()!, deviceInfo: 'android', role: 'recruiter' };
-        await repository.create(mockSession);
-        let session = await repository.findByUserId(mockSession.userId);
-        expect(session.length).toBe(1);
-        expect(session[0].JTI).toBe(hashData(mockSession.JTI));
-        const mock2: Session = { userId: 'favId', JTI: 'tok2', deviceId: uniqueDevId.pop()!, deviceInfo: 'notAndroid', role: 'recruiter' };
-        await repository.create(mock2);
-        session = await repository.findByUserId(mock2.userId);
-        expect(session.length).toBe(2);
-        expect(session[1].JTI).toBe(hashData(mock2.JTI));
-      });
-
-      it('Should remove by tokenHash', async () => {
-        const mockSession: Session = { userId: 'idi', JTI: 'hashhh', deviceInfo: 'inffoo', role: 'recruiter', deviceId: 'deviceId' };
-        const { userId: id } = mockSession;
-        await repository.create(mockSession);
-        let count = await repository.countByUserId(id);
-        expect(count).toBe(1);
-        await repository.removeByUserId(id);
-        count = await repository.countByUserId(id);
-        expect(count).toBe(0);
-      });
-
-      it('Should remove the oldest session correctly using sort', async () => {
-        const userId = 'u1';
-        const session1: Session = { userId, JTI: 'old', deviceId: uniqueDevId.pop()!, deviceInfo: 'd1', role: 'recruiter' };
-        await repository.create(session1);
-        await new Promise(r => setTimeout(r, 50));
-        const session2: Session = { userId, JTI: 'new', deviceId: uniqueDevId.pop()!, deviceInfo: 'd1', role: 'recruiter' };
-        await repository.create(session2);
-
-        await repository.removeOldest('u1');
-
-        const remaining = await repository.findByUserId(userId);
-        expect(remaining.length).toBe(1);
-        expect(remaining[0].JTI).toBe(hashData(session2.JTI));
-      });
-
-    });
-
-    describe('Session Service', () => {
-      let repo: SessionRepository, service: SessionService;
-
-      beforeAll(() => {
-        repo = new SessionRepository();
-        service = new SessionService(repo);
-      });
-      it('Should create sessions not exceding limits', async () => {
-        const userId = 'mockId';
-        const session = await service.add(userId, '1', 'recruiter', crypto.randomUUID());
-        if (!session) throw new ServerError();
-        expect(session.deviceInfo).toBe('Unknown device');
-        let activeSessions = await repo.countByUserId(userId);
-        expect(activeSessions).toBe(1);
-        const session2 = await service.add(userId, '2', 'recruiter', crypto.randomUUID());
-        activeSessions = await repo.countByUserId(userId);
-        //! recruiter can only have one open session 
-        expect(activeSessions).toBe(1);
-
-        const adminId = 'mockAdmin';
-        await service.add(adminId, '3', 'admin', crypto.randomUUID());
-        let activeAdminSessions = await repo.countByUserId(adminId);
-        expect(activeAdminSessions).toBe(1);
-        await service.add(adminId, '4', 'admin', crypto.randomUUID());
-        activeAdminSessions = await repo.countByUserId(adminId);
-        expect(activeAdminSessions).toBe(2);
-
-      });
-
-      it('Should delete sessions by userId', async () => {
-        const userId = 'mockMockid';
-        await service.add(userId, 'a', 'admin', 'deviceId');
-        let activeSessions = await repo.countByUserId(userId);
-        expect(activeSessions).toBe(1);
-        const delRes = await service.removeAll(userId);
-        console.warn('delete count', delRes.deletedCount);
-        activeSessions = await repo.countByUserId(userId);
-        expect(activeSessions).toBe(0);
-        await service.add(userId, 'b', 'admin', 'deviceId-1');
-        await service.add(userId, 'c', 'admin', 'deviceId-2');
-        activeSessions = await repo.countByUserId(userId);
-        expect(activeSessions).toBe(2);
-        await service.removeAll(userId);
-        activeSessions = await repo.countByUserId(userId);
-        expect(activeSessions).toBe(0);
-      });
-
-      it('Should delete by JTI', async () => {
-        const userId = 'mockingId';
-        await service.add(userId, 'd', 'admin', 'deviceId');
-        let activeSessions = await repo.countByUserId(userId);
-        expect(activeSessions).toBe(1);
-        await service.remove('d');
-        activeSessions = await repo.countByUserId(userId);
-        expect(activeSessions).toBe(0);
-      });
-
-      it('Should get Session by jti', async () => {
-        const userId = 'mockSessionId';
-        await service.add(userId, 'e', 'admin', 'deviceId');
-        const session = await service.getSessionByJti('e');
-        if (!session) throw new ServerError();
-        expect(session.JTI).toBe(hashData('e'));
-      })
-    });
-    describe('Like tests', () => {
-      describe('Like repo', () => {
-        const likeUser: User = {
-          email: 'like',
-          id: 'likeuser',
-          internalTag: 'like',
-          role: 'basic',
-          status: 'active',
-        }
-
-        let likeRepo: ILikeRepository;
+    describe('User tests', () => {
+      const mockUser: User = {
+        email: 'a@a.com',
+        id: 'mockId',
+        nick: 'testuser',
+        password: '1234',
+        role: 'recruiter',
+        status: "active",
+        internalTag: 'intTag'
+      };
+      describe('User repository tests', () => {
         beforeAll(async () => {
-          likeRepo = new LikeRepository();
-          const userService = new UserService(new UserRepository());
-          await userService.createUser(likeUser);
-        });
-        beforeEach(async () => {
-          await LikeModel.deleteMany({});
-        })
-        it('Should get empty array when no songs liked', async () => {
-          const likedSongs = await likeRepo.getLikedSongsByUser(likeUser.id);
-          expect(likedSongs).toEqual([]);
-        });
-
-        it('Should update songs when liked', async () => {
-          const mockSong: Song = {
-            id: 'mockSongid',
-            description: 'mockSong',
-            duration: 10,
-            provider: 'Unknown',
-            title: 'mockrock',
-          }
-          await SongModel.create(mockSong);
-          let result = await likeRepo.toggleLike(likeUser.id, mockSong.id);
-          expect(result).toBe(true);
-          let isLiked = await likeRepo.isLiked(likeUser.id, mockSong.id);
-          expect(isLiked).toBe(true);
-          let likedSongs = await likeRepo.getLikedSongsByUser(likeUser.id);
-          expect(likedSongs.length).toBe(1);
-
-          result = await likeRepo.toggleLike(likeUser.id, mockSong.id);
-          expect(result).toBe(false);
-          likedSongs = await likeRepo.getLikedSongsByUser(likeUser.id);
-          expect(likedSongs.length).toBe(0);
-
-          isLiked = await likeRepo.isLiked(likeUser.id, mockSong.id);
-          expect(isLiked).toBe(false);
-
-        });
-
-
-      })
-    })
-    describe('Signed urls', () => {
-      describe('Streaming', () => {
-
-        let authService: AuthService;
-        let userRepo: UserRepository;
-        let sessionService: SessionService;
-        let sessionRepo: SessionRepository;
-        const [songId, provider, userId] = ['1234', '1234', '1234'];
-        beforeAll(() => {
-          userRepo = new UserRepository();
-          sessionRepo = new SessionRepository();
-          sessionService = new SessionService(sessionRepo);
-          authService = new AuthService(userRepo, sessionService);
-        });
-        type Params = {
-          songId: string,
-          provider: string,
-          userId: string,
-          expiresAt: string,
-          sign: string,
-        }
-        const getParams = (url: string): Params => {
-          const pairs = url.split('?')[1].split('&');
-          const params: Record<string, string> = {};
-          pairs.forEach(pair => {
-            const [key, value] = pair.split('=');
-            if (key && value) params[key] = value;
-          });
-          return params as Params;
-        }
-        it('Should create and validate signed urls', async () => {
-          const signedUrl = authService.createSignedUrl(songId, provider, userId);
-
-          const { signedUrl: url } = signedUrl;
-          const params = getParams(url);
-          expect(signedUrl).not.toBeFalsy();
-          expect(authService.isSignedUrlValid(params.songId, params.provider, params.userId, params.expiresAt, params.sign)).toBe(true);
-
-        });
-        it('Should detect when url has expired', async () => {
-          const signedUrl = authService.createSignedUrl(songId, provider, userId, Date.now() + 1000);
-          const { signedUrl: url } = signedUrl;
-          const params = getParams(url);
-          expect(authService.isSignedUrlValid(params.songId, params.provider, params.userId, params.expiresAt, params.sign)).toBe(true);
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          expect(authService.isSignedUrlValid(params.songId, params.provider, params.userId, params.expiresAt, params.sign)).toBe(false);
-        });
-
-      });
-      describe('Download', () => {
-        let authService: AuthService;
-        let userRepo: UserRepository;
-        let sessionService: SessionService;
-        let sessionRepo: SessionRepository;
-        const mockUser: User = {
-          email: 'down@down',
-          id: 'trickyId',
-          role: 'recruiter',
-          status: 'active',
-          internalTag: 'intTag'
-        }
-        beforeAll(async () => {
-          userRepo = new UserRepository();
-          sessionRepo = new SessionRepository();
-          sessionService = new SessionService(sessionRepo);
-          authService = new AuthService(userRepo, sessionService);
+          await mongoose.connection.collection('users').deleteMany({});
           await userRepo.save(mockUser);
         });
 
-        it('Should invalidate token when expired', async () => {
+        const userRepo = new UserRepository();
+
+        it('Should save users', async () => {
+          const user = { ...mockUser, id: 'capi', email: 'capi@capi.com' };
+          await userRepo.save(user);
+          const response = await userRepo.getUserByEmail(user.email);
+          expect(response).toBeTruthy();
+          expect(response?.id).toEqual(user.id);
+        });
+
+        it('Should get the users by id', async () => {
+          const idUser = { ...mockUser, email: 'id@id.com', id: 'idid', emailHash: '3322' };
+          await userRepo.save(idUser);
+          const response = await userRepo.getUserById(idUser.id);
+          expect(idUser.id).toEqual(response?.id);
+        });
+
+        it('Should verify real email hashing', async () => {
+          const encryptedUser = { ...mockUser };
+          await userRepo.save(encryptedUser);
+          const rawUser = await UserModel.findOne({ _id: encryptedUser.id }).lean();
+          expect(rawUser?.email).not.toBe(encryptedUser.email);
+        });
+
+        it('Should save resetPassword credentials', async () => {
+          const resetPasswordCredentials: Credential = {
+            token: randomUUID(),
+            expiresAt: expiresIn(30, 'minutes')
+          }
+          let user = await userRepo.getUserById(mockUser.id);
+          expect(user).toBeTruthy();
+          const savedCredentials = await userRepo.saveResetPasswordCredentials(mockUser.id, resetPasswordCredentials);
+          expect(savedCredentials).toBe(true);
+
+          const recoveredCredential = await userRepo.getUserIdByResetPasswordToken(resetPasswordCredentials.token);
+          expect(recoveredCredential).toBeTruthy();
+          const isCredentialValid = await userRepo.getResetPasswordCredentials(resetPasswordCredentials.token);
+          expect(isCredentialValid).toBeTruthy();
+        });
+
+        it('Should update resetPassword credentials', async () => {
+          const [firstToken, secondToken] = [randomUUID(), randomUUID()];
+          const expiresAt = expiresIn(30, 'minutes');
+          const user = { ...mockUser, id: 'update', email: 'up@up.com' };
+          const savedUser = await userRepo.save(user);
+          expect(savedUser).toBeTruthy();
+          await userRepo.saveResetPasswordCredentials(user.id, { token: firstToken, expiresAt });
+          let isCredentialValid = await userRepo.getResetPasswordCredentials(firstToken);
+          expect(isCredentialValid).toBeTruthy();
+          await userRepo.saveResetPasswordCredentials(user.id, { token: secondToken, expiresAt });
+          isCredentialValid = await userRepo.getResetPasswordCredentials(firstToken);
+          expect(isCredentialValid).toBe(null);
+        });
+
+        it('Should remove resetPassword credentials', async () => {
           const token = randomUUID();
-          const expiresAt = new Date(Date.now() + 3000);
-          await userRepo.saveResetPasswordCredentials(mockUser.id, { token, expiresAt });
-          let isValid = await authService.isResetPasswordTokenValid(token);
-          expect(isValid).toBe(true);
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          isValid = await authService.isResetPasswordTokenValid(token);
-          expect(isValid).toBe(false);
-        })
-      })
+          await userRepo.saveResetPasswordCredentials(mockUser.id, { token, expiresAt: expiresIn(30, 'minutes') });
+          await userRepo.removeResetPasswordCredentials(mockUser.id);
+          const isValid = await userRepo.getResetPasswordCredentials(token);
+          expect(isValid).toBe(null);
+        });
+
+
+      });
+
+      describe('User service test', () => {
+
+        let userRepo: UserRepository;
+        let userService: UserService;
+        let activationService: ActivationService;
+        let authService: AuthService;
+        let sessionRepo: SessionRepository;
+        let sessionService: SessionService;
+        let mailingService: MailingService;
+        const uniqueEmails: string[] = []
+        for (let i = 0; i < 50; i++) uniqueEmails.push(i + "@email.com");
+
+        beforeAll(async () => {
+          await UserModel.deleteMany({});
+          userRepo = new UserRepository();
+          userService = new UserService(userRepo);
+          mailingService = new MailingService(new MockEmailProvider());
+          sessionRepo = new SessionRepository();
+          sessionService = new SessionService(sessionRepo);
+          authService = new AuthService(userRepo, sessionService);
+          activationService = new ActivationService(userRepo, mailingService, authService);
+        });
+
+        it('Should create users', async () => {
+          const createdUser = await userService.createUser({ email: uniqueEmails.pop()!, password: 'password', internalTag: 'intTag', role: 'recruiter' });
+          expect(createdUser).toBeTruthy();
+        });
+
+        it('Should hash the email', async () => {
+          const email = 'emailTobeHashed';
+          const createdUser = await userService.createUser({ email, password: 'password', internalTag: 'intTag', role: 'recruiter' });
+          const rawCreatedUser = await UserModel.findOne({ internalTag: 'intTag' }).lean();
+          expect(createdUser.email).not.toBe(rawCreatedUser?.email);
+        });
+
+        it('Should encrypt email field', async () => {
+          const { email, password, internalTag } = mockUser;
+          const createdUser = await userService.createUser({ email, password, internalTag, role: 'recruiter' });
+          expect(password).not.toBe(createdUser.password);
+        });
+
+        it('Should find users by emailHash', async () => {
+          const [email, password, internalTag,] = [uniqueEmails.pop()!, 'pwdd', 'daiv'];
+          const createdUser = await userService.createUser({ email, password, internalTag, role: 'recruiter' });
+          const userFromHash = await userService.getUserByEmail(email);
+          expect(userFromHash).toEqual(createdUser);
+        });
+
+        it('Should find users by id', async () => {
+          const email = uniqueEmails.pop();
+          const createdUser = await userService.createUser({ email: email!, password: '12345', internalTag: 'intTag', role: 'recruiter' });
+          const userFound = await userService.getUserById(createdUser.id);
+          expect(createdUser.id).toEqual(userFound.id);
+        });
+
+        it('Should create user encrypting password and hashing email', async () => {
+          await UserModel.deleteMany({});
+          // const [nick, email, password] = ['nick', 'email@email.com', 'password'];
+          const { internalTag, email, password, role } = mockUser;
+          const newUser: User = await userService.createUser({ email, password, internalTag, role });
+          const rawCreatedUser = await UserModel.findOne({ internalTag }).lean();
+          expect(rawCreatedUser).toBeTruthy();
+          expect(rawCreatedUser?.email).toBeTruthy();
+          expect(rawCreatedUser?.email).not.toBe(email);
+          expect(rawCreatedUser?.password).toBeTruthy();
+          expect(rawCreatedUser?.password).not.toBe(password);
+          expect(newUser.internalTag).toBe(internalTag);
+        });
+
+        it('Should produce the same hash from the same string', () => {
+          const { email } = mockUser;
+          const mockEmailHash = hashData(email);
+          expect(mockEmailHash).toEqual(hashData(email));
+        });
+
+        it('Should override user data when using save', async () => {
+          const email = uniqueEmails.pop()!;
+          const password = 'initialPassword';
+          const internalTag = 'originalTag';
+
+          const createdUser = await userService.createUser({ email, password, internalTag, role: 'recruiter' });
+          expect(createdUser.status).toBe('whiteListed');
+
+          const updatedData: User = {
+            ...createdUser,
+            status: 'verification_pending',
+            role: 'admin'
+          };
+
+          const savedUser = await userRepo.save(updatedData);
+
+          expect(savedUser.id).toBe(createdUser.id);
+          expect(savedUser.status).toBe('verification_pending');
+          expect(savedUser.role).toBe('admin');
+
+          const userCount = await UserModel.countDocuments({ _id: savedUser.id });
+          expect(userCount).toBe(1);
+
+          const userInDb = await userRepo.getUserByEmail(email);
+          if (!userInDb) throw new ServerError();
+          expect(userInDb.id).toBe(createdUser.id);
+        });
+
+        it('Should create user from only email, role and internalTag', async () => {
+          const email = uniqueEmails.pop()!;
+          const role: Role = "user";
+          const internalTag = 'intTag';
+          const user = await userService.createUser({ email, role, internalTag });
+          expect(user.id).toBeTruthy();
+          expect(user.email).toBeTruthy();
+          expect(user.role).toBeTruthy();
+          expect(user.role).toEqual(role);
+          expect(user.status).toEqual('whiteListed');
+        });
+
+
+        it('Should validate validationToken lifecycle', async () => {
+          const user = await userService.createUser({ email: uniqueEmails.pop()!, internalTag: 'intTag', role: 'recruiter' });
+          const credentials = createValidationCredentials();
+
+          expect(await activationService.removeCredentials(user.id)).toBe(false);
+          // 1. Invalid token case
+          const invalidResult = await activationService.isValidationTokenLegit(credentials.token);
+          expect(invalidResult.valid).toBe(false);
+          expect((invalidResult as { cause: string }).cause).toBe('invalid token');
+
+          // 2. Valid token case
+          await userService.saveUser({ ...user, credentials });
+
+          const validResult = await activationService.isValidationTokenLegit(credentials.token);
+
+          expect(validResult.valid).toBe(true);
+          const success = validResult as { valid: true; credentials: typeof credentials };
+          expect(success.credentials).toEqual(credentials);
+
+          // 3. Expired token case
+          const expiredCredential = { ...credentials, expiresAt: new Date(Date.now() - 10) };
+          await userService.saveUser({ ...user, credentials: expiredCredential });
+
+          const expiredResult = await activationService.isValidationTokenLegit(expiredCredential.token);
+          expect(expiredResult.valid).toBe(false);
+          expect((expiredResult as { cause: string }).cause).toBe('token expired');
+
+          expect(await activationService.removeCredentials(user.id)).toBe(true);
+        });
+
+        it('Should save password and check password lifecycle', async () => {
+          const user = await userService.createUser({ email: uniqueEmails.pop()!, role: 'recruiter', internalTag: 'intTag' });
+          expect(user.password).toBeFalsy();
+          const userPassword = 'iLoveUnicorns';
+          expect(await authService.checkUserPassword(user.id, userPassword)).toBe(false);
+          await userService.setUserPassword(user.id, userPassword);
+          expect(await authService.checkUserPassword(user.id, 'notLovingUnicorns')).toBe(false);
+          expect(await authService.checkUserPassword(user.id, userPassword)).toBe(true);
+
+        });
+
+        it('Should enable user Account if everything is ok', async () => {
+          const userToEnable = await userService.createUser({ email: uniqueEmails.pop()!, role: 'recruiter', internalTag: 'intTag' });
+          expect(userToEnable.activatedAt).toBeFalsy();
+          const password = '12345isTheBestPassword';
+          await activationService.enableUserAccount(userToEnable.id, password, 'mockNick');
+          const user = await userService.getUserById(userToEnable.id);
+          expect(user.activatedAt).toBeTruthy();
+        });
+
+        it('Should create and save userCredentials', async () => {
+          const user = await userService.createUser({ email: uniqueEmails.pop()!, role: 'recruiter', internalTag: 'intTag' });
+          expect(user).not.toHaveProperty('credentials');
+          const preparedUser = activationService.prepareUserCredentials(user);
+          expect(preparedUser).toHaveProperty('credentials');
+          if (!preparedUser.credentials) throw new Error('credentials missing');
+          if (!preparedUser.credentials.token) throw new Error('token missing');
+
+          const { token } = preparedUser.credentials;
+          expect(await activationService.getUserByToken(token)).toBeFalsy();
+          await userService.saveUser(preparedUser);
+          const userByToken = await activationService.getUserByToken(token);
+          if (!userByToken) throw new Error('user not found');
+          expect(preparedUser.id).toEqual(userByToken.id);
+        });
+
+        it('Should save resetPassword credentials', async () => {
+          const resetCredential: ResetPasswordCredential = {
+            active: true,
+            createdAt: new Date(),
+            expiresAt: expiresIn(30, 'minutes'),
+            token: 'token'
+          };
+          const newUser: User = {
+            email: uniqueEmails.pop()!,
+            role: "recruiter",
+            id: '123333333',
+            status: 'active',
+            internalTag: 'intTag',
+            resetPassword: resetCredential
+          }
+          const updatedUser = await userRepo.save(newUser);
+          expect(updatedUser).toBeTruthy();
+          expect(updatedUser.resetPassword?.active).toBe(true);
+          if (!updatedUser.resetPassword) throw new Error();
+          updatedUser.resetPassword.active = false;
+          const finalUser = await userRepo.save(updatedUser);
+          if (!finalUser || !finalUser.resetPassword) throw new Error();
+          expect(finalUser.resetPassword.active).toBe(false);
+
+        });
+        it('Should save user nick', async () => {
+          const newUser: User = {
+            email: uniqueEmails.pop()!,
+            role: 'recruiter',
+            id: '32323',
+            status: 'active',
+            internalTag: 'mock',
+          }
+          await userRepo.save(newUser);
+          const user = await userService.getUserByEmail(newUser.email);
+          if (!user) throw new Error();
+          expect(user.nick).toBeFalsy();
+          const newNick = 'Timotea';
+          const updatedUser = await userService.setUserNick(user.id, newNick);
+          if (!updatedUser) throw Error();
+          expect(updatedUser.nick).toBe(newNick);
+        });
+      });
     });
 
+    describe('Session tests', () => {
 
-  });
+      describe('Session Repository', () => {
+        const uniqueDevId: string[] = [];
+        for (let i = 100; i < 200; i++)uniqueDevId.push(`devId-${i}`);
+        let repository: SessionRepository;
+
+        beforeAll(() => {
+          repository = new SessionRepository();
+        });
+        afterEach(async () => {
+          await SessionModel.deleteMany({});
+        });
+        const deviceInfo = 'deviceInfo';
+        it('Should count sessions correctly for a specific user', async () => {
+          await repository.create({ userId: 'u1', JTI: 't1', deviceId: uniqueDevId.pop()!, deviceInfo, role: 'recruiter' });
+          await repository.create({ userId: 'u1', JTI: 't2', deviceId: uniqueDevId.pop()!, deviceInfo, role: 'recruiter' });
+
+          const count = await repository.countByUserId('u1');
+          expect(count).toBe(2);
+        });
+        it('Should find sessions by token', async () => {
+          const mockSession: Session = { userId: 'ut', JTI: 'token', deviceId: 'deviceId', deviceInfo: 'info', role: 'recruiter' };
+          await repository.create(mockSession);
+          const session = await repository.findByJti(mockSession.JTI);
+          if (!session) throw new Error('session not found');
+          expect(session.userId).toBe(mockSession.userId);
+        });
+
+        it('Should find sessions by userId', async () => {
+          const mockSession: Session = { userId: 'favId', JTI: 'tokenhash', deviceId: uniqueDevId.pop()!, deviceInfo: 'android', role: 'recruiter' };
+          await repository.create(mockSession);
+          let session = await repository.findByUserId(mockSession.userId);
+          expect(session.length).toBe(1);
+          expect(session[0].JTI).toBe(hashData(mockSession.JTI));
+          const mock2: Session = { userId: 'favId', JTI: 'tok2', deviceId: uniqueDevId.pop()!, deviceInfo: 'notAndroid', role: 'recruiter' };
+          await repository.create(mock2);
+          session = await repository.findByUserId(mock2.userId);
+          expect(session.length).toBe(2);
+          expect(session[1].JTI).toBe(hashData(mock2.JTI));
+        });
+
+        it('Should remove by tokenHash', async () => {
+          const mockSession: Session = { userId: 'idi', JTI: 'hashhh', deviceInfo: 'inffoo', role: 'recruiter', deviceId: 'deviceId' };
+          const { userId: id } = mockSession;
+          await repository.create(mockSession);
+          let count = await repository.countByUserId(id);
+          expect(count).toBe(1);
+          await repository.removeByUserId(id);
+          count = await repository.countByUserId(id);
+          expect(count).toBe(0);
+        });
+
+        it('Should remove the oldest session correctly using sort', async () => {
+          const userId = 'u1';
+          const session1: Session = { userId, JTI: 'old', deviceId: uniqueDevId.pop()!, deviceInfo: 'd1', role: 'recruiter' };
+          await repository.create(session1);
+          await new Promise(r => setTimeout(r, 50));
+          const session2: Session = { userId, JTI: 'new', deviceId: uniqueDevId.pop()!, deviceInfo: 'd1', role: 'recruiter' };
+          await repository.create(session2);
+
+          await repository.removeOldest('u1');
+
+          const remaining = await repository.findByUserId(userId);
+          expect(remaining.length).toBe(1);
+          expect(remaining[0].JTI).toBe(hashData(session2.JTI));
+        });
+
+      });
+
+      describe('Session Service', () => {
+        let repo: SessionRepository, service: SessionService;
+
+        beforeAll(() => {
+          repo = new SessionRepository();
+          service = new SessionService(repo);
+        });
+        it('Should create sessions not exceding limits', async () => {
+          const userId = 'mockId';
+          const session = await service.add(userId, '1', 'recruiter', crypto.randomUUID());
+          if (!session) throw new ServerError();
+          expect(session.deviceInfo).toBe('Unknown device');
+          let activeSessions = await repo.countByUserId(userId);
+          expect(activeSessions).toBe(1);
+          const session2 = await service.add(userId, '2', 'recruiter', crypto.randomUUID());
+          activeSessions = await repo.countByUserId(userId);
+          //! recruiter can only have one open session 
+          expect(activeSessions).toBe(1);
+
+          const adminId = 'mockAdmin';
+          await service.add(adminId, '3', 'admin', crypto.randomUUID());
+          let activeAdminSessions = await repo.countByUserId(adminId);
+          expect(activeAdminSessions).toBe(1);
+          await service.add(adminId, '4', 'admin', crypto.randomUUID());
+          activeAdminSessions = await repo.countByUserId(adminId);
+          expect(activeAdminSessions).toBe(2);
+
+        });
+
+        it('Should delete sessions by userId', async () => {
+          const userId = 'mockMockid';
+          await service.add(userId, 'a', 'admin', 'deviceId');
+          let activeSessions = await repo.countByUserId(userId);
+          expect(activeSessions).toBe(1);
+          const delRes = await service.removeAll(userId);
+          console.warn('delete count', delRes.deletedCount);
+          activeSessions = await repo.countByUserId(userId);
+          expect(activeSessions).toBe(0);
+          await service.add(userId, 'b', 'admin', 'deviceId-1');
+          await service.add(userId, 'c', 'admin', 'deviceId-2');
+          activeSessions = await repo.countByUserId(userId);
+          expect(activeSessions).toBe(2);
+          await service.removeAll(userId);
+          activeSessions = await repo.countByUserId(userId);
+          expect(activeSessions).toBe(0);
+        });
+
+        it('Should delete by JTI', async () => {
+          const userId = 'mockingId';
+          await service.add(userId, 'd', 'admin', 'deviceId');
+          let activeSessions = await repo.countByUserId(userId);
+          expect(activeSessions).toBe(1);
+          await service.remove('d');
+          activeSessions = await repo.countByUserId(userId);
+          expect(activeSessions).toBe(0);
+        });
+
+        it('Should get Session by jti', async () => {
+          const userId = 'mockSessionId';
+          await service.add(userId, 'e', 'admin', 'deviceId');
+          const session = await service.getSessionByJti('e');
+          if (!session) throw new ServerError();
+          expect(session.JTI).toBe(hashData('e'));
+        })
+      });
+      describe('Like tests', () => {
+        describe('Like repo', () => {
+          const likeUser: User = {
+            email: 'like',
+            id: 'likeuser',
+            internalTag: 'like',
+            role: 'basic',
+            status: 'active',
+          }
+
+          let likeRepo: ILikeRepository;
+          beforeAll(async () => {
+            likeRepo = new LikeRepository();
+            const userService = new UserService(new UserRepository());
+            await userService.createUser(likeUser);
+          });
+          beforeEach(async () => {
+            await LikeModel.deleteMany({});
+          })
+          it('Should get empty array when no songs liked', async () => {
+            const likedSongs = await likeRepo.getLikedSongsByUser(likeUser.id);
+            expect(likedSongs).toEqual([]);
+          });
+
+          it('Should update songs when liked', async () => {
+            const mockSong: Song = {
+              id: 'mockSongid',
+              description: 'mockSong',
+              duration: 10,
+              provider: 'Unknown',
+              title: 'mockrock',
+            }
+            await SongModel.create(mockSong);
+            let result = await likeRepo.toggleLike(likeUser.id, mockSong.id);
+            expect(result).toBe(true);
+            let isLiked = await likeRepo.isLiked(likeUser.id, mockSong.id);
+            expect(isLiked).toBe(true);
+            let likedSongs = await likeRepo.getLikedSongsByUser(likeUser.id);
+            expect(likedSongs.length).toBe(1);
+
+            result = await likeRepo.toggleLike(likeUser.id, mockSong.id);
+            expect(result).toBe(false);
+            likedSongs = await likeRepo.getLikedSongsByUser(likeUser.id);
+            expect(likedSongs.length).toBe(0);
+
+            isLiked = await likeRepo.isLiked(likeUser.id, mockSong.id);
+            expect(isLiked).toBe(false);
+
+          });
+
+
+        })
+      })
+      describe('Signed urls', () => {
+        describe('Streaming', () => {
+
+          let authService: AuthService;
+          let userRepo: UserRepository;
+          let sessionService: SessionService;
+          let sessionRepo: SessionRepository;
+          const [songId, provider, userId] = ['1234', '1234', '1234'];
+          beforeAll(() => {
+            userRepo = new UserRepository();
+            sessionRepo = new SessionRepository();
+            sessionService = new SessionService(sessionRepo);
+            authService = new AuthService(userRepo, sessionService);
+          });
+          type Params = {
+            songId: string,
+            provider: string,
+            userId: string,
+            expiresAt: string,
+            sign: string,
+          }
+          const getParams = (url: string): Params => {
+            const pairs = url.split('?')[1].split('&');
+            const params: Record<string, string> = {};
+            pairs.forEach(pair => {
+              const [key, value] = pair.split('=');
+              if (key && value) params[key] = value;
+            });
+            return params as Params;
+          }
+          it('Should create and validate signed urls', async () => {
+            const signedUrl = authService.createSignedUrl(songId, provider, userId);
+
+            const { signedUrl: url } = signedUrl;
+            const params = getParams(url);
+            expect(signedUrl).not.toBeFalsy();
+            expect(authService.isSignedUrlValid(params.songId, params.provider, params.userId, params.expiresAt, params.sign)).toBe(true);
+
+          });
+          it('Should detect when url has expired', async () => {
+            const signedUrl = authService.createSignedUrl(songId, provider, userId, Date.now() + 1000);
+            const { signedUrl: url } = signedUrl;
+            const params = getParams(url);
+            expect(authService.isSignedUrlValid(params.songId, params.provider, params.userId, params.expiresAt, params.sign)).toBe(true);
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            expect(authService.isSignedUrlValid(params.songId, params.provider, params.userId, params.expiresAt, params.sign)).toBe(false);
+          });
+
+        });
+        describe('Download', () => {
+          let authService: AuthService;
+          let userRepo: UserRepository;
+          let sessionService: SessionService;
+          let sessionRepo: SessionRepository;
+          const mockUser: User = {
+            email: 'down@down',
+            id: 'trickyId',
+            role: 'recruiter',
+            status: 'active',
+            internalTag: 'intTag'
+          }
+          beforeAll(async () => {
+            userRepo = new UserRepository();
+            sessionRepo = new SessionRepository();
+            sessionService = new SessionService(sessionRepo);
+            authService = new AuthService(userRepo, sessionService);
+            await userRepo.save(mockUser);
+          });
+
+          it('Should invalidate token when expired', async () => {
+            const token = randomUUID();
+            const expiresAt = new Date(Date.now() + 3000);
+            await userRepo.saveResetPasswordCredentials(mockUser.id, { token, expiresAt });
+            let isValid = await authService.isResetPasswordTokenValid(token);
+            expect(isValid).toBe(true);
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            isValid = await authService.isResetPasswordTokenValid(token);
+            expect(isValid).toBe(false);
+          })
+        })
+      });
+
+
+    });
+  })
 });

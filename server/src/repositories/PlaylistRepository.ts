@@ -1,51 +1,48 @@
-import { Song } from "@/common/types";
 import { IPlaylistRepository } from "@/interfaces";
 import { PlayListModel } from "@/models/playListModel";
-import { MongoPlayList, PlayList } from "@/types/types";
+import { Playlist } from "@/types/types";
 import mongoose from "mongoose";
 
+
+type PlaylistDoc = {
+  _id: mongoose.Types.ObjectId;
+  userId: string;
+  title: string;
+  songs: string[];
+}
 export class PlayListRepository implements IPlaylistRepository {
 
-  async saveList(list: PlayList | MongoPlayList): Promise<MongoPlayList | null> {
+  async saveList(list: Playlist): Promise<Playlist | null> {
     const { id, userId, songs, title } = list;
     if (songs.length === 0 || !userId || !title) return null;
-
-    const isStringArray = (array: string[] | Song[]): array is string[] => {
-      return typeof array[0] === 'string'
-    }
-
-    const songIds: string[] = isStringArray(songs) ? songs : songs.map(s => s.id);
 
     if (id) {
       if (!mongoose.isValidObjectId(id)) return null;
 
-      const updated = await PlayListModel.findByIdAndUpdate(
+      const updated: PlaylistDoc | null = await PlayListModel.findByIdAndUpdate(
         id,
-        { userId, songs: songIds, title },
-        { returnDocument: 'after', lean: true }
-      );
-      console.log('updated is ', updated);
+        { userId, songs, title },
+        { returnDocument: 'after' }
+      ).lean<PlaylistDoc | null>();
       if (!updated) return null;
 
-      return updated as MongoPlayList;
+      return this.toPlaylist(updated);
+
     }
 
     const created = await PlayListModel.create({
       userId,
-      songs: songIds,
+      songs,
       title
     });
 
-    const playListObject = created.toObject() as MongoPlayList;
-
-    return playListObject;
-
+    return (this.toPlaylist(created.toObject()));
   }
 
-  async getLists(userId: string): Promise<MongoPlayList[]> {
-    const lists = await PlayListModel.find({ userId }).lean();
+  async getLists(userId: string): Promise<Playlist[]> {
+    const lists: PlaylistDoc[] = await PlayListModel.find({ userId }).lean<PlaylistDoc[]>();
     if (!lists || lists.length === 0) return [];
-    return lists;
+    return lists.map(this.toPlaylist);
   }
 
   async removeList(listId: string, userId: string): Promise<boolean> {
@@ -55,6 +52,16 @@ export class PlayListRepository implements IPlaylistRepository {
     })
     return (result.deletedCount ?? 0) > 0;
   }
+  async getListById(listId: string): Promise<Playlist | null> {
+    if (!mongoose.isValidObjectId(listId)) return null;
 
-
+    const result = await PlayListModel.findById(listId).lean<PlaylistDoc | null>();
+    if (!result) return null;
+    return this.toPlaylist(result);
+  }
+  private toPlaylist(list: PlaylistDoc): Playlist {
+    const { _id, ...rest } = list;
+    const playlist: Playlist = { ...rest, id: _id.toString() }
+    return playlist;
+  }
 }

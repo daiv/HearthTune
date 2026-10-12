@@ -1,4 +1,4 @@
-import { DeleteResult, UpdateWriteOpResult } from "mongoose";
+import mongoose, { DeleteResult, UpdateWriteOpResult } from "mongoose";
 import { ISongRepository } from "@/interfaces";
 import { SongModel } from "../models/songModel";
 import { DownloadStatus, Song } from "@/common/types";
@@ -61,5 +61,10 @@ export class SongRepository implements ISongRepository {
 
   async getSongDetails(id: string): Promise<Song | null> {
     return await SongModel.findOne({ id });
+  }
+  async getSongsByIds(ids: string[]): Promise<Song[]> {
+    if (!ids || ids.length === 0) return [];
+    const songs: Song[] = await SongModel.find({ id: { $in: ids } }).lean();
+    return songs;
   }
 }

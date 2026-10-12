@@ -83,3 +83,8 @@ export class BadRequestException extends ServerError {
     super(message, 400);
   }
 }
+export class PlaylistLimitReachedException extends ServerError {
+  constructor(message: string = 'Playlist max limit reached') {
+    super(message, 403);
+  }
+}

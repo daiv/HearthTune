@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { Credential, Role, TimeUnit, ViewPath, ViewPropsMap } from './types/types';
-import { PERMISSION } from './constants';
+import { MAX_SESSIONS, ROLE_HIERARCHY } from './constants';
 import { Response } from 'express';
 import { ServerError } from './errors/ServerError';
 
@@ -31,14 +31,6 @@ export function hashData<T>(data: T, customHashingKey?: string): string {
     .digest("hex");
 }
 
-export function getMaxSessionsAllowed(role: Role): number {
-  switch (role) {
-    case 'recruiter': return 1;
-    case 'superAdmin': return Infinity;
-    case 'admin': return 3;
-    default: return 2;
-  }
-}
 export function isTrialExpired(activatedAt: Date): boolean {
   const now = new Date().getTime();
   const expirationDate = expiresIn(15, 'days', activatedAt).getTime();
@@ -71,7 +63,7 @@ export function createValidationCredentials(expiresAt: Date = expiresIn(2, 'days
   return credentials;
 }
 
-export const atLeast = (minRole: Role) => (role: Role) => PERMISSION[role] >= PERMISSION[minRole];
+export const atLeast = (minRole: Role) => (role: Role) => ROLE_HIERARCHY[role] >= ROLE_HIERARCHY[minRole];
 export const isExactly = (targetRole: Role) => (role: Role) => targetRole === role;
 
 export const sanitize = (rawQuery: string): string => {
