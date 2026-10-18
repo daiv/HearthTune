@@ -8,6 +8,12 @@
     provider: String
     url: String
   }
+  type Playlist {
+      id: ID!
+      userId: String!
+      title: String!
+      songs: [Song!]!
+  }
 
   type AuthPayLoad{
     accessToken: String!
@@ -36,6 +42,9 @@
     getNick:User!
     isLiked(songId:String!):Boolean!
     getLikedSongsByUser:[Song!]!
+
+    getPlaylistsByUserId: [Playlist!]!
+    getPlaylistById(id: ID!): Playlist
   }
 
   type Mutation {
@@ -45,4 +54,7 @@
     changeNick(newNick:String!):User!
     changePassword(oldPass:String!, newPass:String!):Boolean!
     toggleLikeSong(songId:String!):Boolean!
+
+    savePlaylist(id: ID, title: String!, songs: [String!]!): Playlist
+    removePlaylist(id: ID!): Boolean!
   }

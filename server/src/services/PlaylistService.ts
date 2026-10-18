@@ -20,7 +20,6 @@ export class PlaylistService implements IPLaylistService {
 
   async savePlaylist(list: Playlist, userId: string, role: Role): Promise<Playlist | null> {
     if (!list || !userId || !role) return null;
-
     const isNewPlaylist = !list.id;
     if (isNewPlaylist) {
       const existingUserPlaylists = await this.playlistRepo.getLists(userId);

@@ -3,11 +3,11 @@ import { RolePermission } from "./types/types";
 export const PORT = 4000;
 
 export const ROLE_HIERARCHY: RolePermission = {
-  test: 0,
+  test: 1,
   basic: 1,
   recruiter: 2,
   user: 3,
-  admin: 5,
+  admin: 4,
   superAdmin: 10,
 };
 
@@ -21,7 +21,7 @@ export const MAX_SESSIONS: RolePermission = {
 };
 
 export const MAX_PLAYLISTS: RolePermission = {
-  test: 1,
+  test: 5,
   recruiter: 1,
   basic: 5,
   user: 10,

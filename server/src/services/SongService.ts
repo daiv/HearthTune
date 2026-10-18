@@ -150,4 +150,7 @@ export class SongService implements ISongService {
 
     return newSong;
   }
+  async getSongsByIds(ids: string[]): Promise<Song[]> {
+    return this.songRepository.getSongsByIds(ids);
+  }
 }

@@ -7,14 +7,14 @@ export const songResolvers = {
     search: protect<undefined, MusicContext, { query: string, limit?: number }>(
       atLeast('basic'),
       async (_, { query, limit }, context) => {
-        return await context.services.songs.search(query, limit || 50);
+        return await context.services.song.search(query, limit || 50);
       }
       ,
       { sanitizeFields: ['query'] }
     ),
     searchLocally: protect<undefined, MusicContext, { query: string }>(
       atLeast('basic'),
-      async (_, { query }, context) => await context.services.songs.searchLocally(query)
+      async (_, { query }, context) => await context.services.song.searchLocally(query)
       ,
       { sanitizeFields: ['query'] }
     ),
@@ -22,7 +22,7 @@ export const songResolvers = {
     getRelated: protect<undefined, MusicContext, { id: string, numberOfSongs: number }>(
       atLeast("basic"),
       async (_, { id, numberOfSongs }, context) =>
-        await context.services.songs.getRelatedSongs(id, numberOfSongs)
+        await context.services.song.getRelatedSongs(id, numberOfSongs)
     ),
   },
 };

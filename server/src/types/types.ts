@@ -1,10 +1,10 @@
 import { Readable } from "node:stream";
 import { ISongService } from "../interfaces/ISongService";
-import { ActivationService, AuthService, LikeService, SessionService, UserService } from "@/services";
+import { ActivationService, AuthService, LikeService, PlaylistService, SessionService, UserService } from "@/services";
 import { Song } from "@/common/types";
 import { ResourcesService } from "@/services/ResourcesService";
 import { MailingService } from "@/services/MailingService";
-import mongoose from "mongoose";
+import { ExpressContextFunctionArgument } from "@as-integrations/express5";
 
 export type SongResponse = {
   type: "local",
@@ -20,10 +20,11 @@ export type SongResponse = {
 export type resolverContext = {
   user?: User;
   services: {
-    songs: ISongService;
+    song: ISongService;
     user: UserService;
     auth: AuthService;
     like: LikeService;
+    playlist: PlaylistService;
   };
   metadata: {
     deviceInfo: string;
@@ -213,5 +214,12 @@ export type Playlist = {
   title: string;
   songs: string[];
 }
-
+export type initGraphqlMiddlewareProps = {
+  songService: ISongService,
+  userService: UserService,
+  authService: AuthService,
+  likeService: LikeService,
+  playlistService: PlaylistService,
+  customContext?: (args?: ExpressContextFunctionArgument) => Promise<resolverContext>
+}
 

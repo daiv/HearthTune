@@ -19,8 +19,9 @@ export class PlayListRepository implements IPlaylistRepository {
     if (id) {
       if (!mongoose.isValidObjectId(id)) return null;
 
+      const objectId = new mongoose.Types.ObjectId(id);
       const updated: PlaylistDoc | null = await PlayListModel.findByIdAndUpdate(
-        id,
+        objectId,
         { userId, songs, title },
         { returnDocument: 'after' }
       ).lean<PlaylistDoc | null>();

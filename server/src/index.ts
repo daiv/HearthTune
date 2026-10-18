@@ -5,16 +5,15 @@ import { checkEnvFile } from '@/helpers';
 import { initDatabase } from '@/models/model';
 import { initGraphqlMiddleware } from './graphql/graphqlServer';
 import { YoutubeProvider, NodeMailer } from '@/providers';
-import { ResourcesService, MailingService, AuthService, SongService, UserService, SessionService, ActivationService, LikeService, } from '@/services';
+import { ResourcesService, MailingService, AuthService, SongService, UserService, SessionService, ActivationService, LikeService, PlaylistService, } from '@/services';
 import { errorHandler } from '@/middleware/errorHandler';
 import { ISongsProvider } from '@/interfaces';
 import path from 'node:path';
-import { SongRepository, UserRepository, SessionRepository } from '@/repositories';
+import { SongRepository, UserRepository, SessionRepository, PlayListRepository, LikeRepository } from '@/repositories';
 import { PORT } from './constants';
 import { SsrController, ResourcesController } from '@/controllers';
 import { MockEmailProvider } from './mocks/MockEmailProvider';
-import { SsrConstructorProps } from './types/types';
-import { LikeRepository } from './repositories/LikeRepository';
+import { initGraphqlMiddlewareProps, SsrConstructorProps } from './types/types';
 
 const app = express();
 
@@ -47,6 +46,7 @@ const app = express();
     const resourcesController = new ResourcesController(resourcesService, authService);
     const likeRepo = new LikeRepository();
     const likeService = new LikeService(likeRepo);
+    const playlistService = new PlaylistService(new PlayListRepository());
 
     const ssrProps: SsrConstructorProps = {
       authService,
@@ -70,8 +70,10 @@ const app = express();
 
     await userService.createUsersFromEnv();
     await activationService.sendActivationLinkToWhiteListedUsers();
-
-    const graphql = await initGraphqlMiddleware(songService, userService, authService, likeService);
+    const graphqlProps: initGraphqlMiddlewareProps = {
+      songService, authService, likeService, playlistService, userService,
+    }
+    const graphql = await initGraphqlMiddleware(graphqlProps);
     app.use('/graphql', graphql);
 
     app.use(errorHandler);

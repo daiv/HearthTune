@@ -1,15 +1,11 @@
-import jwt from 'jsonwebtoken';
 import { ApolloServer } from "@apollo/server";
 import { ExpressContextFunctionArgument, expressMiddleware } from "@as-integrations/express5";
 import { join } from "node:path";
 import { readFileSync } from 'node:fs'
-import { ISongService } from "@/interfaces";
-import { AccessPayload, resolverContext, User } from "@/types/types";
-import { AuthService, UserService } from "@/services";
+import { initGraphqlMiddlewareProps, resolverContext, User } from "@/types/types";
 import { resolvers } from './resolvers';
 import { InvalidCredentialsException } from '@/errors/ServerError';
 import { handleGraphQlError } from '@/middleware/handleGraphQLError';
-import { LikeService } from '@/services/LikeService';
 
 const schemaPath = join(process.cwd(), "src/graphql/schema.graphql");
 const typeDefs = readFileSync(schemaPath, "utf-8");
@@ -26,12 +22,16 @@ const server = new ApolloServer<resolverContext>({
 });
 
 export async function initGraphqlMiddleware(
-  songService: ISongService,
-  userService: UserService,
-  authService: AuthService,
-  likeService: LikeService,
-  customContext?: (args: ExpressContextFunctionArgument) => Promise<resolverContext>
-) {
+  {
+    songService,
+    userService,
+    authService,
+    likeService,
+    playlistService,
+    customContext
+  }
+    : initGraphqlMiddlewareProps) {
+
   await server.start();
   return expressMiddleware(server, {
     context: customContext || (async ({ req }: ExpressContextFunctionArgument): Promise<resolverContext> => {
@@ -61,7 +61,7 @@ export async function initGraphqlMiddleware(
         {
           user,
           services: {
-            songs: songService, user: userService, auth: authService, like: likeService
+            song: songService, user: userService, auth: authService, like: likeService, playlist: playlistService
           },
           metadata,
         }
