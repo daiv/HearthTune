@@ -1,4 +1,5 @@
-import { Role, Playlist } from "@/types/types";
+import { Playlist } from "@/common/types";
+import { Role } from "@/types/types";
 
 export interface IPLaylistService {
   getPlaylistsByUserId: (userId: string) => Promise<Playlist[]>;

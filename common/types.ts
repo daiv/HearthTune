@@ -29,3 +29,9 @@ export type Song = {
 export type SignedUrl = {
   signedUrl: string;
 }
+export type Playlist<T = string> = {
+  id?: string;
+  userId: string;
+  title: string;
+  songs?: T[];
+}

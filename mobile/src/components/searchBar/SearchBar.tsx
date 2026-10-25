@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useGraphQl } from "@/hooks/";
 import { LIKED_LIST, SEARCH_LOCALLY, SEARCH_SONGS } from "@/graphql/queries";
@@ -7,7 +7,6 @@ import { SearchItem } from "./SearchItem";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { styles } from "./styles";
 import Entypo from '@expo/vector-icons/Entypo';
-import { getLiked } from "@/services/likeService";
 
 const renderFunction = ({ item }: { item: Song }) => <SearchItem key={item.instanceId} song={item} />
 const mergeSongs = (local: Song[], remote: Song[]): Song[] => {

@@ -1,4 +1,4 @@
-import { Playlist } from "@/types/types";
+import { Playlist } from "@/common/types";
 import mongoose, { model } from "mongoose";
 
 const playListSchema = new mongoose.Schema<Omit<Playlist, 'id'>>({

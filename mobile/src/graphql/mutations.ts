@@ -37,3 +37,22 @@ export const TOGGLE_MUTATION = gql`
   mutation Toggle($songId:String!){
     toggleLikeSong(songId:$songId)
   }`;
+
+export const SAVE_PLAYLIST_MUTATION = gql`
+        mutation SavePlaylist($id: ID, $title: String!, $songs: [String]) {
+        savePlaylist(id:$id, title: $title, songs: $songs) {
+          id
+          title
+          userId
+            songs {
+            id
+            title
+          }
+        }
+      }
+      `;
+
+export const REMOVE_PLAYLIST_MUTATION = gql`
+        mutation RemovePlaylist($id:ID!){
+          removePlaylist(id:$id)
+        }`;

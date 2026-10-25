@@ -55,6 +55,6 @@
     changePassword(oldPass:String!, newPass:String!):Boolean!
     toggleLikeSong(songId:String!):Boolean!
 
-    savePlaylist(id: ID, title: String!, songs: [String!]!): Playlist
+    savePlaylist(id: ID, title: String!, songs: [String]): Playlist
     removePlaylist(id: ID!): Boolean!
   }

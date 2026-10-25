@@ -1,7 +1,7 @@
-import { Playlist } from "@/types/types";
 import { DeletePlaylistContext, GetPlaylistsContext, GetSongsContext, SavePlaylistContext } from "../context.types";
 import { protect } from "@/middleware";
 import { atLeast } from "@/helpers";
+import { Playlist } from "@/common/types";
 
 export const playlistResolvers = {
   Query: {
@@ -21,12 +21,12 @@ export const playlistResolvers = {
   }
   ,
   Mutation: {
-    savePlaylist: protect<undefined, SavePlaylistContext, { id?: string; title: string, songs: string[] }>(
+    savePlaylist: protect<undefined, SavePlaylistContext, { id?: string; title: string, songs?: string[] }>(
       atLeast('basic'),
       async (_, { id, title, songs }, context) => {
-        if (!title || !songs) return null;
+        if (!title) return null;
 
-        const response = await context.services.playlist?.savePlaylist({ id, songs, title, userId: context.user?.id! }, context.user?.id!, context.user?.role!);
+        const response = await context.services.playlist?.savePlaylist({ id, songs: songs ?? [], title, userId: context.user?.id! }, context.user?.id!, context.user?.role!);
         return response;
       }),
 

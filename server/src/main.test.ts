@@ -5,10 +5,10 @@ import { initGraphqlMiddleware } from "./graphql/graphqlServer";
 import supertest from "supertest";
 import TestAgent from "supertest/lib/agent";
 import { Server } from "node:http";
-import { DownloadStatus, Song } from "@/common/types";
+import { DownloadStatus, Playlist, Song } from "@/common/types";
 import { PlaylistService, MailingService, AuthService, SongService, UserService, ActivationService, SessionService, LikeService } from "@/services";
 import { describe, it, expect, afterAll, beforeAll, jest, beforeEach, afterEach } from '@jest/globals';
-import { Playlist, CreateUserDto, Role, Session, User, Credential, ResetPasswordCredential, initGraphqlMiddlewareProps } from "./types/types";
+import { CreateUserDto, Role, Session, User, Credential, ResetPasswordCredential, initGraphqlMiddlewareProps } from "./types/types";
 import { LikeRepository, UserRepository, SongRepository, SessionRepository, PlayListRepository } from "@/repositories/";
 import { LikeModel, UserModel, SessionModel, SongModel } from "@/models/";
 import { createValidationCredentials, expiresIn, hashData, sanitize } from "./helpers";
@@ -356,10 +356,22 @@ describe('TDD tests', () => {
             id
             title
             songs {
-            title
+              title
             }
           }
         }`,
+        GET_PLAYLIST_BY_ID_WITH_SONGS: `
+        query GetPlaylistsByIdWithSongs($id:ID!){
+          getPlaylistById(id:$id){
+          id
+          title
+          songs{
+            title
+            description
+            provider
+          }
+        }
+      }`,
 
       }
       const mutations = {
@@ -506,6 +518,7 @@ describe('TDD tests', () => {
           title: 'initial',
           songs: [mockedSongs[0].id]
         }
+        if (!initialPlaylist.songs) return;
         const saveResponse = await request.post(GRAPH)
           .send({
             query: mutations.SAVE_PLAYLIST_MUTATION,
@@ -521,6 +534,7 @@ describe('TDD tests', () => {
         const savedData = saveResponse.body.data.savePlaylist;
         console.log('savedData', savedData);
         expect(savedData.title).toBe(initialPlaylist.title);
+
         expect(savedData.songs[0].id).toBe(initialPlaylist.songs[0]);
         expect(savedData.songs.length).toBe(initialPlaylist.songs.length);
 
@@ -548,6 +562,27 @@ describe('TDD tests', () => {
         expect(updatedData.id).toBe(savedData.id);
       });
 
+      it('Should get a playlist by id with songs', async () => {
+
+        const initialPlaylist: Playlist4Tests = {
+          title: 'rock playlist',
+          songs: [mockedSongs[0].id]
+        }
+        const saveResponse = await request.post(GRAPH)
+          .send({
+            query: mutations.SAVE_PLAYLIST_MUTATION,
+            variables: initialPlaylist
+          });
+        const id = saveResponse.body.data.savePlaylist.id;
+        const response = await request.post(GRAPH)
+          .send({
+            query: queries.GET_PLAYLIST_BY_ID_WITH_SONGS,
+            variables: { id: id }
+          });
+        expect(response.body.data.getPlaylistById.title).toBeDefined();
+        expect(response.body.data.getPlaylistById.songs[0].title).toEqual(mockedSongs[0].title);
+        expect(response.body.data.getPlaylistById.songs[0].provider).toEqual(mockedSongs[0].provider);
+      });
     });
 
     describe('Auth Tests', () => {
@@ -757,14 +792,16 @@ describe('TDD tests', () => {
         title: 'title',
       }
       const outdatedPlaylist = await playListRepo.saveList(playList);
+      if (!outdatedPlaylist?.songs) return;
       expect(!outdatedPlaylist?.songs.includes(newSong.id));
       if (!outdatedPlaylist?.id) throw new Error();
       const listToUpdate: Playlist = {
         ...playList,
         id: outdatedPlaylist?.id.toString() || ''
       };
-      const updatedPlayList = await playListRepo.saveList(listToUpdate);
-      expect(updatedPlayList?.songs.includes(newSong.id));
+      const updatedPlaylist = await playListRepo.saveList(listToUpdate);
+      if (!updatedPlaylist?.songs) return;
+      expect(updatedPlaylist?.songs.includes(newSong.id));
     });
 
     it('Should delete playlists', async () => {

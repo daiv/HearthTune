@@ -1,4 +1,4 @@
-import { Playlist } from "@/types/types";
+import { Playlist } from "@/common/types";
 
 export interface IPlaylistRepository {
   removeList(listId: string, userId: string): Promise<boolean>;

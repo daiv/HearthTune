@@ -208,12 +208,7 @@ export type SsrConstructorProps = {
   sessionService: SessionService;
   activationService: ActivationService;
 }
-export type Playlist = {
-  id?: string;
-  userId: string;
-  title: string;
-  songs: string[];
-}
+
 export type initGraphqlMiddlewareProps = {
   songService: ISongService,
   userService: UserService,

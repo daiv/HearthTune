@@ -53,7 +53,7 @@ export const IS_LIKED = gql`
   query isSongLiked($songId:String!){
     isLiked(songId:$songId)
   }`;
-  
+
 export const LIKED_LIST = gql`
   query getLiked{
     getLikedSongsByUser{
@@ -65,3 +65,25 @@ export const LIKED_LIST = gql`
       url
     }
   }`;
+export const GET_PLAYLISTS = gql`
+        query GetPlaylists{
+          getPlaylistsByUserId{
+            id
+            title
+          }
+        }`;
+export const GET_PLAYLIST_BY_ID_WITH_SONGS = gql`
+        query GetPlaylistsByIdWithSongs($id:ID!){
+          getPlaylistById(id:$id){
+          id
+          title
+          songs{
+            id
+            title
+            duration
+            local
+            provider
+            url
+          }
+        }
+      }`;

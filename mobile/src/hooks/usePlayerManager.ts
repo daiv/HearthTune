@@ -1,4 +1,4 @@
-import { Song } from "@/common/types";
+import { Playlist, Song } from "@/common/types";
 import { addInstanceId, songToTrack, trackToSong } from "@/helpers/helpers";
 import { getRelatedSongsFromServer, getSignedUrlService } from "@/services";
 import TrackPlayer, { Event, Track, useTrackPlayerEvents } from "react-native-track-player";
@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export const usePlayerManager = () => {
   const [queue, setQueue] = useState<Song[]>([]);
+  const [activePlaylist, setActivePlaylist] = useState<{ id: string, title: string } | null>(null);
   const queueRef = useRef<Song[]>([]);
   const relatedCandidatesRef = useRef<Song[]>([]);
   const isLastSongRef = useRef<boolean>(false);
@@ -118,6 +119,10 @@ export const usePlayerManager = () => {
   const signTrackAtPosition = async (position: number): Promise<void> => {
     if (position >= queueRef.current.length) return;
 
+    const currentSong = queueRef.current[position];
+
+    if (currentSong.url && currentSong.url !== 'empty') return;
+
     const signedSong: Song = await updateSongWithSignedUrl(queueRef.current[position]);
 
     const signedTrack: Track = songToTrack(signedSong);
@@ -157,19 +162,24 @@ export const usePlayerManager = () => {
     }
   }, []);
 
-  const loadPlayList = useCallback(async (songs: Song[]): Promise<void> => {
+  const loadSongs = useCallback(async (songs: Song[]): Promise<void> => {
     await TrackPlayer.reset();
-    await TrackPlayer.add(songs.map(songToTrack));
-    const newQueue = [...songs];
-    queueRef.current = newQueue;
-    await signTrackAtPosition(0);
-    setQueue(newQueue);
+    const songsWithInstanceId = songs.map(addInstanceId);
+    if (songs.length > 0) {
+      const signedFirstSong = await updateSongWithSignedUrl(songsWithInstanceId[0]);
+      songsWithInstanceId[0] = signedFirstSong;
+    }
+    await TrackPlayer.add(songsWithInstanceId.map(songToTrack));
+    queueRef.current = [...songsWithInstanceId];
+    setQueue(songsWithInstanceId);
+    console.log('songswi', songsWithInstanceId);
   }, [queueRef]);
 
-  const resetQueue = useCallback(async (): Promise<void> => {
+  const unloadPlaylist = useCallback(async (): Promise<void> => {
     await TrackPlayer.reset();
     queueRef.current = [];
     songIndexRef.current = 0;
+    setActivePlaylist(null);
     setQueue([]);
   }, []);
 
@@ -259,12 +269,12 @@ export const usePlayerManager = () => {
       const j = Math.floor(Math.random() * (i + 1));
       [newQueue[i], newQueue[j]] = [newQueue[j], newQueue[i]];
     }
-    await loadPlayList(newQueue);
+    await loadSongs(newQueue);
     songIndexRef.current = 0;
     isLastSongRef.current = newQueue.length === 1;
     isSongAdditionTrigeredRef.current = false;
     isShufflingRef.current = false;
-  }, [loadPlayList]);
+  }, [loadSongs]);
 
   const isCurrentTrackLocal = (): boolean => {
     const currentIndex = songIndexRef.current;
@@ -284,34 +294,64 @@ export const usePlayerManager = () => {
       (to === 'Next' && currentIndex >= length - 1) ||
       (to === 'Prev' && currentIndex === 0)
     ) return;
+
     try {
-      if (to === 'Next') {
-        if (queueRef.current[currentIndex + 1].url === 'empty') signTrackAtPosition(currentIndex + 1);
+      const targetIndex = to === 'Next' ? currentIndex + 1 : currentIndex - 1;
+      const targetSong = queueRef.current[targetIndex];
+      const isSongUnsigned = !targetSong.url || targetSong.url === 'empty';
+      if (isSongUnsigned) await signTrackAtPosition(targetIndex);
+
+      if (to === 'Next')
         await TrackPlayer.skipToNext();
-        songIndexRef.current = currentIndex + 1;
-      } else {
-        if (queueRef.current[currentIndex - 1].url === 'empty') signTrackAtPosition(currentIndex - 1);
+      else
         await TrackPlayer.skipToPrevious();
-        songIndexRef.current = currentIndex - 1;
-      }
+
+      songIndexRef.current = targetIndex;
+
     } catch (error) {
       songIndexRef.current = currentIndex;
     }
 
   }, []);
 
+  const loadPlaylist = useCallback(async (playlist: Playlist<Song>) => {
+    const { id, title, songs } = playlist;
+    if (!id || !songs) return;
+    await loadSongs(songs);
+    console.log('lennnn', queueRef.current.length);
+    console.log('index', songIndexRef.current);
+    setActivePlaylist({ id, title });
+  }, [loadSongs]);
+
+
   const contextValue: PlayListContextData = useMemo(() => ({
     queue,
+    activePlaylist,
     enqueue,
     dequeue,
     skipToByInstanceId,
     enqueueRelatedSong,
-    loadPlayList,
-    resetQueue,
+    loadSongs,
+    loadPlaylist,
+    unloadPlaylist,
     pauseAutoQueue,
     shuffleQueue,
     isCurrentTrackLocal,
-    skipSong
-  }), [queue, enqueue, dequeue, skipToByInstanceId, enqueueRelatedSong, loadPlayList, resetQueue, pauseAutoQueue, shuffleQueue]);
+    skipSong,
+    setActivePlaylist,
+
+  }), [
+    queue,
+    activePlaylist,
+    enqueue,
+    dequeue,
+    skipToByInstanceId,
+    enqueueRelatedSong,
+    loadSongs,
+    loadPlaylist,
+    unloadPlaylist,
+    pauseAutoQueue,
+    shuffleQueue,
+    skipSong]);
   return contextValue;
 }

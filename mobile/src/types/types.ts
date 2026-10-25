@@ -1,20 +1,23 @@
-import { AuthPayload, Song } from "@/common/types"
+import { AuthPayload, Playlist, Song } from "@/common/types"
 import { Dispatch, ReactNode } from "react";
 import { NativeSyntheticEvent, TextInput } from "react-native";
 
 export type Mode = 'Create account' | 'Log in';
 export type PlayListContextData = {
   queue: Song[];
+  activePlaylist: { id: string, title: string } | null,
   enqueue: (song: Song, addedManually?: boolean) => Promise<void>;
   dequeue: (instanceId: string) => Promise<void>;
   enqueueRelatedSong: (isRetry?: boolean) => Promise<void>;
   skipToByInstanceId: (instanceId: string) => void;
-  loadPlayList: (songs: Song[]) => void;
-  resetQueue: () => void;
+  loadSongs: (songs: Song[]) => void;
+  unloadPlaylist: () => void;
   pauseAutoQueue: (enabled: boolean) => void;
   shuffleQueue: () => Promise<void>;
   isCurrentTrackLocal: () => boolean;
   skipSong: (to: 'Prev' | 'Next') => Promise<void>;
+  loadPlaylist: (playlist: Playlist<Song>) => Promise<void>;
+  setActivePlaylist: Dispatch<React.SetStateAction<{ id: string, title: string } | null>>;
 }
 export type SkipSongFunctionArgs = 'Next' | 'Prev';
 
@@ -62,7 +65,7 @@ export type ValidatedFields<T> = {
   ref: React.RefObject<TextInput | null>;
   type: FieldType;
   id: string;
-  placeHolder: string
+  placeHolder: string;
 }
 export type LoginVariables = {
   email: string;
@@ -74,10 +77,10 @@ export type Option = {
   action: () => void;
 }
 export type BaseModalProps = {
-  children: ReactNode,
-  visible: boolean,
-  onRequestClose: (event?: NativeSyntheticEvent<any>) => void,
+  children: ReactNode;
+  visible: boolean;
+  onRequestClose: (event?: NativeSyntheticEvent<any>) => void;
 }
 export type OptionsListProps = {
-  options: Option[],
+  options: Option[];
 }

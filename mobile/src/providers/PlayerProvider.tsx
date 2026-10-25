@@ -10,7 +10,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     if (isInitializing) return;
-    if (!isAuthenticated) player.resetQueue();
+    if (!isAuthenticated) player.unloadPlaylist();
   }, [player, isAuthenticated, isInitializing]);
   return (
     <PlayerContext.Provider value={player as PlayListContextData}>
