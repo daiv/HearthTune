@@ -1,4 +1,4 @@
-import { Playlist, Song } from "@/common/types";
+import { DownloadStatus, Playlist, Song } from "@/common/types";
 import { gqlManager } from "@/graphql/GraphQLClientManager";
 import { SAVE_PLAYLIST_MUTATION } from "@/graphql/mutations";
 import { GET_PLAYLIST_BY_ID_WITH_SONGS, GET_PLAYLISTS } from "@/graphql/queries";
@@ -19,6 +19,7 @@ export const getSongsFromPlaylistId = async (id: string): Promise<Playlist<Song>
     GET_PLAYLIST_BY_ID_WITH_SONGS,
     { id }
   );
-  console.log('data is ', data);
-  return data.getPlaylistById || [];
+  const songs: Song[] = data.getPlaylistById.songs?.map(s => ({ ...s, local: s.downloadStatus === "Ready" })) || [];
+  const playlist = { ...data.getPlaylistById, songs }
+  return playlist;
 }

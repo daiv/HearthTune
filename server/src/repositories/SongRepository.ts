@@ -18,7 +18,7 @@ export class SongRepository implements ISongRepository {
   async search(query: string): Promise<Song[]> {
     const regex = new RegExp(query, 'i');
     return await SongModel.find({
-      downloadStatus: DownloadStatus.Ready,
+      downloadStatus: "Ready",
       $or: [
         { title: { $regex: regex } },
         { description: { $regex: regex } }
@@ -37,7 +37,7 @@ export class SongRepository implements ISongRepository {
   }
 
   async isReady(id: string): Promise<boolean> {
-    const count = await SongModel.countDocuments({ id, status: DownloadStatus.Ready }, { limit: 1 }).exec();
+    const count = await SongModel.countDocuments({ id, status:"Ready" }, { limit: 1 }).exec();
     return count > 0;
   }
 

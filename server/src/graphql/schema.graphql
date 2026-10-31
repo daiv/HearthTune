@@ -4,7 +4,7 @@
     duration: Int
     description: String
     played: Int
-    local: Boolean
+    downloadStatus: String
     provider: String
     url: String
   }

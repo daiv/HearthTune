@@ -11,6 +11,11 @@ export class SongService implements ISongService {
   private songsCache = new Map<string, Song>();
   private readonly PATH = join(process.cwd(), 'storage', 'music');
   private activeSources = new Map<string, PassThrough>();
+
+  /*   private toSongWithLocal = (song: Song): Song => {
+      return { ...song, local: song.downloadStatus === "Ready" }
+    } */
+
   constructor(private providers: ISongsProvider[], private songRepository: ISongRepository) { }
 
   async searchLocally(query: string): Promise<Song[]> {
@@ -31,8 +36,8 @@ export class SongService implements ISongService {
       .flat();
     const searchesResult: Song[] = (await Promise.allSettled(
       searches.map(async song => {
-        const downloadStatus = await this.songRepository.getSongState(song.id) || DownloadStatus.DownloadPending;
-        song.local = downloadStatus === DownloadStatus.Ready;
+        const downloadStatus = await this.songRepository.getSongState(song.id) || "DownloadPending";
+        song.local = downloadStatus === "Ready";
         this.songsCache.set(song.id, song);
         return song;
       })
@@ -50,9 +55,9 @@ export class SongService implements ISongService {
     const songSearch = await provider.getRelated(id, numberOfSongs);
 
     const result = (await Promise.allSettled(songSearch.map(async song => {
-      const downloadStatus = await this.songRepository.getSongState(song.id) || DownloadStatus.DownloadPending;
+      const downloadStatus: DownloadStatus = await this.songRepository.getSongState(song.id) || "DownloadPending";
       song.downloadStatus = downloadStatus;
-      song.local = downloadStatus === DownloadStatus.Ready;
+      song.local = downloadStatus === "Ready";
       return song;
     })))
       .filter((res): res is PromiseFulfilledResult<Song> => res.status === 'fulfilled')
@@ -76,7 +81,7 @@ export class SongService implements ISongService {
     if (!song) song = await this.saveSongOnDb(id, provider, userId);
     if (!song) throw new ServerError('Unable to get song info');
 
-    if (song.downloadStatus === DownloadStatus.Ready && fs.existsSync(join(this.PATH, `${id}.m4a`)))
+    if (song.downloadStatus === "Ready" && fs.existsSync(join(this.PATH, `${id}.m4a`)))
       return { type: 'local', localPath };
 
     if (this.activeSources.has(id)) {
@@ -91,13 +96,13 @@ export class SongService implements ISongService {
     audiostream.pipe(fileWriter);
     audiostream.pipe(combinedStream);
 
-    await this.songRepository.setSongState(id, DownloadStatus.Downloading);
+    await this.songRepository.setSongState(id, "Downloading");
 
     const handleCleanUpError = async (err: Error) => {
       console.error(err.message);
       if (!this.activeSources.has(id)) return;
       this.activeSources.delete(id);
-      await this.songRepository.setSongState(id, DownloadStatus.Error);
+      await this.songRepository.setSongState(id, "Error");
       combinedStream.destroy(err);
       if (fs.existsSync(localPath)) {
         try {
@@ -120,7 +125,7 @@ export class SongService implements ISongService {
       try {
         const stats = fs.statSync(localPath);
         if (stats.size > 0) {
-          await this.songRepository.setSongState(id, DownloadStatus.Ready);
+          await this.songRepository.setSongState(id, "Ready");
           this.activeSources.delete(id);
         } else throw new Error('File is empty');
       } catch (error) {
@@ -143,14 +148,14 @@ export class SongService implements ISongService {
     const newSong = (await provider.searchSongs(id, 1))[0];
     if (!newSong) return null;
 
-    const downloadStatus = await this.songRepository.getSongState(id) || DownloadStatus.DownloadPending;
+    const downloadStatus: DownloadStatus = await this.songRepository.getSongState(id) || "DownloadPending";
     newSong.downloadStatus = downloadStatus;
-    newSong.local = downloadStatus === DownloadStatus.Ready;
+    newSong.local = downloadStatus === "Ready";
     this.songsCache.set(newSong.id, newSong);
 
     return newSong;
   }
   async getSongsByIds(ids: string[]): Promise<Song[]> {
-    return this.songRepository.getSongsByIds(ids);
+    return (await this.songRepository.getSongsByIds(ids));//.map(this.toSongWithLocal);
   }
 }

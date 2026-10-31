@@ -6,7 +6,7 @@ export const SEARCH_SONGS = gql`
         id
         title
         duration
-        local
+        downloadStatus
         provider
         url
       }
@@ -18,7 +18,7 @@ query searchLocally($query:String!){
     id
     title
     duration
-    local
+    downloadStatus
     provider
     url
   }
@@ -30,7 +30,7 @@ export const GET_RELATED_SONGS = gql`
       id
       title
       duration
-      local
+      downloadStatus
       provider
       url
     }
@@ -60,7 +60,7 @@ export const LIKED_LIST = gql`
       id
       title
       duration
-      local
+      downloadStatus
       provider
       url
     }
@@ -81,7 +81,7 @@ export const GET_PLAYLIST_BY_ID_WITH_SONGS = gql`
             id
             title
             duration
-            local
+            downloadStatus
             provider
             url
           }

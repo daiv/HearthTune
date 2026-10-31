@@ -12,8 +12,9 @@ export const SearchItem = memo(
     const { enqueue } = usePlayListContext();
 
     const formattedTime = formatTime(song.duration);
+    
     const color =
-      song.local === undefined ? 'orange' : song.local === true ? '#10b981' : '#ef4444';
+      song.downloadStatus === undefined ? 'orange' : song.downloadStatus === "Ready" ? '#10b981' : '#ef4444';
 
     const handleItemPress = () => {
       Alert.alert('Add song', `Do you want to add \n${song.title} \n to current playlist?`,

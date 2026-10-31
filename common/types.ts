@@ -1,9 +1,5 @@
-export enum DownloadStatus {
-  DownloadPending = "DownloadPending",
-  Downloading = "Downloading",
-  Ready = "Ready",
-  Error = "Error",
-}
+export type DownloadStatus = 'DownloadPending' | 'Downloading' | 'Ready' | 'Error';
+
 export type AuthPayload = {
   accessToken: string;
   refreshToken: string;
@@ -18,7 +14,6 @@ export type Song = {
   local?: boolean;
   provider: 'Soundcloud' | 'Youtube' | 'Unknown';
   url?: string;
-
   lastPlayed?: Date;
   downloadStatus?: DownloadStatus | undefined;
   instanceId?: string;

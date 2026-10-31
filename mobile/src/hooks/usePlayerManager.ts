@@ -172,7 +172,6 @@ export const usePlayerManager = () => {
     await TrackPlayer.add(songsWithInstanceId.map(songToTrack));
     queueRef.current = [...songsWithInstanceId];
     setQueue(songsWithInstanceId);
-    console.log('songswi', songsWithInstanceId);
   }, [queueRef]);
 
   const unloadPlaylist = useCallback(async (): Promise<void> => {

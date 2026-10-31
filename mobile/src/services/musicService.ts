@@ -1,6 +1,6 @@
 import { Song } from "@/common/types";
 import { gqlManager } from "@/graphql/GraphQLClientManager";
-import { GET_RELATED_SONGS, SEARCH_SONGS } from "@/graphql/queries";
+import { GET_RELATED_SONGS } from "@/graphql/queries";
 
 export const getRelatedSongsFromServer = async (id: string, count: number = 10): Promise<Song[] | undefined> => {
   const data = await gqlManager.safeRequest<{ getRelated: Song[] }>(

@@ -37,9 +37,7 @@ export const formatTime = (durationInSeconds: number): string => {
   const formattedMinutes = minutes.toString().padStart(2, '0');
   const formattedSeconds = seconds.toString().padStart(2, '0');
 
-  if (hours > 0) {
-    return `${hours}:${formattedMinutes}:${formattedSeconds}`;
-  }
+  if (hours > 0) return `${hours}:${formattedMinutes}:${formattedSeconds}`;
 
   return `${minutes}:${formattedSeconds}`;
 }

@@ -9,15 +9,16 @@ import { styles } from "./styles";
 import Entypo from '@expo/vector-icons/Entypo';
 
 const renderFunction = ({ item }: { item: Song }) => <SearchItem key={item.instanceId} song={item} />
+
 const mergeSongs = (local: Song[], remote: Song[]): Song[] => {
   const mergedMap = new Map<string, Song>(local.map(s => [s.id, s]));
 
   remote.forEach(song => {
     if (mergedMap.has(song.id)) {
-      const localSong = mergedMap.get(song.id);
+      const localSong = mergedMap.get(song.id)!;
       mergedMap.set(song.id, {
-        ...localSong,
         ...song,
+        downloadStatus: localSong.downloadStatus,
       });
     } else mergedMap.set(song.id, { ...song });
   });
@@ -107,9 +108,14 @@ export function SearchBar() {
         <View style={{ flex: 1 }}>
           <Text style={styles.resultsCount}>Found {songs.length} results</Text>
           <FlatList<Song>
-            data={songs.sort((currentSong, otherSong) => (
-              Number(otherSong.local) - (Number(currentSong.local)))
-            )}
+            data={[...songs].sort((currentSong, otherSong) => {
+              const isCurrentReady = currentSong.downloadStatus === "Ready";
+              const isOtherReady = otherSong.downloadStatus === "Ready";
+              if (isCurrentReady && !isOtherReady) return -1;
+              if (isOtherReady && !isCurrentReady) return 1;
+
+              return currentSong.title.localeCompare(otherSong.title);
+            })}
             keyExtractor={item => item.id}
             renderItem={renderFunction}
 

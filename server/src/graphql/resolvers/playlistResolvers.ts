@@ -1,7 +1,7 @@
 import { DeletePlaylistContext, GetPlaylistsContext, GetSongsContext, SavePlaylistContext } from "../context.types";
 import { protect } from "@/middleware";
 import { atLeast } from "@/helpers";
-import { Playlist } from "@/common/types";
+import { Playlist, Song } from "@/common/types";
 
 export const playlistResolvers = {
   Query: {
@@ -42,7 +42,8 @@ export const playlistResolvers = {
   Playlist: {
     songs: async (playlist: Playlist, _: {}, context: GetSongsContext) => {
       if (!playlist.songs || playlist.songs.length === 0) return [];
-      return await context.services.song.getSongsByIds(playlist.songs);
+      const list: Song[] = await context.services.song.getSongsByIds(playlist.songs);
+      return list;
     }
-  }
+  },
 }

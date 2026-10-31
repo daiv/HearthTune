@@ -46,7 +46,7 @@ const songSchema = new mongoose.Schema<Song>({
   },
   downloadStatus: {
     type: String,
-    default: DownloadStatus.DownloadPending
+    default: "DownloadPending"
   }
 });
 

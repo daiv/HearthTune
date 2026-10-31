@@ -10,10 +10,7 @@ export function useGetPlaylists() {
   );
   return { ...hook, data: hook.data?.getPlaylistsByUserId || [] };
 }
-export function useGetPlaylistWithSongs() {
 
-
-}
 export function useSavePlaylist() {
   return useGraphQlMutation<
     { savePlaylist: Playlist },

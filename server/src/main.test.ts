@@ -704,7 +704,7 @@ describe('TDD tests', () => {
       description: '',
       duration: 10,
       played: 0,
-      downloadStatus: DownloadStatus.DownloadPending,
+      downloadStatus: "DownloadPending",
       lastPlayed: now,
       provider: 'Unknown'
     };
