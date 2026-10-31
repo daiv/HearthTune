@@ -41,6 +41,14 @@ This application is a full-stack music streaming and playlist management solutio
 * **Repository Pattern & Persistence:** Clean separation of data layers using Mongoose for robust song and user state persistence in MongoDB.
 * **Infrastructure:** Fully containerized setup using Docker for local development and backend execution.
 
+  #### Engineering & Architectural Highlights
+    - **Zero Trust Security & Server-Side Identity Injection:** 
+      To prevent IDOR (Insecure Direct Object Reference) and unauthorized modifications, the API avoids trusting client payloads. Identity (`userId`) and permissions (`role`) are extracted and cryptographically verified from JWT tokens at the server context layer, ensuring that write/mutation ownership is enforced authoritatively.
+    - **N+1 Query Prevention & Performance Optimization:** 
+      Designed with a strict separation between light summaries and heavy details. Utilizes Mongoose `.lean()` to bypass heavy document instantiation (returning pure POJOs) and MongoDB's `$in` operator for efficient batch-fetching of related song references.
+    - **Type-Safe Business Logic:** 
+      Leverages advanced TypeScript patterns (such as strict `Record<Role, number>` mappings) to enforce role-based limits (e.g., maximum playlists per tier) at compile-time, eliminating runtime undefined errors and ensuring fail-safe scalability.
+
 ### 4. Authentication & Security
 * **JWT & Session Management:** Complete token-based authentication workflow supporting secure login, session handling, and user logout capabilities.
 * **User Lifecycle:** End-to-end user invitation, registration flows, and validation logic.
@@ -61,5 +69,5 @@ This application is a full-stack music streaming and playlist management solutio
     <picture>![React Native](https://img.shields.io/badge/React_Native-61DAFB?style=flat&logo=react&logoColor=black)</picture>
     <picture>![Expo](https://img.shields.io/badge/Expo-000020?style=flat&logo=expo&logoColor=white)</picture>
     <picture>![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)</picture>
-    <picture>![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?style=flat&logo=react-query&logoColor=white)<picture>
+    <picture>![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?style=flat&logo=react-query&logoColor=white)</picture>
     <picture>![Graphql](https://img.shields.io/badge/GraphQl-531bd5?style=flat&logo=graphql&logoColor=white)</picture>
