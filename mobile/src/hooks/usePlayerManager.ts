@@ -165,9 +165,12 @@ export const usePlayerManager = () => {
   const loadSongs = useCallback(async (songs: Song[]): Promise<void> => {
     await TrackPlayer.reset();
     const songsWithInstanceId = songs.map(addInstanceId);
-    if (songs.length > 0) {
-      const signedFirstSong = await updateSongWithSignedUrl(songsWithInstanceId[0]);
-      songsWithInstanceId[0] = signedFirstSong;
+    const songsToSign = songs.length > 2 ? 2 : songs.length;
+    if (songsToSign > 0) {
+      for (let i = 0; i < songsToSign; i++) {
+        const signedSong = await updateSongWithSignedUrl(songsWithInstanceId[i]);
+        songsWithInstanceId[i] = signedSong;
+      }
     }
     await TrackPlayer.add(songsWithInstanceId.map(songToTrack));
     queueRef.current = [...songsWithInstanceId];

@@ -1,5 +1,4 @@
 import { Song } from "@/common/types";
-import { SERVER_URL } from "@env";
 import { Track } from "react-native-track-player";
 import { DeviceInfo } from 'react-native-device-info';
 

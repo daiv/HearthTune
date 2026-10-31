@@ -1,6 +1,6 @@
 import { memo, useState } from "react";
 import { Playlist, Song } from "@/common/types";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 interface LibraryItemProps {
@@ -20,10 +20,10 @@ export const LibraryItem = memo(
       }
       setIsEditing(false);
     }
-    return <View style={{ flexDirection: 'row', height: 50, alignItems: 'center' }}>
+    return <View style={styles.card}>
       {isEditing ? (
         <TextInput
-          style={{ flex: 1, borderWidth: 1, borderColor: '#0d9488', borderRadius: 5, paddingHorizontal: 8, height: 35 }}
+          style={styles.textInput}
           onChangeText={setTitle}
           value={title}
           autoFocus
@@ -54,3 +54,31 @@ export const LibraryItem = memo(
     </View>
   }
 );
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  textInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#0d9488',
+    borderRadius: 5,
+    paddingHorizontal: 8,
+
+  }
+});

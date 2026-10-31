@@ -14,7 +14,7 @@ export function Library() {
 
   const handleSelectPlaylist = async (playlist: Playlist) => {
     if (!playlist.id) return;
-    const { id, title } = playlist;
+    const { id } = playlist;
     const fullPlaylist: Playlist<Song> = await getSongsFromPlaylistId(id);
     await loadPlaylist(fullPlaylist);
   }
@@ -29,7 +29,6 @@ export function Library() {
       onUpdateTitle={handleUpdateTitle} />
   )
   return <View style={{ flex: 1 }}>
-    <Text>Library</Text>
     {isLoading ? (
 
       <View >
