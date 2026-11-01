@@ -7,7 +7,7 @@ import { YoutubeRawSong } from "./youtube.types";
 
 
 export class YoutubeProvider implements ISongsProvider {
-  readonly PROVIDER = "Youtube";
+  readonly PROVIDER = "Main";
   readonly FILE_EXTENSION = "m4a";
 
   userAgents = [

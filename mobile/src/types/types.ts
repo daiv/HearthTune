@@ -18,6 +18,7 @@ export type PlayListContextData = {
   skipSong: (to: 'Prev' | 'Next') => Promise<void>;
   loadPlaylist: (playlist: Playlist<Song>) => Promise<void>;
   setActivePlaylist: Dispatch<React.SetStateAction<{ id: string, title: string } | null>>;
+  moveQueueItem: (index: number, to: 'up' | 'down') => void;
 }
 export type SkipSongFunctionArgs = 'Next' | 'Prev';
 

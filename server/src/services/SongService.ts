@@ -2,7 +2,7 @@ import { PassThrough } from "node:stream";
 import { ISongService, ISongsProvider, ISongRepository } from "@/interfaces";
 import fs from 'fs';
 import { SongResponse } from "../types/types";
-import { DownloadStatus, Song } from "@/common/types";
+import { DownloadStatus, Provider, Song } from "@/common/types";
 import { join } from "node:path";
 import { InvalidIdException, ProviderNotFoundException, ServerError } from "../errors/ServerError";
 
@@ -11,10 +11,6 @@ export class SongService implements ISongService {
   private songsCache = new Map<string, Song>();
   private readonly PATH = join(process.cwd(), 'storage', 'music');
   private activeSources = new Map<string, PassThrough>();
-
-  /*   private toSongWithLocal = (song: Song): Song => {
-      return { ...song, local: song.downloadStatus === "Ready" }
-    } */
 
   constructor(private providers: ISongsProvider[], private songRepository: ISongRepository) { }
 
@@ -46,7 +42,7 @@ export class SongService implements ISongService {
     return searchesResult;
   }
 
-  async getRelatedSongs(id: string, numberOfSongs: number = 10, source = 'Youtube'): Promise<Song[]> {
+  async getRelatedSongs(id: string, numberOfSongs: number = 10, source: Provider = 'Main'): Promise<Song[]> {
     const provider = this.providers.find(prov => prov.PROVIDER === source);
     if (!provider) throw new ProviderNotFoundException();
 
@@ -69,7 +65,7 @@ export class SongService implements ISongService {
     return result;
   }
 
-  async getAudioSource(id: string, source: string = 'Youtube', userId: string): Promise<SongResponse> {
+  async getAudioSource(id: string, source: Provider = 'Main', userId: string): Promise<SongResponse> {
     const provider = this.providers.find(provider => provider.PROVIDER === source);
 
     if (!provider) throw new ProviderNotFoundException();
@@ -156,6 +152,6 @@ export class SongService implements ISongService {
     return newSong;
   }
   async getSongsByIds(ids: string[]): Promise<Song[]> {
-    return (await this.songRepository.getSongsByIds(ids));//.map(this.toSongWithLocal);
+    return (await this.songRepository.getSongsByIds(ids));
   }
 }

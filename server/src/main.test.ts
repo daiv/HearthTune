@@ -188,7 +188,7 @@ describe('TDD tests', () => {
 
         const searchQuery = Query.query.search;
         const spy = jest.spyOn(songService, 'search').mockResolvedValue([
-          { id: '9Yp3lc3PsjA', title: 'Test Song', description: 'desc', duration: 100, provider: 'Youtube' }
+          { id: '9Yp3lc3PsjA', title: 'Test Song', description: 'desc', duration: 100, provider: 'Unknown' }
         ]);
         const vars = { searchString: '9Yp3lc3PsjA', max: 1 }
         const response = await request.post(GRAPH)
@@ -825,7 +825,7 @@ describe('TDD tests', () => {
     let playlistService: PlaylistService;
     let playlistRepo: PlayListRepository;
     const userId = 'test-userId-integration';
-    const role: Role = 'basic';
+    const ROLE: Role = 'basic';
     const mockPlayList: Playlist = {
       songs: ['a'],
       title: 'mock playlist',
@@ -839,16 +839,16 @@ describe('TDD tests', () => {
     });
 
     it('Should save playlists withing the role limits', async () => {
-      const MAX = MAX_PLAYLISTS[role];
+      const MAX = MAX_PLAYLISTS[ROLE];
       console.log('max', MAX);
       for (let i = 0; i < MAX; i++) {
         const list: Playlist = { ...mockPlayList, title: `Playlist number ${i} ` };
-        const result = await playlistService.savePlaylist(list, userId, role);
+        const result = await playlistService.savePlaylist(list, userId, ROLE);
         expect(result).toBeTruthy();
       }
       const exceedingList: Playlist = { ...mockPlayList, title: 'Exceeding playlist' };
       await expect(
-        playlistService.savePlaylist(exceedingList, userId, role)
+        playlistService.savePlaylist(exceedingList, userId, ROLE)
       ).rejects.toThrow(PlaylistLimitReachedException);
 
       const userLists = await playlistRepo.getLists(userId);
@@ -858,7 +858,7 @@ describe('TDD tests', () => {
     it('Should delete only owned playlists', async () => {
       const userA = 'a';
       const userB = 'b';
-      const savedPlaylist = await playlistService.savePlaylist({ ...mockPlayList, userId: userA }, userA, role);
+      const savedPlaylist = await playlistService.savePlaylist({ ...mockPlayList, userId: userA }, userA, ROLE);
       console.log('saved is ', savedPlaylist);
       if (!savedPlaylist || !savedPlaylist.id) throw new Error('Unable to save playlist');
 
@@ -878,13 +878,28 @@ describe('TDD tests', () => {
         songs: ['song1'],
         userId: userA,
       }
-      const savedPlaylist = await playlistService.savePlaylist(playlist, userA, role);
+      const savedPlaylist = await playlistService.savePlaylist(playlist, userA, ROLE);
       if (!savedPlaylist || !savedPlaylist.id) throw new Error('Unable to save playlist');
 
       const tamperedPlaylist: Playlist = {
         ...savedPlaylist, title: 'hacked title'
       }
-      await expect(playlistService.savePlaylist(tamperedPlaylist, userB, role)).rejects.toThrow(ForbiddenException);
+      await expect(playlistService.savePlaylist(tamperedPlaylist, userB, ROLE)).rejects.toThrow(ForbiddenException);
+    });
+    it('Should preserve the exact song order when saving and updating a playlist', async () => {
+      const songs = ['1', '2', '3', '4', '5', '1'];
+      const playlist: Playlist = {
+        title: 'ordered playlist',
+        songs: [...songs],
+        userId: 'test-user'
+      }
+      const savedPlaylist = await playlistService.savePlaylist({ ...playlist }, userId, ROLE);
+      console.log('saved is', savedPlaylist?.songs);
+      expect(savedPlaylist?.songs).toEqual(songs);
+      const unorderedSongs = ['3', '1', '5', '3'];
+      const updatedPlaylist = await playlistService.savePlaylist({ ...playlist, songs: [...unorderedSongs] }, userId, ROLE);
+      expect(updatedPlaylist?.songs).toEqual(unorderedSongs);
+
     });
   });
   describe('User tests', () => {

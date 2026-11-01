@@ -325,6 +325,22 @@ export const usePlayerManager = () => {
     setActivePlaylist({ id, title });
   }, [loadSongs]);
 
+  const moveQueueItem = useCallback((pos: number, to: 'up' | 'down') => {
+    const length = queueRef.current.length;
+
+    if (pos === 0 && to === 'up'
+      || pos >= length
+      || pos === length - 1 && to === 'down'
+    ) return;
+    const finalPosition = to === 'up' ? (pos - 1) : (pos + 1);
+    const newQueue = [...queueRef.current];
+
+    const temp = newQueue[finalPosition];
+    newQueue[finalPosition] = newQueue[pos];
+    newQueue[pos] = temp;
+    queueRef.current = newQueue;
+    setQueue(newQueue);
+  }, []);
 
   const contextValue: PlayListContextData = useMemo(() => ({
     queue,
@@ -341,6 +357,7 @@ export const usePlayerManager = () => {
     isCurrentTrackLocal,
     skipSong,
     setActivePlaylist,
+    moveQueueItem
 
   }), [
     queue,
@@ -354,6 +371,7 @@ export const usePlayerManager = () => {
     unloadPlaylist,
     pauseAutoQueue,
     shuffleQueue,
+    moveQueueItem,
     skipSong]);
   return contextValue;
 }

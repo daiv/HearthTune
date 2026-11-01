@@ -20,7 +20,7 @@ export const trackToSong = (track: Track): Song => {
     duration: track.duration || 0,
     description: track.description ?? '',
     instanceId: track.mediaId,
-    provider: 'Youtube',
+    provider: 'Main',
     url: track.url
   }
   const songWithInstanceId = song.instanceId ? song : addInstanceId(song);

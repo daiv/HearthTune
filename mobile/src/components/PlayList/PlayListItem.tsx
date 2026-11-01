@@ -4,10 +4,11 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { usePlayListContext } from "@/contexts/PlayerContext";
 import { BlinkingPlayButton } from "../buttons/BlinkingPlayButton";
 import { formatTime } from "@/helpers/helpers";
+import AntDesign from '@expo/vector-icons/AntDesign';
 import { useProgress } from "react-native-track-player";
 import { useEffect, useRef } from "react";
 
-export function PlayListItem({ song, index, isPlaying }: { song: Song, index: number, isPlaying: boolean }) {
+export function PlayListItem({ song, move, isPlaying }: { song: Song, move: (to: 'up' | 'down') => void, isPlaying: boolean }) {
 
   const { dequeue, skipToByInstanceId } = usePlayListContext();
   const titlelower = song.title
@@ -20,7 +21,7 @@ export function PlayListItem({ song, index, isPlaying }: { song: Song, index: nu
   const { position, duration } = useProgress();
   const animatedProgress = useRef(new Animated.Value(0)).current;
   const color =
-    song.local === undefined ? 'orange' : song.local === true ? '#10b981' : '#ef4444';
+    song.downloadStatus === undefined ? 'orange' : song.downloadStatus === "Ready" ? '#10b981' : '#ef4444';
 
   useEffect(() => {
     if (!isPlaying) {
@@ -70,14 +71,26 @@ export function PlayListItem({ song, index, isPlaying }: { song: Song, index: nu
       </View>
     </TouchableOpacity>
 
-    <TouchableOpacity
-      style={styles.deleteButton}
-      onPress={() => dequeue(song.instanceId!)}>
-      <FontAwesome name="trash-o" size={20} color="#94a3b8" />
-    </TouchableOpacity>
+    <View style={styles.rightActionsContainer}>
+      <View style={styles.arrowContainer}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => { move('up') }}>
+          <AntDesign name="up" size={16} color="#64748b" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={() => { move('down') }}>
+          <AntDesign name="down" size={16} color="#64748b" />
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => dequeue(song.instanceId!)}>
+        <FontAwesome name="trash-o" size={22} color="#94a3b8" />
+      </TouchableOpacity>
+    </View>
   </View >
 
 }
+
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
@@ -89,7 +102,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    overflow: 'hidden', 
+    overflow: 'hidden',
     position: 'relative',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -143,9 +156,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
+  rightActionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 1,
+    gap: 8,
+    marginLeft: 8,
+  },
+  arrowContainer: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  actionButton: {
+    padding: 4,
+  },
   deleteButton: {
     padding: 8,
-    marginLeft: 8,
-    zIndex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

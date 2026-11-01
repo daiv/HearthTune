@@ -37,7 +37,7 @@ export class SongRepository implements ISongRepository {
   }
 
   async isReady(id: string): Promise<boolean> {
-    const count = await SongModel.countDocuments({ id, status:"Ready" }, { limit: 1 }).exec();
+    const count = await SongModel.countDocuments({ id, status: "Ready" }, { limit: 1 }).exec();
     return count > 0;
   }
 
@@ -65,6 +65,9 @@ export class SongRepository implements ISongRepository {
   async getSongsByIds(ids: string[]): Promise<Song[]> {
     if (!ids || ids.length === 0) return [];
     const songs: Song[] = await SongModel.find({ id: { $in: ids } }).lean();
-    return songs;
+    const songMap = new Map(songs.map(song => [song.id, song]));
+    return ids
+      .map(id => songMap.get(id))
+      .filter((s): s is Song => s !== undefined);
   }
 }

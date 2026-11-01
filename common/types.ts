@@ -4,7 +4,7 @@ export type AuthPayload = {
   accessToken: string;
   refreshToken: string;
 }
-
+export type Provider = 'Main' | 'sc' | 'Unknown'
 export type Song = {
   id: string;
   title: string;
@@ -12,7 +12,7 @@ export type Song = {
   description: string | null;
   played?: number;
   local?: boolean;
-  provider: 'Soundcloud' | 'Youtube' | 'Unknown';
+  provider: Provider
   url?: string;
   lastPlayed?: Date;
   downloadStatus?: DownloadStatus | undefined;

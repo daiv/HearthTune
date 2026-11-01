@@ -12,7 +12,7 @@ import { useSavePlaylist } from "@/hooks/usePlaylist";
 
 export function PlayList() {
   const activeTrack = useActiveTrack();
-  const { activePlaylist, queue, enqueueRelatedSong, unloadPlaylist, shuffleQueue, setActivePlaylist } = usePlayListContext();
+  const { activePlaylist, queue, enqueueRelatedSong, unloadPlaylist, shuffleQueue, setActivePlaylist, moveQueueItem: moveItem } = usePlayListContext();
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
 
@@ -20,11 +20,13 @@ export function PlayList() {
 
   const formattedTime: string = formatTime(queue.reduce((acc, song) => acc + (song.duration || 0), 0));
   const DEFAULT_TITLE = 'Unknown title';
+
   const renderFunction = ({ item, index }: { item: Song, index: number }) => {
+    const factory = (index: number) => (to: 'up' | 'down') => moveItem(index, to);
+    const move = factory(index);
     return <PlayListItem
-      key={item.instanceId}
       song={item}
-      index={index}
+      move={move}
       isPlaying={activeTrack?.mediaId == item.instanceId
       } />
   }
@@ -41,7 +43,6 @@ export function PlayList() {
       songs: songIds
     }, {
       onSuccess: data => {
-        console.log('saved!');
         if (data.savePlaylist.id) {
           setActivePlaylist(
             {
