@@ -1,13 +1,17 @@
 import { protect } from "@/middleware";
 import { MusicContext } from "../context.types";
 import { atLeast } from "@/helpers";
+import { ROLE_HIERARCHY } from "@/constants";
 
 export const songResolvers = {
   Query: {
     search: protect<undefined, MusicContext, { query: string, limit?: number }>(
       atLeast('basic'),
       async (_, { query, limit }, context) => {
-        return await context.services.song.search(query, limit || 50);
+        const role = context.user?.role!;
+        const response = await context.services.song.search(query, limit || 50);
+        if (ROLE_HIERARCHY[role] >= ROLE_HIERARCHY["admin"]) return response;
+        else return response.filter(s => s.duration <= 600);
       }
       ,
       { sanitizeFields: ['query'] }
