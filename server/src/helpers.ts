@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { Credential, Role, TimeUnit, ViewPath, ViewPropsMap } from './types/types';
-import { MAX_SESSIONS, ROLE_HIERARCHY } from './constants';
+import { ROLE_HIERARCHY } from './constants';
 import { Response } from 'express';
 import { ServerError } from './errors/ServerError';
 

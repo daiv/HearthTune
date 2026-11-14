@@ -1,8 +1,8 @@
-import { ISessionService } from "@/interfaces/ISessionService";
-import { SessionRepository } from "../repositories/SessionRepository";
 import { Role, Session } from "@/types/types";
 import { DeleteResult } from "mongoose";
 import { MAX_SESSIONS } from "@/constants";
+import { ISessionService } from "@/interfaces";
+import { SessionRepository } from "@/repositories";
 
 export class SessionService implements ISessionService {
   constructor(private sessions: SessionRepository) { }

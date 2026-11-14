@@ -1,7 +1,10 @@
 import { IAuthService } from "@/interfaces/IAuthService";
-import { AccessPayload, Role, Session, Credential, ResetPasswordCredential, } from "@/types/types";
+import { AccessPayload, Role, Session, Credential, ResetPasswordCredential, MicroToken, } from "@/types/types";
 import { UserRepository } from "@/repositories";
-import { AccountNotActiveException, BadRequestException, InvalidCredentialsException, InvalidTokenException, MissingUserRoleException, ServerError, TrialExpiredException, } from "@/errors/ServerError";
+import {
+  AccountNotActiveException, BadRequestException, InvalidCredentialsException,
+  InvalidTokenException, MissingUserRoleException, ServerError, TrialExpiredException,
+} from "@/errors/ServerError";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { expiresIn, hashData, isTrialExpired } from "@/helpers";
@@ -189,4 +192,11 @@ export class AuthService implements IAuthService {
     const expectedSignature = hashData(dataToSign);
     return expectedSignature === sign;
   };
+
+  createMicroserviceToken(): MicroToken {
+    const expiresAt = expiresIn(5, "minutes").getTime();
+    const dataToSign = `${expiresAt}`;
+    const signature = hashData(dataToSign, process.env.MICROSERVICE_HASHING_KEY);
+    return { expiresAt: expiresAt.toString(), signature };
+  }
 }

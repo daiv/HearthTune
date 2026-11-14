@@ -5,3 +5,5 @@ export * from './graphQLErrorWrapper';
 export * from './handleGraphQLError';
 export * from './protect';
 export * from './streamGuard';
+export * from './checkResetPassToken';
+export * from './requireDashboardAuth';

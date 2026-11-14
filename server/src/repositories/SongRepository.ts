@@ -1,6 +1,6 @@
-import mongoose, { DeleteResult, UpdateWriteOpResult } from "mongoose";
+import { DeleteResult, UpdateWriteOpResult } from "mongoose";
 import { ISongRepository } from "@/interfaces";
-import { SongModel } from "../models/songModel";
+import { SongModel } from "@/models";
 import { DownloadStatus, Song } from "@/common/types";
 
 export class SongRepository implements ISongRepository {

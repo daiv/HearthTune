@@ -4,14 +4,13 @@ export type AuthPayload = {
   accessToken: string;
   refreshToken: string;
 }
-export type Provider = 'Main' | 'sc' | 'Unknown'
+export type Provider = 'Main' | 'sc' | 'Unknown' | 'Service';
 export type Song = {
   id: string;
   title: string;
   duration: number;
   description: string | null;
   played?: number;
-  local?: boolean;
   provider: Provider
   url?: string;
   lastPlayed?: Date;

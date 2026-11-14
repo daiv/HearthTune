@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import { ISongService } from '../interfaces/ISongService';
 import { InvalidIdException, ServerError } from '@/errors/ServerError';
+import { Provider } from '@/common/types';
 
 export class SongController {
   constructor(private service: ISongService) { }
 
   playSong = async (req: Request, res: Response) => {
-    const { songId, provider = 'Youtube', userId } = req.query as { songId: string, provider: string, userId: string };
+    const { songId, provider = 'Main', userId } = req.query as { songId: string, provider: Provider, userId: string };
 
     try {
       const audioSource = await this.service.getAudioSource(songId, provider, userId!);

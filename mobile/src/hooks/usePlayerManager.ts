@@ -47,19 +47,24 @@ export const usePlayerManager = () => {
 
   useEffect(() => { syncQueue() }, []);
 
-  const setCurrentSongToLocal = (): void => {
+  const setDownloadStatusToReady = (): void => {
+    console.log('setting queue to local');
     isSongUpdatedToLocal.current = true;
-
-    queueRef.current[songIndexRef.current].local = true;
-
-    setQueue(prevQueue => {
-      const newQueue = [...prevQueue];
-      if (newQueue[songIndexRef.current])
-        newQueue[songIndexRef.current] = { ...newQueue[songIndexRef.current], local: true }
-      return newQueue;
-    });
+    const instanceId = queueRef.current[songIndexRef.current].instanceId;
+    console.log('instanceid is', instanceId);
+    if (!instanceId) console.error(' no instance id');
+    const newQueue: Song[] = queueRef.current.map((s: Song) => s.instanceId !== instanceId ? s : ({ ...s, downloadStatus: "Ready" }));
+    queueRef.current[songIndexRef.current].downloadStatus = "Ready";
+    const currentSong = queueRef.current[songIndexRef.current];
+    console.log('song', currentSong);
+    setQueue(q => newQueue);
   }
 
+  const manageSongStatus = () => {
+    const needConvertToLocal = queueRef.current[songIndexRef.current].downloadStatus !== "Ready" && !isSongUpdatedToLocal.current && isCurrentTrackBeyondMiddlePointRef.current;
+    if (needConvertToLocal)
+      setDownloadStatusToReady();
+  }
   useTrackPlayerEvents(
     [
       Event.PlaybackProgressUpdated,
@@ -67,7 +72,7 @@ export const usePlayerManager = () => {
     ], async event => {
       const { position, duration } = event;
       await manageAutoQueue(position, duration);
-      if (!isSongUpdatedToLocal.current && isCurrentTrackBeyondMiddlePointRef.current) setCurrentSongToLocal();
+      manageSongStatus();
     }
   );
 
@@ -86,6 +91,7 @@ export const usePlayerManager = () => {
     [Event.PlaybackActiveTrackChanged],
 
     async function updateRefsAndTrigerTracksSignature(event) {
+      isSongUpdatedToLocal.current = false;
       const activeIndex = event.index ?? await TrackPlayer.getActiveTrackIndex();
       songIndexRef.current = activeIndex || 0;
       isLastSongRef.current = queueRef.current.length - 1 === songIndexRef.current;
@@ -286,7 +292,7 @@ export const usePlayerManager = () => {
       currentIndex < 0 ||
       currentIndex >= queueRef.current.length) return false;
 
-    return queueRef.current[songIndexRef.current].local || false;
+    return queueRef.current[songIndexRef.current].downloadStatus == "Ready" || false;
   };
 
   const skipSong = useCallback(async (to: 'Prev' | 'Next'): Promise<void> => {
@@ -325,7 +331,7 @@ export const usePlayerManager = () => {
     setActivePlaylist({ id, title });
   }, [loadSongs]);
 
-  const moveQueueItem = useCallback((pos: number, to: 'up' | 'down') => {
+  const moveQueueItem = useCallback(async (pos: number, to: 'up' | 'down') => {
     const length = queueRef.current.length;
 
     if (pos === 0 && to === 'up'
@@ -339,6 +345,8 @@ export const usePlayerManager = () => {
     newQueue[finalPosition] = newQueue[pos];
     newQueue[pos] = temp;
     queueRef.current = newQueue;
+    await TrackPlayer.move(pos, finalPosition);
+    songIndexRef.current = await TrackPlayer.getActiveTrackIndex() ?? 0;
     setQueue(newQueue);
   }, []);
 

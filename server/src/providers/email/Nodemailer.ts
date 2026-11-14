@@ -1,4 +1,4 @@
-import { IMailingProvider } from "@/interfaces/IMailingProvider";
+import { IMailingProvider } from "@/interfaces";
 import nodemailer from 'nodemailer';
 import { MailOptions } from "nodemailer/lib/json-transport";
 
@@ -15,7 +15,7 @@ export class NodeMailer implements IMailingProvider {
   });
   async sendEmail(to: string, message: string, subject: string = '')
     : Promise<boolean> {
-      
+
     const mailFinalOptions: MailOptions = {
       to,
       subject,

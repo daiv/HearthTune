@@ -4,7 +4,6 @@ import { createRouter } from '@/router';
 import { checkEnvFile } from '@/helpers';
 import { initDatabase } from '@/models/model';
 import { initGraphqlMiddleware } from './graphql/graphqlServer';
-import { YoutubeProvider, NodeMailer } from '@/providers';
 import { ResourcesService, MailingService, AuthService, SongService, UserService, SessionService, ActivationService, LikeService, PlaylistService, } from '@/services';
 import { errorHandler } from '@/middleware/errorHandler';
 import { ISongsProvider } from '@/interfaces';
@@ -14,6 +13,7 @@ import { PORT } from './constants';
 import { SsrController, ResourcesController } from '@/controllers';
 import { MockEmailProvider } from './mocks/MockEmailProvider';
 import { initGraphqlMiddlewareProps, SsrConstructorProps } from './types/types';
+import { MicroServiceProvider } from '@/providers/music/microService';
 
 const app = express();
 
@@ -29,10 +29,7 @@ const app = express();
     console.log('views', viewsPath);
     app.use(express.urlencoded({ extended: true }));
 
-    const providers: ISongsProvider[] = [new YoutubeProvider(), /* new SoundCloudProvider() */];
-    // const provider = new MockProvider();
     const songRepository = new SongRepository();
-    const songService = new SongService(providers, songRepository);
 
     const userRepository = new UserRepository();
 
@@ -40,6 +37,8 @@ const app = express();
     const sessionRepository = new SessionRepository();
     const sessionService = new SessionService(sessionRepository);
     const authService = new AuthService(userRepository, sessionService);
+    const providers: ISongsProvider[] = [new MicroServiceProvider(authService), /* new SoundCloudProvider() */];
+    const songService = new SongService(providers, songRepository);
     const mailService = new MailingService(new MockEmailProvider());
     const activationService = new ActivationService(userRepository, mailService, authService);
     const resourcesService = new ResourcesService();

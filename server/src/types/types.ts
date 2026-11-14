@@ -1,10 +1,8 @@
 import { Readable } from "node:stream";
-import { ISongService } from "../interfaces/ISongService";
-import { ActivationService, AuthService, LikeService, PlaylistService, SessionService, UserService } from "@/services";
+import { ActivationService, AuthService, LikeService, MailingService, PlaylistService, ResourcesService, SessionService, UserService } from "@/services";
 import { Song } from "@/common/types";
-import { ResourcesService } from "@/services/ResourcesService";
-import { MailingService } from "@/services/MailingService";
 import { ExpressContextFunctionArgument } from "@as-integrations/express5";
+import { ISongService } from "@/interfaces";
 
 export type SongResponse = {
   type: "local",
@@ -218,3 +216,7 @@ export type initGraphqlMiddlewareProps = {
   customContext?: (args?: ExpressContextFunctionArgument) => Promise<resolverContext>
 }
 
+export type MicroToken = {
+  signature: string;
+  expiresAt: string;
+}

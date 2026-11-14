@@ -1,9 +1,9 @@
-import { UserNotFoundException } from "../errors/ServerError";
-import { hashData } from "../helpers";
-import { IUserService } from "@/interfaces/IUserService";
-import { UserRepository } from "@/repositories/UserRepository";
+import { IUserService } from "@/interfaces";
+import { hashData } from "@/helpers";
 import { CreateUserDto, Role, User } from "@/types/types";
 import bcrypt from 'bcrypt';
+import { UserRepository } from "@/repositories";
+import { UserNotFoundException } from "@/errors/ServerError";
 
 export class UserService implements IUserService {
 

@@ -1,6 +1,6 @@
 import { InvalidTokenException, ServerError, UserNotFoundException } from "@/errors/ServerError";
 import { checkEmail, checkPassword, render } from "@/helpers";
-import { ISsrController } from "@/interfaces/ISsrController";
+import { ISsrController } from "@/interfaces";
 import { SsrConstructorProps } from "@/types/types";
 import { Request, Response } from "express";
 

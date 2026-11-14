@@ -1,9 +1,7 @@
 import express from 'express';
 import { AuthService, SongService, ActivationService } from './services';
-import {  ResourcesController, SongController, SsrController } from './controllers';
-import { checkValidationToken, createAppDownloadGuard, createStreamGuard } from './middleware';
-import { requireDashboardAuth } from './middleware/requireDashboardAuth';
-import { checkResetPasswordToken } from './middleware/checkResetPassToken';
+import { ResourcesController, SongController, SsrController } from './controllers';
+import { checkResetPasswordToken, checkValidationToken, createAppDownloadGuard, createStreamGuard, requireDashboardAuth } from './middleware';
 
 export function createRouter
   (

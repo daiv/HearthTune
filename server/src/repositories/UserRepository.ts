@@ -1,8 +1,8 @@
-import { IUserRepository } from "@/interfaces/IUserRepository";
-import { UserModel } from "../models/userModel";
+import { IUserRepository } from "@/interfaces";
+import { UserModel } from "../models/";
 import { Credential, ResetPasswordCredential, User, UserCredential, UserStatus } from "@/types/types";
-import { hashData } from "../helpers";
-import { UserNotFoundException } from "../errors/ServerError";
+import { hashData } from "@/helpers";
+import { UserNotFoundException } from "@/errors/ServerError";
 import { HydratedDocument } from "mongoose";
 
 export class UserRepository implements IUserRepository {

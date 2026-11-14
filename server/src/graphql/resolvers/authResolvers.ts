@@ -1,8 +1,8 @@
 import { graphQLErrorWrapper } from "@/middleware/graphQLErrorWrapper";
 import { LoginContext, LogoutContext, RefreshContext, SignUrlContext } from "../context.types";
-import { protect } from "@/middleware/protect";
 import { atLeast } from "@/helpers";
 import { AuthPayload, SignedUrl } from "@/common/types";
+import { protect } from "@/middleware";
 
 export const authResolvers = {
   Query: {

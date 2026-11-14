@@ -1,7 +1,6 @@
 import { Song } from "@/common/types";
-import { ILikeRepository } from "@/interfaces/ILikeRepository";
-import { LikeModel } from "@/models/likeSongModel";
-import { SongModel } from "@/models/songModel";
+import { ILikeRepository } from "@/interfaces";
+import { LikeModel, SongModel } from "@/models";
 
 export class LikeRepository implements ILikeRepository {
   async toggleLike(userId: string, songId: string): Promise<boolean> {

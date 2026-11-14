@@ -1,10 +1,5 @@
-import { ISongService } from "@/interfaces";
-import { IAuthService } from "@/interfaces/IAuthService";
-import { ILikeService } from "@/interfaces/ILikeService";
-import { IPLaylistService } from "@/interfaces/IPlaylistService";
-import { IUserService } from "@/interfaces/IUserService";
+import { ILikeService, IAuthService, ISongService, IUserService, IPLaylistService } from "@/interfaces";
 import { User } from "@/types/types";
-
 
 export interface ServiceContainer {
   auth: IAuthService;
@@ -12,8 +7,8 @@ export interface ServiceContainer {
   user: IUserService;
   like: ILikeService;
   playlist: IPLaylistService;
-
 }
+
 export interface BaseContext {
   user?: User;
   services: { [K in keyof ServiceContainer]?: Partial<ServiceContainer[K]> }
@@ -22,7 +17,6 @@ export interface BaseContext {
     appVersion: string;
   }
 }
-
 
 export interface MusicContext extends Omit<BaseContext, 'services'> {
   services: {
@@ -45,11 +39,13 @@ export interface LoginContext extends Omit<BaseContext, 'services'> {
   };
 
 }
+
 export interface RefreshContext extends Omit<BaseContext, 'services'> {
   services: {
     auth: Pick<IAuthService, 'refreshTokens'>;
   }
 }
+
 export interface LogoutContext extends Omit<BaseContext, 'services'> {
   services: BaseContext['services'] & {
     auth: Pick<IAuthService, 'logout'>;
@@ -61,27 +57,25 @@ export interface SignUrlContext extends Omit<BaseContext, 'services'> {
     auth: Pick<ServiceContainer['auth'], 'createSignedUrl'>
   }
 }
-/* export interface PlaylistContext extends Omit<BaseContext, 'services'> {
-  services: BaseContext['services'] & {
-    playlist: Pick<ServiceContainer['playlist'], 'getPlaylistsByUserId'>;
-    song: Pick<ServiceContainer['song'], 'getSongsByIds'>;
-  }
-} */
+
 export interface GetPlaylistsContext extends Omit<BaseContext, 'services'> {
   services: {
     playlist?: Pick<IPLaylistService, 'getPlaylistById' | 'getPlaylistsByUserId'>;
   }
 }
+
 export interface GetSongsContext extends Omit<BaseContext, 'services'> {
   services: {
     song: Pick<ISongService, 'getSongsByIds'>;
   }
 }
+
 export interface SavePlaylistContext extends Omit<BaseContext, 'services'> {
   services: {
     playlist?: Pick<IPLaylistService, 'getPlaylistsByUserId' | 'savePlaylist'>;
   };
 }
+
 export interface DeletePlaylistContext extends Omit<BaseContext, 'services'> {
   services: {
     playlist?: Pick<IPLaylistService, 'removePlaylist'>;

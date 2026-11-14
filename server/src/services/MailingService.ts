@@ -1,5 +1,4 @@
-import { IMailingProvider } from "@/interfaces/IMailingProvider";
-import { IMailingService } from "@/interfaces/IMailingService";
+import { IMailingProvider, IMailingService } from "@/interfaces";
 
 export class MailingService implements IMailingService {
   constructor(private mailProvider: IMailingProvider) { }

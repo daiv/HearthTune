@@ -1,4 +1,4 @@
-import { protect } from "@/middleware/protect";
+import { protect } from "@/middleware";
 import { MusicContext } from "../context.types";
 import { atLeast } from "@/helpers";
 

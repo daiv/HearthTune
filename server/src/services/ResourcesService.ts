@@ -1,4 +1,4 @@
-import { IResourcesService } from "@/interfaces/IResourcesService";
+import { IResourcesService } from "@/interfaces";
 import { join } from "node:path";
 
 export class ResourcesService implements IResourcesService {

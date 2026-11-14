@@ -1,7 +1,7 @@
 import { Playlist } from "@/common/types";
 import { MAX_PLAYLISTS } from "@/constants";
 import { BadRequestException, ForbiddenException, PlaylistLimitReachedException } from "@/errors/ServerError";
-import { IPLaylistService } from "@/interfaces/IPlaylistService";
+import { IPLaylistService } from "@/interfaces";
 import { PlayListRepository } from "@/repositories";
 import { Role } from "@/types/types";
 

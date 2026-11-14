@@ -1,6 +1,5 @@
 import { Song } from "@/common/types";
-import { ILikeRepository } from "@/interfaces/ILikeRepository";
-import { ILikeService } from "@/interfaces/ILikeService";
+import { ILikeRepository, ILikeService } from "@/interfaces";
 
 export class LikeService implements ILikeService {
   constructor(private likeRepo: ILikeRepository) { }

@@ -5,7 +5,7 @@ import { initGraphqlMiddleware } from "./graphql/graphqlServer";
 import supertest from "supertest";
 import TestAgent from "supertest/lib/agent";
 import { Server } from "node:http";
-import { DownloadStatus, Playlist, Song } from "@/common/types";
+import { Playlist, Song } from "@/common/types";
 import { PlaylistService, MailingService, AuthService, SongService, UserService, ActivationService, SessionService, LikeService } from "@/services";
 import { describe, it, expect, afterAll, beforeAll, jest, beforeEach, afterEach } from '@jest/globals';
 import { CreateUserDto, Role, Session, User, Credential, ResetPasswordCredential, initGraphqlMiddlewareProps } from "./types/types";

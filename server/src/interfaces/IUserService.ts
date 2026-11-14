@@ -1,4 +1,4 @@
-import { CreateUserDto, Role, User, Credential, UserCredential } from "@/types/types";
+import { CreateUserDto, User, } from "@/types/types";
 
 export interface IUserService {
   createUser: (data: CreateUserDto) => Promise<User>;

@@ -1,4 +1,4 @@
-import { DownloadStatus, Song } from "@/common/types";
+import { Song } from "@/common/types";
 import mongoose, { model } from "mongoose";
 
 const songSchema = new mongoose.Schema<Song>({

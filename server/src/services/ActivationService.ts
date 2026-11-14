@@ -1,12 +1,10 @@
 import { UserNotFoundException } from "@/errors/ServerError";
 import { createValidationCredentials } from "@/helpers";
-import { IActivationService } from "@/interfaces/IActivationService";
-import { IMailingService } from "@/interfaces/IMailingService";
 import { UserModel } from "@/models";
 import { UserRepository } from "@/repositories";
 import { Credential, IsTokenLegitResponse, User } from "@/types/types";
-import bcrypt from 'bcrypt';
 import { AuthService } from "./AuthService";
+import { IActivationService, IMailingService } from "@/interfaces";
 
 export class ActivationService implements IActivationService {
   constructor(

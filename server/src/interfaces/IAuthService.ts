@@ -1,5 +1,5 @@
 import { AuthPayload, SignedUrl } from "@/common/types";
-import { AccessPayload, Role, Session, SignedUrlValidationParams, SsrLoginResponse, } from "@/types/types";
+import { AccessPayload, MicroToken, Role, Session, } from "@/types/types";
 
 export interface IAuthService {
   checkUserPassword: (userId: string, plainPassword: string) => Promise<boolean>;
@@ -19,4 +19,6 @@ export interface IAuthService {
 
   createDownloadUrl: (userId: string) => string;
   isDownloadUrlValid: (userId: string, jti: string, expiresAt: string, sign: string) => boolean;
+
+  createMicroserviceToken: () => MicroToken;
 }

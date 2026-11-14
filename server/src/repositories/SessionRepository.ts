@@ -1,5 +1,5 @@
-import { ISessionRepository } from "@/interfaces/ISessionRepository";
-import { SessionModel } from "../models/sessionModel";
+import { ISessionRepository } from "@/interfaces";
+import { SessionModel } from "@/models";
 import { Session } from "@/types/types";
 import { DeleteResult, } from "mongoose";
 import { hashData } from "../helpers";

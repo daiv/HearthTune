@@ -1,6 +1,6 @@
 import { Playlist } from "@/common/types";
 import { IPlaylistRepository } from "@/interfaces";
-import { PlayListModel } from "@/models/playListModel";
+import { PlayListModel } from "@/models";
 import mongoose from "mongoose";
 
 type PlaylistDoc = {
