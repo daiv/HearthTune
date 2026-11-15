@@ -14,6 +14,7 @@ import { SsrController, ResourcesController } from '@/controllers';
 import { MockEmailProvider } from './mocks/MockEmailProvider';
 import { initGraphqlMiddlewareProps, SsrConstructorProps } from './types/types';
 import { MicroServiceProvider } from '@/providers/music/microService';
+import { NodeMailer } from './providers';
 
 const app = express();
 
@@ -39,7 +40,7 @@ const app = express();
     const authService = new AuthService(userRepository, sessionService);
     const providers: ISongsProvider[] = [new MicroServiceProvider(authService), /* new SoundCloudProvider() */];
     const songService = new SongService(providers, songRepository);
-    const mailService = new MailingService(new MockEmailProvider());
+    const mailService = new MailingService(new NodeMailer());
     const activationService = new ActivationService(userRepository, mailService, authService);
     const resourcesService = new ResourcesService();
     const resourcesController = new ResourcesController(resourcesService, authService);
