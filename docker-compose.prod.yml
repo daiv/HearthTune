@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+    container_name: hearthtune_server
+    restart: always
+    env_file:
+      - ./server/.env
+    environment:
+      - TZ=Europe/Madrid
+      - PORT=4000
+      - MONGO_URI=mongodb://db:27017/hearthtune
+    volumes:
+      - ./server/storage/music:/app/server/storage/music
+      - ./server/storage/artifacts:/app/server/storage/artifacts
+    depends_on:
+      - db
+    networks:
+      - hearthtune-net
+
+  db:
+    image: mongo:8.0
+    container_name: hearthtune_db
+    restart: always
+    environment:
+      - TZ=Europe/Madrid
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - hearthtune-net
+
+  caddy:
+    image: caddy:latest
+    container_name: hearthtune_caddy
+    restart: always
+    ports:
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    networks:
+      - hearthtune-net
+
+volumes:
+  mongo_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  hearthtune-net:
+    driver: bridge
