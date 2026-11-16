@@ -8,6 +8,7 @@ export async function initDatabase() {
 
   const MONGO_URI = `mongodb://${USER}:${PASS}@${HOST}:27017/${DB}?authSource=admin`;
   try {
+    console.log('connecting to ', MONGO_URI);
     await mongoose.connect(MONGO_URI);
     console.log('Connected to db');
   } catch (error) {

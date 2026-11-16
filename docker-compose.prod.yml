@@ -27,6 +27,9 @@ services:
     restart: always
     environment:
       - TZ=Europe/Madrid
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    command: mongod --auth
     volumes:
       - mongo_data:/data/db
     networks:
