@@ -25,8 +25,17 @@ describe('TDD tests', () => {
       MONGO_INITDB_ROOT_USERNAME,
       MONGO_INITDB_ROOT_PASSWORD,
       MONGO_INITDB_DATABASE,
-      MONGO_HOSTNAME = 'db' } = process.env;
-    const MONGO_URI = `mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${MONGO_HOSTNAME}:27017/${MONGO_INITDB_DATABASE}?authSource=admin&retryWrites=false`;
+      MONGO_HOSTNAME = 'localhost',
+    } = process.env;
+
+    if (!MONGO_INITDB_ROOT_USERNAME || !MONGO_INITDB_ROOT_PASSWORD || !MONGO_INITDB_DATABASE) {
+      throw new Error('Missing MongoDB test environment variables');
+    }
+
+    const encodedUser = encodeURIComponent(MONGO_INITDB_ROOT_USERNAME);
+    const encodedPass = encodeURIComponent(MONGO_INITDB_ROOT_PASSWORD);
+    const MONGO_URI = `mongodb://${encodedUser}:${encodedPass}@${MONGO_HOSTNAME}:27017/${MONGO_INITDB_DATABASE}?authSource=admin&retryWrites=false`;
+
     await mongoose.connect(MONGO_URI);
     await mongoose.connection.collection('users').deleteMany({});
   });
@@ -1475,7 +1484,21 @@ describe('TDD tests', () => {
         await new Promise(resolve => setTimeout(resolve, 3000));
         isValid = await authService.isResetPasswordTokenValid(token);
         expect(isValid).toBe(false);
-      })
+      });
+
+      it('Should create and validate download Urls', async () => {
+        const createdUrl = authService.createDownloadUrl(mockUser.id);
+        expect(createdUrl).not.toBeFalsy();
+        const fields = createdUrl.split('=');
+        const [userId, jti, expiresAt, signature] = fields
+          .map((f, i) => {
+            if (i === 0 || i === fields.length - 1) return f;
+            else return f.substring(0, f.indexOf('&'));
+          })
+          .splice(1);
+        const isValidUrl = authService.isDownloadUrlValid(userId, jti, expiresAt, signature);
+        expect(isValidUrl).toBe(true);
+      });
     })
   });
 

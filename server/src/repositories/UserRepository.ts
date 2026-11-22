@@ -8,7 +8,12 @@ import { HydratedDocument } from "mongoose";
 export class UserRepository implements IUserRepository {
 
   async save(user: User) {
-    const userToSave = { ...user, emailHash: hashData(user.email) };
+    const userToSave = {
+      ...user,
+      emailHash: hashData(user.email),
+      ...(user.credentials ? { credentials: { ...user.credentials, token: hashData(user.credentials.token) } } : {})
+    };
+
 
     const savedUserDoc = await UserModel.findOneAndUpdate(
       { _id: user.id },
@@ -41,7 +46,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async getUserByToken(token: string): Promise<User | null> {
-    const userDoc = await UserModel.findOne({ "credentials.token": token });
+    const userDoc = await UserModel.findOne({ "credentials.token": hashData(token) });
     return userDoc ? userDoc.toJSON() : null;
   }
 
@@ -51,7 +56,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async getCredentialsFromValidationToken(token: string): Promise<UserCredential | null> {
-    const userDoc: HydratedDocument<User> | null = await UserModel.findOne({ "credentials.token": token });
+    const userDoc: HydratedDocument<User> | null = await UserModel.findOne({ "credentials.token": hashData(token) });
     return (this.extractCredentialFromUser(userDoc));
   }
 

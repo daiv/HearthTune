@@ -166,6 +166,7 @@ export class AuthService implements IAuthService {
 
     return storedHash === hashData(token);
   }
+
   async invalidateResetPasswordToken(userId: string): Promise<boolean> {
     const user = await this.userRepository.getUserById(userId);
     if (!user || !user.resetPassword) return false;
@@ -173,6 +174,7 @@ export class AuthService implements IAuthService {
     await this.userRepository.save(user);
     return true;
   };
+
   createDownloadUrl(userId: string): string {
     const expiresAt = expiresIn(30, "minutes").getTime();
 
@@ -183,6 +185,7 @@ export class AuthService implements IAuthService {
     const signedUrl = `${baseUrl}/apk-download-signed?userId=${userId}&jti=${jti}&expiresAt=${expiresAt}&sign=${signature}`;
     return signedUrl;
   };
+
   isDownloadUrlValid(userId: string, jti: string, expiresAt: string, sign: string): boolean {
     const numericExpiresAt = Number(expiresAt);
     if (isNaN(numericExpiresAt)) throw new BadRequestException();

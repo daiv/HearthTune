@@ -95,7 +95,7 @@ export class ActivationService implements IActivationService {
     const now = new Date();
 
     if (now > credentials.expiresAt) return { valid: false, cause: "token expired" };
-    return { valid: true, ...validationResponse };
+    return { valid: true, ...validationResponse, credentials: { ...credentials, token } };
   }
 
   async updateStateByExpiredToken(token: string): Promise<boolean> {

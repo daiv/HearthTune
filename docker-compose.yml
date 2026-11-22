@@ -9,6 +9,7 @@ services:
       - "4000:4000"
     env_file:
       - ./server/.env
+    command: ["npm", "run", "dev"]
     environment:
       - TZ=Europe/Madrid
     volumes:

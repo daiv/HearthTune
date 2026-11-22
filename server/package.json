@@ -4,10 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "tdd": "docker compose up -d api && docker compose up test",
+    "tdd": "docker compose --env-file .env up -d test-db && docker compose --env-file .env up test",
+    "production": "docker compose --env-file .env -f ../docker-compose.prod.yml up -d caddy",
+    "production:build": "docker compose --env-file .env -f ../docker-compose.prod.yml up -d --build caddy",
+    "tdd-old": "docker compose up -d api && docker compose up test",
     "build": "docker compose build && npm run tdd",
     "test": "jest",
-    "dev": "tsx watch --ignore ./storage/music src/index.ts "
+    "dev": "tsx watch --ignore ./storage/music src/index.ts ",
+    "start": "tsx src/index.ts"
   },
   "keywords": [],
   "author": "",

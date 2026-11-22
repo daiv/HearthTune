@@ -32,7 +32,6 @@ export class NodeMailer implements IMailingProvider {
   }
   async sendActivationEmail(to: string, token: string)
     : Promise<boolean> {
-
     const activationUrl = `${process.env.SERVER_URL}/validation/${token}`;
     const mailOptions = {
       from: `HearthTune <${process.env.SMTP_USER}>`,

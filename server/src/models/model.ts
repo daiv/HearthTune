@@ -1,14 +1,17 @@
 import mongoose from 'mongoose';
 export async function initDatabase() {
   const {
-    MONGO_INITDB_ROOT_USERNAME: USER,
-    MONGO_INITDB_ROOT_PASSWORD: PASS,
+    MONGO_USER: USER,
+    MONGO_PASS: PASS,
     MONGO_INITDB_DATABASE: DB,
     MONGO_HOSTNAME: HOST = 'db' } = process.env;
 
-  const MONGO_URI = `mongodb://${USER}:${PASS}@${HOST}:27017/${DB}?authSource=admin`;
+  if (!USER || !PASS || !DB) {
+    console.error('error connecting to db. Missing .env fields');
+    process.exit(1);
+  }
+  const MONGO_URI = `mongodb://${USER}:${PASS}@${HOST}:27017/${DB}?authSource=${DB}`;
   try {
-    console.log('connecting to ', MONGO_URI);
     await mongoose.connect(MONGO_URI);
     console.log('Connected to db');
   } catch (error) {

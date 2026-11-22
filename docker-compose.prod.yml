@@ -1,5 +1,4 @@
-version: '3.8'
-
+name: HearthTune
 services:
   api:
     build:
@@ -11,11 +10,13 @@ services:
       - ./server/.env
     environment:
       - TZ=Europe/Madrid
-      - PORT=4000
-      - MONGO_URI=mongodb://db:27017/hearthtune
     volumes:
       - ./server/storage/music:/app/server/storage/music
       - ./server/storage/artifacts:/app/server/storage/artifacts
+      - ./common:/app/common:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+
     depends_on:
       - db
     networks:
@@ -29,9 +30,13 @@ services:
       - TZ=Europe/Madrid
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PASS=${MONGO_PASS}
     command: mongod --auth
     volumes:
       - mongo_data:/data/db
+      - ./server/src/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
       - hearthtune-net
 
@@ -40,6 +45,7 @@ services:
     container_name: hearthtune_caddy
     restart: always
     ports:
+      - "80:80"
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
